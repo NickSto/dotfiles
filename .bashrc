@@ -1,3 +1,5 @@
+#################### Ubuntu default stuff ####################
+
 # ~/.bashrc: executed by bash(1) for non-login shells.
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
@@ -89,17 +91,14 @@ fi
 
 
 
-##### My customizations #####
+#################### My stuff ####################
 
-# stuff I don't want to post publicly on github
-# still should be universal, not machine-specific
-source ~/.bashrc_private
+
+##### Aliases #####
 
 alias lsl='ls -lFhAb --color=auto --group-directories-first'
 alias lsld='ls -lFhAbd --color=auto --group-directories-first'
 alias trash='trash-put'
-alias cds='cd ~/annex/school/13-1-spring'
-alias cdc='cd ~/aa/code/'
 alias targ='tar -zxvpf'
 alias tarb='tar -jxvpf'
 
@@ -107,14 +106,12 @@ alias awkt="awk -F '\t' -v OFS='\t'"
 alias pingg='ping -c 1 google.com'
 alias curlip='curl icanhazip.com'
 alias vib='vim ~/.bashrc'
+alias rsynca='rsync -e ssh --delete -zavXA'
+alias kerb='kinit nick@BX.PSU.EDU'
 alias temp="sensors | extract Physical 'Core 1' | sed 's/(.*)//' | grep -P '\d+\.\d'"
 alias proxpn='cd ~/src/proxpn_mac/config; sudo openvpn --user me --config proxpn.ovpn'
-alias rsynca='rsync -e ssh --delete -zavXA'
-
-alias ssha='ssh nick@helios.bx.psu.edu'
-alias sshg='ssh nick@gigameta.com'
-alias kerb='kinit nick@BX.PSU.EDU'
 #alias qsh='source /home/me/src/qiime_software/activate.sh'
+alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
 
 alias minelog='ssh vps "tail src/minecraft/server.log"'
 alias mineme='ssh vps "cat src/minecraft/server.log" | grep -i nick | tail'
@@ -122,7 +119,8 @@ alias minelist="ssh vps 'screen -S minecraft -X stuff \"list
 \"; sleep 1; tail src/minecraft/server.log'"
 alias minemem='ssh vps "if pgrep -f java > /dev/null; then pgrep -f java | xargs ps -o %mem; fi"'
 
-alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
+
+##### Functions #####
 
 vix () {
   if [ -e $1 ]; then
@@ -235,9 +233,16 @@ oneline () {
   echo "$1" | tr -d '\n'
 }
 
-# Comment all this screen shit! I'm back in the real world!
+
+##### Other #####
+
+# Stuff I don't want to post publicly on Github.
+# Still should be universal, not machine-specific.
+source ~/.bashrc_private
+
+# Update: no more local screen! I'm back in the real world!
 # I'm just gonna leave it like this on this machine, since it's never an ssh
-# DESTINATION, always an ssh ORIGIN.
+# *server*, always an ssh *client*
 ## If interactive, set $PS1 prompt format and enter a screen
 #if [ ! -z "$PS1" ]; then
   export PS1="\e[0;36m[\d]\e[m \e[0;32m\u@\h:\w\e[m\n\$ "
