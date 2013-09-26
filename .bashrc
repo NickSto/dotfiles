@@ -156,6 +156,13 @@ alias l='ls -CF'
 #################### My stuff ####################
 
 
+if [[ $host =~ (zen|main) ]]; then
+  bashrc_dir="$HOME/aa/code/bash/bashrc"
+elif [[ $host =~ (nsto|brubeck) ]]; then
+  bashrc_dir="$HOME/code/bashrc"
+fi
+
+
 ##### Aliases #####
 
 alias lsl='ls -lFhAb --color=auto --group-directories-first'
@@ -173,6 +180,7 @@ alias kerb='kinit nick@BX.PSU.EDU'
 alias temp="sensors | extract Physical 'Core 1' | sed 's/(.*)//' | grep -P '\d+\.\d'"
 alias proxpn='cd ~/src/proxpn_mac/config; sudo openvpn --user me --config proxpn.ovpn'
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
+alias updaterc="git --work-tree=$bashrc_dir --git-dir=$bashrc_dir/.git pull"
 
 alias minecraft='cd ~/src/minecraft; java -Xmx400M -Xincgc -jar /home/me/src/minecraft_server.jar nogui'
 alias minelog='ssh vps "tail src/minecraft/server.log"'
@@ -180,11 +188,6 @@ alias mineme='ssh vps "cat src/minecraft/server.log" | grep -i nick | tail'
 alias minelist="ssh vps 'screen -S minecraft -X stuff \"list
 \"; sleep 1; tail src/minecraft/server.log'"
 alias minemem='ssh vps "if pgrep -f java > /dev/null; then pgrep -f java | xargs ps -o %mem; fi"'
-if [[ $host =~ (zen|main) ]]; then
-  alias updaterc="git --work-tree=/home/me/aa/code/bash/bashrc --git-dir=/home/me/aa/code/bash/bashrc/.git pull"
-elif [[ $host =~ (nsto|brubeck) ]]; then
-  alias updaterc="git --work-tree=/home/me/code/bashrc --git-dir=/home/me/code/bashrc/.git pull"
-fi
 
 
 ##### Functions #####
