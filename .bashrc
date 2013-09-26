@@ -158,7 +158,7 @@ alias l='ls -CF'
 
 if [[ $host =~ (zen|main) ]]; then
   bashrc_dir="$HOME/aa/code/bash/bashrc"
-elif [[ $host =~ (nsto|brubeck) ]]; then
+elif [[ $host =~ (nsto|brubeck|nfshost.com) ]]; then
   bashrc_dir="$HOME/code/bashrc"
 fi
 
@@ -174,20 +174,28 @@ alias tarb='tar -jxvpf'
 alias awkt="awk -F '\t' -v OFS='\t'"
 alias pingg='ping -c 1 google.com'
 alias curlip='curl icanhazip.com'
-alias vib='vim ~/.bashrc'
 alias rsynca='rsync -e ssh --delete -zavXA'
 alias kerb='kinit nick@BX.PSU.EDU'
-alias temp="sensors | extract Physical 'Core 1' | sed 's/(.*)//' | grep -P '\d+\.\d'"
-alias proxpn='cd ~/src/proxpn_mac/config; sudo openvpn --user me --config proxpn.ovpn'
-alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
-alias updaterc="git --work-tree=$bashrc_dir --git-dir=$bashrc_dir/.git pull"
+if [[ $host =~ (nfshost.com) ]]; then
+  alias vib='vim ~/.bash_profile'
+else
+  alias vib='vim ~/.bashrc'
+fi
 
-alias minecraft='cd ~/src/minecraft; java -Xmx400M -Xincgc -jar /home/me/src/minecraft_server.jar nogui'
+alias minecraft='cd ~/src/minecraft && java -Xmx400M -Xincgc -jar $HOME/src/minecraft_server.jar nogui'
 alias minelog='ssh vps "tail src/minecraft/server.log"'
 alias mineme='ssh vps "cat src/minecraft/server.log" | grep -i nick | tail'
 alias minelist="ssh vps 'screen -S minecraft -X stuff \"list
 \"; sleep 1; tail src/minecraft/server.log'"
 alias minemem='ssh vps "if pgrep -f java > /dev/null; then pgrep -f java | xargs ps -o %mem; fi"'
+
+alias temp="sensors | extract Physical 'Core 1' | sed 's/(.*)//' | grep -P '\d+\.\d'"
+alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user me --config proxpn.ovpn'
+alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
+alias updaterc="git --work-tree=$bashrc_dir --git-dir=$bashrc_dir/.git pull"
+if [[ $host =~ (nfshost.com) ]]; then
+  alias alog='tail -n 20 /home/logs/error_log'
+fi
 
 
 ##### Functions #####
@@ -307,7 +315,7 @@ oneline () {
 
 alias rdp='java -Xmx1g -jar ~/bin/MultiClassifier.jar'
 alias gatk="java -jar ~/bin/GenomeAnalysisTK.jar"
-#alias qsh='source /home/me/src/qiime_software/activate.sh'
+#alias qsh='source $HOME/src/qiime_software/activate.sh'
 alias readsfa='grep -Pc "^>"'
 readsfq () {
   local lines_tmp=$(wc -l $1 |  awk -F ' ' '{print $1}'); echo "$lines_tmp/4" | bc
@@ -351,9 +359,11 @@ if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
     # Don't export PATH again if in a screen.
     if [[ $host =~ (nsto|brubeck) ]]; then
       export PATH=$PATH:~/bin:~/code
-    elif [[ $host =~ (main|nfshost.com) ]]; then
+    elif [[ $host =~ (zen|main|nfshost.com) ]]; then
       export PATH=$PATH:~/bin
     fi
+    if [[ $host =~ (nfshost.com) ]]; then
+      true  # no screen there
     if [[ $host =~ (brubeck) ]]; then
       exec ~/code/pagscr-me.sh '-RR -S auto'
     else
