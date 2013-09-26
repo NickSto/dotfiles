@@ -32,38 +32,9 @@ shopt -s checkwinsize
 # make less more friendly for non-text input files, see lesspipe(1)
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
-# set variable identifying the chroot you work in (used in the prompt below)
-if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
-    debian_chroot=$(cat /etc/debian_chroot)
-fi
-
-# set a fancy prompt (non-color, unless we know we "want" color)
-case "$TERM" in
-    xterm-color) color_prompt=yes;;
-esac
-
-# uncomment for a colored prompt, if the terminal has the capability; turned
-# off by default to not distract the user: the focus in a terminal window
-# should be on the output of commands, not on the prompt
-force_color_prompt=yes
-
-if [ -n "$force_color_prompt" ]; then
-    if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
-	# We have color support; assume it's compliant with Ecma-48
-	# (ISO/IEC-6429). (Lack of such support is extremely rare, and such
-	# a case would tend to support setf rather than setaf.)
-	color_prompt=yes
-    else
-	color_prompt=
-    fi
-fi
-
 # enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-    #alias dir='dir --color=auto'
-    #alias vdir='vdir --color=auto'
-
     alias grep='grep --color=auto'
     alias fgrep='fgrep --color=auto'
     alias egrep='egrep --color=auto'
@@ -93,9 +64,11 @@ fi
 
 #################### My stuff ####################
 
-host=$(hostname)
 # supported hosts:
-# zen main
+# zen main nsto
+# unsupported hosts:
+# brubeck ndojo.nfshost.com nbs.nfshost.com
+host=$(hostname)
 
 ##### Aliases #####
 
@@ -113,9 +86,9 @@ alias rsynca='rsync -e ssh --delete -zavXA'
 alias kerb='kinit nick@BX.PSU.EDU'
 alias temp="sensors | extract Physical 'Core 1' | sed 's/(.*)//' | grep -P '\d+\.\d'"
 alias proxpn='cd ~/src/proxpn_mac/config; sudo openvpn --user me --config proxpn.ovpn'
-#alias qsh='source /home/me/src/qiime_software/activate.sh'
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
 
+alias minecraft='cd ~/src/minecraft; java -Xmx400M -Xincgc -jar /home/me/src/minecraft_server.jar nogui'
 alias minelog='ssh vps "tail src/minecraft/server.log"'
 alias mineme='ssh vps "cat src/minecraft/server.log" | grep -i nick | tail'
 alias minelist="ssh vps 'screen -S minecraft -X stuff \"list
@@ -231,15 +204,35 @@ repeat () {
     echo -n "$1"; i=$((i+1))
   done
 }
+oneline () {
+  echo "$1" | tr -d '\n'
+}
+
+
+##### Bioinformatics #####
+
+alias rdp='java -Xmx1g -jar ~/bin/MultiClassifier.jar'
+#alias qsh='source /home/me/src/qiime_software/activate.sh'
+alias readsfa='grep -Pc "^>"'
+readsfq () {
+  local lines_tmp=$(wc -l $1 |  awk -F ' ' '{print $1}'); echo "$lines_tmp/4" | bc
+}
 gatc () {
   echo "$1" | sed -r 's/[^GATCNgatcn]//g'
 }
 revcomp () {
   echo "$1" | tr 'ATGCatgc' 'TACGtacg' | rev
 }
-oneline () {
-  echo "$1" | tr -d '\n'
+mothur_report () {
+  local total=$(readsfa "$1.fasta")
+  local quality=$(readsfa "mothur-work/$1.trim.fasta")
+  local dedup=$(readsfa "mothur-work/$1.trim.unique.fasta")
+  echo -e "$total\t$quality\t$dedup"
+  quality=$(echo "100*$quality/$total" | bc)
+  dedup=$(echo "100*$dedup/$total" | bc)
+  echo -e "100%\t$quality%\t$dedup%"
 }
+
 
 
 ##### Other #####
@@ -250,13 +243,12 @@ if [ -f ~/.bashrc_private ]; then
   source ~/.bashrc_private
 fi
 
-export PATH=$PATH:~/bin
+#export PATH=$PATH:~/bin
 export PS1="\e[0;36m[\d]\e[m \e[0;32m\u@\h:\w\e[m\n\$ "
 if [[ $host =~ (zen) ]]; then
   export PATH=$PATH:~/bx/code
 fi
 
-#if [ ! -z "$PS1" ]; then
 # if it's a remote shell, change $PS1 prompt format and enter a screen
 if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
   export PS1="[\d] \u@\h:\w\n\$ "
