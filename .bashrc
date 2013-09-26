@@ -9,7 +9,7 @@ host=$(hostname)
 
 if [[ $host =~ (zen|main|nsto) ]]; then
   distro="ubuntu"
-elif [[ $host =~ (nfshost.com) ]]; then
+elif [[ $host =~ (nfshost) ]]; then
   distro="freebsd"
 elif [[ $host =~ (brubeck) ]]; then
   distro="debian"
@@ -158,7 +158,7 @@ alias l='ls -CF'
 
 if [[ $host =~ (zen|main) ]]; then
   bashrc_dir="$HOME/aa/code/bash/bashrc"
-elif [[ $host =~ (nsto|brubeck|nfshost.com) ]]; then
+elif [[ $host =~ (nsto|brubeck|nfshost) ]]; then
   bashrc_dir="$HOME/code/bashrc"
 fi
 
@@ -176,7 +176,7 @@ alias pingg='ping -c 1 google.com'
 alias curlip='curl icanhazip.com'
 alias rsynca='rsync -e ssh --delete -zavXA'
 alias kerb='kinit nick@BX.PSU.EDU'
-if [[ $host =~ (nfshost.com) ]]; then
+if [[ $host =~ (nfshost) ]]; then
   alias vib='vim ~/.bash_profile'
 else
   alias vib='vim ~/.bashrc'
@@ -193,7 +193,7 @@ alias temp="sensors | extract Physical 'Core 1' | sed 's/(.*)//' | grep -P '\d+\
 alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user me --config proxpn.ovpn'
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
 alias updaterc="git --work-tree=$bashrc_dir --git-dir=$bashrc_dir/.git pull"
-if [[ $host =~ (nfshost.com) ]]; then
+if [[ $host =~ (nfshost) ]]; then
   alias alog='tail -n 20 /home/logs/error_log'
 fi
 
@@ -359,10 +359,10 @@ if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
     # Don't export PATH again if in a screen.
     if [[ $host =~ (nsto|brubeck) ]]; then
       export PATH=$PATH:~/bin:~/code
-    elif [[ $host =~ (zen|main|nfshost.com) ]]; then
+    elif [[ $host =~ (zen|main|nfshost) ]]; then
       export PATH=$PATH:~/bin
     fi
-    if [[ $host =~ (nfshost.com) ]]; then
+    if [[ $host =~ (nfshost) ]]; then
       true  # no screen there
     if [[ $host =~ (brubeck) ]]; then
       exec ~/code/pagscr-me.sh '-RR -S auto'
