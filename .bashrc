@@ -1,7 +1,5 @@
 # supported hosts:
-# zen main nsto brubeck
-# partially supported hosts:
-# ndojo.nfshost.com nbs.nfshost.com
+# zen main nsto brubeck ndojo.nfshost.com nbs.nfshost.com
 host=$(hostname)
 
 
@@ -89,7 +87,7 @@ if [[ $distro == "ubuntu" ]]; then
   fi
 
 
-elif [[ $distro == "brubeck" ]]; then
+elif [[ $distro == "debian" ]]; then
 
   # Source global definitions
   if [ -f /etc/bashrc ]; then
@@ -165,8 +163,14 @@ fi
 
 ##### Aliases #####
 
-alias lsl='ls -lFhAb --color=auto --group-directories-first'
-alias lsld='ls -lFhAbd --color=auto --group-directories-first'
+if [[ $host =~ (main|zen|brubeck) ]]; then
+  alias lsl='ls -lFhAb --color=auto --group-directories-first'
+  alias lsld='ls -lFhAbd --color=auto --group-directories-first'
+else
+  # long options don't work on nfshost (freebsd)
+  alias lsl='ls -lFhAb'
+  alias lsld='ls -lFhAbd'
+fi
 alias trash='trash-put'
 alias targ='tar -zxvpf'
 alias tarb='tar -jxvpf'
