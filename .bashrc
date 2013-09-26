@@ -7,11 +7,16 @@ host=$(hostname)
 
 #################### System default stuff ####################
 
-ostype="unknown"
-if [ -f /etc/os-release ]; then
-  ostype=$(grep '^NAME' /etc/os-release | sed -r 's/^NAME="([^"]+)"/\1/g' | tr '[:upper:]' '[:lower:]')
+if [[ $host =~ (zen|main|nsto) ]]; then
+  ostype="ubuntu"
+elif [[ $host =~ (nfshost.com) ]]; then
+  ostype="freebsd"
 elif [[ $host =~ (brubeck) ]]; then
   ostype="brubeck"
+elif [ -f /etc/os-release ]; then
+  ostype=$(grep '^NAME' /etc/os-release | sed -r 's/^NAME="([^"]+)"/\1/g' | tr '[:upper:]' '[:lower:]')
+else
+  ostype="unknown"
 fi
 
 
@@ -130,6 +135,7 @@ alias l='ls -CF'
 
 
 #################### My stuff ####################
+
 
 ##### Aliases #####
 
