@@ -1,36 +1,118 @@
-#################### Ubuntu default stuff ####################
+# supported hosts:
+# zen main nsto brubeck
+# partially supported hosts:
+# ndojo.nfshost.com nbs.nfshost.com
+host=$(hostname)
 
-# ~/.bashrc: executed by bash(1) for non-login shells.
-# see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
-# for examples
 
-# If not running interactively, don't do anything
-case $- in
-    *i*) ;;
-      *) return;;
-esac
+#################### System default stuff ####################
 
-# don't put duplicate lines or lines starting with space in the history.
-# See bash(1) for more options
-HISTCONTROL=ignoreboth
+ostype="unknown"
+if [ -f /etc/os-release ]; then
+  ostype=$(grep '^NAME' /etc/os-release | sed -r 's/^NAME="([^"]+)"/\1/g' | tr '[:upper:]' '[:lower:]')
+elif [[ $host =~ (brubeck) ]]; then
+  ostype="brubeck"
+fi
 
-# append to the history file, don't overwrite it
-shopt -s histappend
 
-# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000
-HISTFILESIZE=2000
+if [[ $ostype == "ubuntu" ]]; then
 
-# check the window size after each command and, if necessary,
-# update the values of LINES and COLUMNS.
-shopt -s checkwinsize
+  # ~/.bashrc: executed by bash(1) for non-login shells.
+  # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
+  # for examples
 
-# If set, the pattern "**" used in a pathname expansion context will
-# match all files and zero or more directories and subdirectories.
-#shopt -s globstar
+  # If not running interactively, don't do anything
+  case $- in
+      *i*) ;;
+        *) return;;
+  esac
 
-# make less more friendly for non-text input files, see lesspipe(1)
-[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+  # don't put duplicate lines or lines starting with space in the history.
+  # See bash(1) for more options
+  HISTCONTROL=ignoreboth
+
+  # append to the history file, don't overwrite it
+  shopt -s histappend
+
+  # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+  HISTSIZE=1000
+  HISTFILESIZE=2000
+
+  # check the window size after each command and, if necessary,
+  # update the values of LINES and COLUMNS.
+  shopt -s checkwinsize
+
+  # If set, the pattern "**" used in a pathname expansion context will
+  # match all files and zero or more directories and subdirectories.
+  #shopt -s globstar
+
+  # make less more friendly for non-text input files, see lesspipe(1)
+  [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
+  # Add an "alert" alias for long running commands.  Use like so:
+  #   sleep 10; alert
+  alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+
+  # enable programmable completion features (you don't need to enable
+  # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
+  # sources /etc/bash.bashrc).
+  if ! shopt -oq posix; then
+    if [ -f /usr/share/bash-completion/bash_completion ]; then
+      . /usr/share/bash-completion/bash_completion
+    elif [ -f /etc/bash_completion ]; then
+      . /etc/bash_completion
+    fi
+  fi
+
+
+elif [[ $ostype == "brubeck" ]]; then
+
+  # Source global definitions
+  if [ -f /etc/bashrc ]; then
+    . /etc/bashrc
+  fi
+
+  # System wide functions and aliases
+  # Environment stuff goes in /etc/profile
+
+  # By default, we want this to get set.
+  umask 002
+
+  if ! shopt -q login_shell ; then # We're not a login shell
+    # Need to redefine pathmunge, it get's undefined at the end of /etc/profile
+      pathmunge () {
+      if ! echo $PATH | /bin/egrep -q "(^|:)$1($|:)" ; then
+        if [ "$2" = "after" ] ; then
+          PATH=$PATH:$1
+        else
+          PATH=$1:$PATH
+        fi
+      fi
+    }
+
+    if [ -d /etc/profile.d/ ]; then
+      for i in /etc/profile.d/*.sh; do
+        if [ -r "$i" ]; then
+          . $i
+        fi
+      unset i
+      done
+    fi
+    unset pathmunge
+  fi
+
+  # system path augmentation
+  test -f /afs/bx.psu.edu/service/etc/env.sh && . /afs/bx.psu.edu/service/etc/env.sh
+
+  # make afs friendlier-ish
+  if [ -d /afs/bx.psu.edu/service/etc/bash.d/ ]; then
+    for file in /afs/bx.psu.edu/service/etc/bash.d/*.bashrc; do
+    . $file
+    done
+  fi
+
+fi
+
 
 # enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
@@ -45,30 +127,9 @@ alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
 
-# Add an "alert" alias for long running commands.  Use like so:
-#   sleep 10; alert
-alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
-
-# enable programmable completion features (you don't need to enable
-# this, if it's already enabled in /etc/bash.bashrc and /etc/profile
-# sources /etc/bash.bashrc).
-if ! shopt -oq posix; then
-  if [ -f /usr/share/bash-completion/bash_completion ]; then
-    . /usr/share/bash-completion/bash_completion
-  elif [ -f /etc/bash_completion ]; then
-    . /etc/bash_completion
-  fi
-fi
-
 
 
 #################### My stuff ####################
-
-# supported hosts:
-# zen main nsto
-# unsupported hosts:
-# brubeck ndojo.nfshost.com nbs.nfshost.com
-host=$(hostname)
 
 ##### Aliases #####
 
@@ -212,6 +273,7 @@ oneline () {
 ##### Bioinformatics #####
 
 alias rdp='java -Xmx1g -jar ~/bin/MultiClassifier.jar'
+alias gatk="java -jar ~/bin/GenomeAnalysisTK.jar"
 #alias qsh='source /home/me/src/qiime_software/activate.sh'
 alias readsfa='grep -Pc "^>"'
 readsfq () {
@@ -254,11 +316,15 @@ if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   if [[ ! $STY ]]; then
     # Don't export PATH again if in a screen.
-    if [[ $host =~ (nsto) ]]; then
+    if [[ $host =~ (nsto|brubeck) ]]; then
       export PATH=$PATH:~/bin:~/code
     elif [[ $host =~ (main|nfshost.com) ]]; then
       export PATH=$PATH:~/bin
     fi
-    exec screen -RR -S auto
+    if [[ $host =~ (brubeck) ]]; then
+      exec ~/code/pagscr-me.sh '-RR -S auto'
+    else
+      exec screen -RR -S auto
+    fi
   fi
 fi
