@@ -93,6 +93,9 @@ fi
 
 #################### My stuff ####################
 
+host=$(hostname)
+# supported hosts:
+# zen main
 
 ##### Aliases #####
 
@@ -129,16 +132,21 @@ vix () {
     touch $1; chmod +x $1; vim $1
   fi
 }
-wcc () { echo -n "$@" | wc -c; }
-# lc () { echo "$1" | tr '[:upper:]' '[:lower:]'; }
-lc () { echo "$1" | lower.b; }
-lgoog () {
-  local query=$(echo "$@" | sed -r 's/ /+/g')
-  lynx -dump http://www.google.com/search?q=$query
-}
 calc () {
   python -c "from math import *; print $1"
 }
+wcc () { echo -n "$@" | wc -c; }
+if [[ $host =~ (zen|main) ]]; then
+  lgoog () {
+    local query=$(echo "$@" | sed -r 's/ /+/g')
+    lynx -dump http://www.google.com/search?q=$query
+  }
+fi
+if [[ $host =~ (zen|main) ]]; then
+  lc () { echo "$1" | lower.b; }
+else
+  lc () { echo "$1" | tr '[:upper:]' '[:lower:]'; }
+fi
 pg () {
     if pgrep -f $@ > /dev/null; then
         pgrep -f $@ | xargs ps -o user,pid,stat,rss,%mem,pcpu,args --sort -pcpu,-rss;
@@ -238,16 +246,22 @@ oneline () {
 
 # Stuff I don't want to post publicly on Github.
 # Still should be universal, not machine-specific.
-source ~/.bashrc_private
+if [ -f ~/.bashrc_private ]; then
+  source ~/.bashrc_private
+fi
 
-# Update: no more local screen! I'm back in the real world!
-# I'm just gonna leave it like this on this machine, since it's never an ssh
-# *server*, always an ssh *client*
-## If interactive, set $PS1 prompt format and enter a screen
-#if [ ! -z "$PS1" ]; then
-  export PS1="\e[0;36m[\d]\e[m \e[0;32m\u@\h:\w\e[m\n\$ "
+export PATH=$PATH:~/bin
+export PS1="\e[0;36m[\d]\e[m \e[0;32m\u@\h:\w\e[m\n\$ "
+if [[ $host =~ (zen) ]]; then
   export PATH=$PATH:~/bx/code
-#  if [ ! $STY ]; then
-#    exec screen -S auto;
-#  fi
-#fi
+fi
+
+#if [ ! -z "$PS1" ]; then
+# if it's a remote shell, change $PS1 prompt format and enter a screen
+if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
+  export PS1="[\d] \u@\h:\w\n\$ "
+  # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
+  if [[ ! $STY && ! $host =~ zen ]]; then
+    exec screen -RR -S auto
+  fi
+fi
