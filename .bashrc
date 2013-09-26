@@ -252,8 +252,13 @@ fi
 if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
   export PS1="[\d] \u@\h:\w\n\$ "
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
-  if [[ ! $STY && ! $host =~ zen ]]; then
-    export PATH=$PATH:~/bin
+  if [[ ! $STY ]]; then
+    # Don't export PATH again if in a screen.
+    if [[ $host =~ (nsto) ]]; then
+      export PATH=$PATH:~/bin:~/code
+    elif [[ $host =~ (main|nfshost.com) ]]; then
+      export PATH=$PATH:~/bin
+    fi
     exec screen -RR -S auto
   fi
 fi
