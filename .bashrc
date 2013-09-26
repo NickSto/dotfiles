@@ -14,24 +14,33 @@ elif [[ $host =~ (brubeck) ]]; then
 # Do your best to detect the distro
 # Uses info from http://www.novell.com/coolsolutions/feature/11251.html
 else
-  if [ -f /etc/os-release ]; then
-    distro=$(grep '^NAME' /etc/os-release | sed -r 's/^NAME="([^"]+)"$/\1/g' | tr '[:upper:]' '[:lower:]')
-  fi
-  if [[ ! $distro ]]; then
-    distro=$(ls /etc/*-release | sed -r 's#/etc/([^-]+)-release#\1#' | head -n 1)
-  fi
-  if [[ ! $distro ]]; then
-    if [ -f /etc/debian_version ]; then
-      distro="debian"
-    elif [ -f /etc/redhat_version ]; then
-      distro="redhat"
-    elif [ -f /etc/slackware-version ]; then
-      distro="slackware"
-    elif [ -f /etc/release ]; then
-      distro="solaris"
+  kernel=$(uname -s | tr '[:upper:]' '[:lower:]')
+  if [[ $kernel =~ freebsd ]]; then
+    distro="freebsd"
+  elif [[ $kernel =~ bsd$ ]]; then
+    distro="bsd"
+  elif [[ $kernel =~ linux ]]; then
+    if [ -f /etc/os-release ]; then
+      distro=$(grep '^NAME' /etc/os-release | sed -E 's/^NAME="([^"]+)"$/\1/g' | tr '[:upper:]' '[:lower:]')
     fi
-  fi
-  if [[ ! $distro ]]; then
+    if [[ ! $distro ]]; then
+      distro=$(ls /etc/*-release | sed -E 's#/etc/([^-]+)-release#\1#' | head -n 1)
+    fi
+    if [[ ! $distro ]]; then
+      if [ -f /etc/debian_version ]; then
+        distro="debian"
+      elif [ -f /etc/redhat_version ]; then
+        distro="redhat"
+      elif [ -f /etc/slackware-version ]; then
+        distro="slackware"
+      elif [ -f /etc/release ]; then
+        distro="solaris"
+      fi
+    fi
+    if [[ ! $distro ]]; then
+      distro="linux"
+    fi
+  else
     distro="unknown"
   fi
 fi
@@ -153,11 +162,11 @@ alias l='ls -CF'
 
 #################### My stuff ####################
 
-
+home=$(echo $HOME | sed -E 's#/$##g')
 if [[ $host =~ (zen|main) ]]; then
-  bashrc_dir="$HOME/aa/code/bash/bashrc"
+  bashrc_dir="$home/aa/code/bash/bashrc"
 elif [[ $host =~ (nsto|brubeck|nfshost) ]]; then
-  bashrc_dir="$HOME/code/bashrc"
+  bashrc_dir="$home/code/bashrc"
 fi
 
 
@@ -186,7 +195,7 @@ else
   alias vib='vim ~/.bashrc'
 fi
 
-alias minecraft='cd ~/src/minecraft && java -Xmx400M -Xincgc -jar $HOME/src/minecraft_server.jar nogui'
+alias minecraft="cd ~/src/minecraft && java -Xmx400M -Xincgc -jar $home/src/minecraft_server.jar nogui"
 alias minelog='ssh vps "tail src/minecraft/server.log"'
 alias mineme='ssh vps "cat src/minecraft/server.log" | grep -i nick | tail'
 alias minelist="ssh vps 'screen -S minecraft -X stuff \"list
@@ -196,9 +205,11 @@ alias minemem='ssh vps "if pgrep -f java > /dev/null; then pgrep -f java | xargs
 alias temp="sensors | extract Physical 'Core 1' | sed 's/(.*)//' | grep -P '\d+\.\d'"
 alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user me --config proxpn.ovpn'
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
-alias updaterc="git --work-tree=$bashrc_dir --git-dir=$bashrc_dir/.git pull"
 if [[ $host =~ (nfshost) ]]; then
   alias alog='tail -n 20 /home/logs/error_log'
+  alias updaterc="cd $home/code/bashrc && git pull && cd -"
+else
+  alias updaterc="git --work-tree=$bashrc_dir --git-dir=$bashrc_dir/.git pull"
 fi
 
 
@@ -217,7 +228,7 @@ calc () {
 wcc () { echo -n "$@" | wc -c; }
 if [[ $host =~ (zen|main) ]]; then
   lgoog () {
-    local query=$(echo "$@" | sed -r 's/ /+/g')
+    local query=$(echo "$@" | sed -E 's/ /+/g')
     lynx -dump http://www.google.com/search?q=$query
   }
 fi
@@ -266,15 +277,18 @@ getip () {
     last=$line
   done
 }
-longurl () {
-  url="$1"
-  while [ "$url" ]; do
-    echo "$url"
-    echo -n "$url" | sed -r 's/^https?:\/\/([^/]+).*?\/?.*$/\1/g' | xclip -sel clip
-    line=$(curl -sI "$url" | grep -P '^[Ll]ocation:\s' | head -n 1)
-    url=$(echo "$line" | sed -r 's/^[Ll]ocation:\s+(\S.*\S)\s*$/\1/g')
-  done
-}
+# doesn't work on nfshost (FreeBSD)
+if [[ $host =~ (zen|main|nsto) ]]; then
+  longurl () {
+    url="$1"
+    while [ "$url" ]; do
+      echo "$url"
+      echo -n "$url" | sed -r 's#^https?://([^/]+)/?.*$#\1#g' | xclip -sel clip
+      line=$(curl -sI "$url" | grep -P '^[Ll]ocation:\s' | head -n 1)
+      url=$(echo "$line" | sed -r 's#^[Ll]ocation:\s+(\S.*\S)\s*$#\1#g')
+    done
+  }
+fi
 # Get totals of a specified column
 sumcolumn () {
   if [ ! "$1" ] || [ ! "$2" ]; then
@@ -319,13 +333,13 @@ oneline () {
 
 alias rdp='java -Xmx1g -jar ~/bin/MultiClassifier.jar'
 alias gatk="java -jar ~/bin/GenomeAnalysisTK.jar"
-#alias qsh='source $HOME/src/qiime_software/activate.sh'
-alias readsfa='grep -Pc "^>"'
+#alias qsh='source $home/src/qiime_software/activate.sh'
+alias readsfa='grep -Ec "^>"'
 readsfq () {
-  local lines_tmp=$(wc -l $1 |  awk -F ' ' '{print $1}'); echo "$lines_tmp/4" | bc
+  local lines_tmp=$(wc -l $1 |  cut -f 1 -d ' '); echo "$lines_tmp/4" | bc
 }
 gatc () {
-  echo "$1" | sed -r 's/[^GATCNgatcn]//g'
+  echo "$1" | sed -E 's/[^GATCNgatcn]//g'
 }
 revcomp () {
   echo "$1" | tr 'ATGCatgc' 'TACGtacg' | rev
