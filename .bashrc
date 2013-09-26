@@ -8,19 +8,38 @@ host=$(hostname)
 #################### System default stuff ####################
 
 if [[ $host =~ (zen|main|nsto) ]]; then
-  ostype="ubuntu"
+  distro="ubuntu"
 elif [[ $host =~ (nfshost.com) ]]; then
-  ostype="freebsd"
+  distro="freebsd"
 elif [[ $host =~ (brubeck) ]]; then
-  ostype="brubeck"
-elif [ -f /etc/os-release ]; then
-  ostype=$(grep '^NAME' /etc/os-release | sed -r 's/^NAME="([^"]+)"/\1/g' | tr '[:upper:]' '[:lower:]')
+  distro="debian"
+# Do your best to detect the distro
+# Uses info from http://www.novell.com/coolsolutions/feature/11251.html
 else
-  ostype="unknown"
+  if [ -f /etc/os-release ]; then
+    distro=$(grep '^NAME' /etc/os-release | sed -r 's/^NAME="([^"]+)"$/\1/g' | tr '[:upper:]' '[:lower:]')
+  fi
+  if [[ ! $distro ]]; then
+    distro=$(ls /etc/*-release | sed -r 's#/etc/([^-]+)-release#\1#' | head -n 1)
+  fi
+  if [[ ! $distro ]]; then
+    if [ -f /etc/debian_version ]; then
+      distro="debian"
+    elif [ -f /etc/redhat_version ]; then
+      distro="redhat"
+    elif [ -f /etc/slackware-version ]; then
+      distro="slackware"
+    elif [ -f /etc/release ]; then
+      distro="solaris"
+    fi
+  fi
+  if [[ ! $distro ]]; then
+    distro="unknown"
+  fi
 fi
 
 
-if [[ $ostype == "ubuntu" ]]; then
+if [[ $distro == "ubuntu" ]]; then
 
   # ~/.bashrc: executed by bash(1) for non-login shells.
   # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
@@ -70,7 +89,7 @@ if [[ $ostype == "ubuntu" ]]; then
   fi
 
 
-elif [[ $ostype == "brubeck" ]]; then
+elif [[ $distro == "brubeck" ]]; then
 
   # Source global definitions
   if [ -f /etc/bashrc ]; then
