@@ -181,7 +181,7 @@ alias minelist="ssh vps 'screen -S minecraft -X stuff \"list
 \"; sleep 1; tail src/minecraft/server.log'"
 alias minemem='ssh vps "if pgrep -f java > /dev/null; then pgrep -f java | xargs ps -o %mem; fi"'
 if [[ $host =~ (zen|main) ]]; then
-  alias updaterc="git --work-tree=/home/me/aa/bash/bashrc/.git --git-dir=/home/me/aa/bash/bashrc/.git pull"
+  alias updaterc="git --work-tree=/home/me/aa/code/bash/bashrc/.git --git-dir=/home/me/aa/code/bash/bashrc/.git pull"
 elif [[ $host =~ (nsto|brubeck) ]]; then
   alias updaterc="git --work-tree=/home/me/code/bashrc/.git --git-dir=/home/me/code/bashrc/.git pull"
 fi
