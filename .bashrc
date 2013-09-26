@@ -243,10 +243,9 @@ if [ -f ~/.bashrc_private ]; then
   source ~/.bashrc_private
 fi
 
-#export PATH=$PATH:~/bin
 export PS1="\e[0;36m[\d]\e[m \e[0;32m\u@\h:\w\e[m\n\$ "
 if [[ $host =~ (zen) ]]; then
-  export PATH=$PATH:~/bx/code
+  export PATH=$PATH:~/bin:~/bx/code
 fi
 
 # if it's a remote shell, change $PS1 prompt format and enter a screen
@@ -254,6 +253,7 @@ if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
   export PS1="[\d] \u@\h:\w\n\$ "
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   if [[ ! $STY && ! $host =~ zen ]]; then
+    export PATH=$PATH:~/bin
     exec screen -RR -S auto
   fi
 fi
