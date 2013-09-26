@@ -364,7 +364,7 @@ if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
     fi
     if [[ $host =~ (nfshost) ]]; then
       true  # no screen there
-    if [[ $host =~ (brubeck) ]]; then
+    elif [[ $host =~ (brubeck) ]]; then
       exec ~/code/pagscr-me.sh '-RR -S auto'
     else
       exec screen -RR -S auto
