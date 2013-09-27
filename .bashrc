@@ -49,6 +49,7 @@ else
 fi
 
 
+
 #################### System default stuff ####################
 
 
@@ -153,6 +154,7 @@ alias l='ls -CF'
 
 #################### My stuff ####################
 
+
 home=$(echo $HOME | sed -E 's#/$##g')
 if [[ $host =~ (zen|main) ]]; then
   bashrc_dir="$home/aa/code/bash/bashrc"
@@ -171,6 +173,8 @@ else
   alias lsl='ls -lFhAb'
   alias lsld='ls -lFhAbd'
 fi
+alias mv="mv -i"
+alias cp="cp -i"
 alias trash='trash-put'
 alias targ='tar -zxvpf'
 alias tarb='tar -jxvpf'
