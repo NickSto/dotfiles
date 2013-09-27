@@ -1,9 +1,12 @@
+
+##### Detect host #####
+
 # supported hosts:
 # zen main nsto brubeck ndojo.nfshost.com nbs.nfshost.com
 host=$(hostname)
 
 
-#################### Detect distro ####################
+##### Detect distro #####
 
 if [[ $host =~ (zen|main|nsto) ]]; then
   distro="ubuntu"
@@ -49,6 +52,7 @@ fi
 #################### System default stuff ####################
 
 
+# All comments in this block are from Ubuntu's default .bashrc
 if [[ $distro == "ubuntu" ]]; then
 
   # ~/.bashrc: executed by bash(1) for non-login shells.
@@ -99,12 +103,8 @@ if [[ $distro == "ubuntu" ]]; then
   fi
 
 
+# All comments in this block are from brubeck's default .bashrc
 elif [[ $distro == "debian" ]]; then
-
-  # Source global definitions
-  if [ -f /etc/bashrc ]; then
-    . /etc/bashrc
-  fi
 
   # System wide functions and aliases
   # Environment stuff goes in /etc/profile
@@ -113,17 +113,6 @@ elif [[ $distro == "debian" ]]; then
   umask 002
 
   if ! shopt -q login_shell ; then # We're not a login shell
-    # Need to redefine pathmunge, it get's undefined at the end of /etc/profile
-      pathmunge () {
-      if ! echo $PATH | /bin/egrep -q "(^|:)$1($|:)" ; then
-        if [ "$2" = "after" ] ; then
-          PATH=$PATH:$1
-        else
-          PATH=$1:$PATH
-        fi
-      fi
-    }
-
     if [ -d /etc/profile.d/ ]; then
       for i in /etc/profile.d/*.sh; do
         if [ -r "$i" ]; then
@@ -132,7 +121,6 @@ elif [[ $distro == "debian" ]]; then
       unset i
       done
     fi
-    unset pathmunge
   fi
 
   # system path augmentation
