@@ -3,7 +3,7 @@
 host=$(hostname)
 
 
-#################### System default stuff ####################
+#################### Detect distro ####################
 
 if [[ $host =~ (zen|main|nsto) ]]; then
   distro="ubuntu"
@@ -44,6 +44,9 @@ else
     distro="unknown"
   fi
 fi
+
+
+#################### System default stuff ####################
 
 
 if [[ $distro == "ubuntu" ]]; then
@@ -207,7 +210,7 @@ alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user me --config prox
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
 if [[ $host =~ (nfshost) ]]; then
   alias alog='tail -n 20 /home/logs/error_log'
-  alias updaterc="cd $home/code/bashrc && git pull && cd -"
+  alias updaterc="cd $bashrc_dir && git pull && cd -"
 else
   alias updaterc="git --work-tree=$bashrc_dir --git-dir=$bashrc_dir/.git pull"
 fi
