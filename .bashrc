@@ -210,6 +210,7 @@ fi
 
 ##### Functions #####
 
+bak () { cp "$1" "$1.bak"; }
 vix () {
   if [ -e $1 ]; then
     vim $1
@@ -283,7 +284,13 @@ if [[ $host =~ (zen|main|nsto) ]]; then
       url=$(echo "$line" | sed -r 's#^[Ll]ocation:\s+(\S.*\S)\s*$#\1#g')
     done
   }
+# so apparently curl has the -L option
+else
+  longurl () {
+    echo "$1"; curl -LIs "$1" | grep '^[Ll]ocation' | cut -d ' ' -f 2
+  }
 fi
+
 # Get totals of a specified column
 sumcolumn () {
   if [ ! "$1" ] || [ ! "$2" ]; then
