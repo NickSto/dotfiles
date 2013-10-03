@@ -207,7 +207,7 @@ else
   alias updaterc="git --work-tree=$bashrc_dir --git-dir=$bashrc_dir/.git pull"
 fi
 if [[ $host =~ (zen) ]]; then
-  logtail () { ssh home "~/bin/logtail.sh $1"; }
+  alias logtail='ssh home "~/bin/logtail.sh 100" | less +G'
 fi
 
 
