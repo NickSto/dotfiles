@@ -208,12 +208,26 @@ else
 fi
 if [[ $host =~ (zen) ]]; then
   alias logtail='ssh home "~/bin/logtail.sh 100" | less +G'
+  logrep () { ssh home "cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab; grep -r $@"; }
 fi
 
 
 ##### Functions #####
 
 bak () { cp "$1" "$1.bak"; }
+# no more "cd ../../../.." (from http://serverfault.com/a/28649)
+up () { 
+    local d="";
+    limit=$1;
+    for ((i=1 ; i <= limit ; i++)); do
+        d=$d/..;
+    done;
+    d=$(echo $d | sed 's/^\///');
+    if [ -z "$d" ]; then
+        d=..;
+    fi;
+    cd $d
+}
 vix () {
   if [ -e $1 ]; then
     vim $1
