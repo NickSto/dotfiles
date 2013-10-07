@@ -22,6 +22,8 @@ else
     distro="freebsd"
   elif [[ $kernel =~ bsd$ ]]; then
     distro="bsd"
+  elif [[ $kernel =~ cygwin ]]; then
+    distro="cygwin"
   elif [[ $kernel =~ linux ]]; then
     if [ -f /etc/os-release ]; then
       distro=$(grep '^NAME' /etc/os-release | sed -E 's/^NAME="([^"]+)"$/\1/g' | tr '[:upper:]' '[:lower:]')
@@ -72,8 +74,7 @@ if [[ $distro == "ubuntu" ]]; then
   # make less more friendly for non-text input files, see lesspipe(1)
   [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
-  # Add an "alert" alias for long running commands.  Use like so:
-  #   sleep 10; alert
+  # "alert" Sends notify-send notification with exit status of last command
   alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
   # enable programmable completion features (you don't need to enable
@@ -154,7 +155,6 @@ HISTCONTROL=ignoreboth
 HISTSIZE=2000       # max # of lines to keep in active history
 HISTFILESIZE=2000   # max # of lines to record in history file
 shopt -s histappend # append to the history file, don't overwrite it
-
 # check the window size after each command and update LINES and COLUMNS.
 shopt -s checkwinsize
 
