@@ -16,14 +16,23 @@ elif [[ $host =~ (brubeck) ]]; then
   distro="debian"
 # Do your best to detect the distro
 # Uses info from http://www.novell.com/coolsolutions/feature/11251.html
+# and http://en.wikipedia.org/wiki/Uname
 else
   kernel=$(uname -s | tr '[:upper:]' '[:lower:]')
   if [[ $kernel =~ freebsd ]]; then
     distro="freebsd"
   elif [[ $kernel =~ bsd$ ]]; then
     distro="bsd"
+  elif [[ $kernel =~ darwin ]]; then
+    distro="mac"
   elif [[ $kernel =~ cygwin ]]; then
     distro="cygwin"
+  elif [[ $kernel =~ mingw ]]; then
+    distro="mingw"
+  elif [[ $kernel =~ sunos ]]; then
+    distro="solaris"
+  elif [[ $kernel =~ haiku ]]; then
+    distro="haiku"
   elif [[ $kernel =~ linux ]]; then
     if [ -f /etc/os-release ]; then
       distro=$(grep '^NAME' /etc/os-release | sed -E 's/^NAME="([^"]+)"$/\1/g' | tr '[:upper:]' '[:lower:]')
@@ -38,8 +47,6 @@ else
         distro="redhat"
       elif [ -f /etc/slackware-version ]; then
         distro="slackware"
-      elif [ -f /etc/release ]; then
-        distro="solaris"
       fi
     fi
     if [[ ! $distro ]]; then
