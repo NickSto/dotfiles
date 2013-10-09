@@ -74,10 +74,6 @@ if [[ $distro == "ubuntu" ]]; then
         *) return;;
   esac
 
-  # If set, the pattern "**" used in a pathname expansion context will
-  # match all files and zero or more directories and subdirectories.
-  #shopt -s globstar
-
   # make less more friendly for non-text input files, see lesspipe(1)
   [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
@@ -85,7 +81,7 @@ if [[ $distro == "ubuntu" ]]; then
   alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
   # enable programmable completion features (you don't need to enable
-  # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
+  # this if it's already enabled in /etc/bash.bashrc and /etc/profile
   # sources /etc/bash.bashrc).
   if ! shopt -oq posix; then
     if [ -f /usr/share/bash-completion/bash_completion ]; then
@@ -164,6 +160,8 @@ HISTFILESIZE=2000   # max # of lines to record in history file
 shopt -s histappend # append to the history file, don't overwrite it
 # check the window size after each command and update LINES and COLUMNS.
 shopt -s checkwinsize
+# Make "**" glob all files and subdirectories recursively
+shopt -s globstar
 
 
 ##### Aliases #####
@@ -212,6 +210,9 @@ fi
 if [[ $host =~ (zen) ]]; then
   alias logtail='ssh home "~/bin/logtail.sh 100" | less +G'
   logrep () { ssh home "cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab; grep -r $@"; }
+elif [[ $host =~ (main) ]]; then
+  alias logtail='~/bin/logtail.sh 100 | less +G'
+  logrep () { cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab; grep -r $@; }
 fi
 
 
