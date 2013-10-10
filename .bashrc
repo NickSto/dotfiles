@@ -166,7 +166,7 @@ shopt -s globstar
 
 ##### Aliases #####
 
-if [[ $host =~ (main|zen|brubeck) ]]; then
+if [[ $host =~ (main|zen|nsto|brubeck) ]]; then
   alias lsl='ls -lFhAb --color=auto --group-directories-first'
   alias lsld='ls -lFhAbd --color=auto --group-directories-first'
 else
