@@ -201,7 +201,7 @@ alias minemem='ssh vps "if pgrep -f java > /dev/null; then pgrep -f java | xargs
 alias temp="sensors | extract Physical 'Core 1' | sed 's/(.*)//' | grep -P '\d+\.\d'"
 alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user me --config proxpn.ovpn'
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
-alias blockedips="sudo grep 'UFW BLOCK' /var/log/syslog | sed -E 's/.* SRC=([0-9.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
+alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
 if [[ $host =~ (nfshost) ]]; then
   alias alog='tail -n 20 /home/logs/error_log'
   alias updaterc="cd $bashrc_dir && git pull && cd -"
