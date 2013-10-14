@@ -357,6 +357,9 @@ repeat () {
 oneline () {
   echo "$1" | tr -d '\n'
 }
+bintoascii () {
+  for i in $( seq 0 8 ${#1} ); do echo -n $(python -c "print chr($((2#${1:$i:8})))"); done; echo
+}
 
 
 ##### Bioinformatics #####
