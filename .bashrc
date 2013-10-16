@@ -357,6 +357,15 @@ repeat () {
 oneline () {
   echo "$1" | tr -d '\n'
 }
+wifimac () {
+  iwconfig 2> /dev/null | sed -nE 's/^.*access point: ([a-zA-Z0-9:]+)\s*$/\1/pig'
+}
+wifissid () {
+  iwconfig 2> /dev/null | sed -nE 's/^.*SSID:"(.*)"\s*$/\1/pig'
+}
+wifiip () {
+  getip | sed -nE 's/^wlan0:\s*([0-9:.]+)$/\1/pig'
+}
 bintoascii () {
   for i in $( seq 0 8 ${#1} ); do echo -n $(python -c "print chr($((2#${1:$i:8})))"); done; echo
 }
