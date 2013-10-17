@@ -415,7 +415,8 @@ fi
 if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
   export PS1="[\d] \u@\h:\w\n\$ "
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
-  if [[ ! $STY ]]; then
+  # also check that stdout is attached to a real terminal with -t 1
+  if [[ ! "$STY" && -t 1 ]]; then
     # Don't export PATH again if in a screen.
     if [[ $host =~ (nsto|brubeck) ]]; then
       export PATH=$PATH:~/bin:~/code
