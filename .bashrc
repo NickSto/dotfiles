@@ -3,6 +3,8 @@
 
 # supported hosts:
 # zen main nsto brubeck ndojo.nfshost.com nbs.nfshost.com
+# partial support:
+# vbox
 host=$(hostname)
 
 
@@ -14,6 +16,8 @@ elif [[ $host =~ (nfshost) ]]; then
   distro="freebsd"
 elif [[ $host =~ (brubeck) ]]; then
   distro="debian"
+elif [[ $host =~ (vbox) ]]; then
+  distro="cygwin"
 # Do your best to detect the distro
 # Uses info from http://www.novell.com/coolsolutions/feature/11251.html
 # and http://en.wikipedia.org/wiki/Uname
@@ -146,7 +150,7 @@ alias l='ls -CF'
 home=$(echo $HOME | sed -E 's#/$##g')
 if [[ $host =~ (zen|main) ]]; then
   bashrc_dir="$home/aa/code/bash/bashrc"
-elif [[ $host =~ (nsto|brubeck|nfshost) ]]; then
+elif [[ $host =~ (nsto|brubeck|nfshost|vbox) ]]; then
   bashrc_dir="$home/code/bashrc"
 fi
 
@@ -166,7 +170,7 @@ shopt -s globstar
 
 ##### Aliases #####
 
-if [[ $host =~ (main|zen|nsto|brubeck) ]]; then
+if [[ $host =~ (main|zen|nsto|brubeck|vbox) ]]; then
   alias lsl='ls -lFhAb --color=auto --group-directories-first'
   alias lsld='ls -lFhAbd --color=auto --group-directories-first'
 else
@@ -378,7 +382,7 @@ alias gatk="java -jar ~/bin/GenomeAnalysisTK.jar"
 #alias qsh='source $home/src/qiime_software/activate.sh'
 alias readsfa='grep -Ec "^>"'
 readsfq () {
-  local lines_tmp=$(wc -l $1 |  cut -f 1 -d ' '); echo "$lines_tmp/4" | bc
+  echo "$(wc -l $1 |  cut -f 1 -d ' ')/4" | bc
 }
 gatc () {
   echo "$1" | sed -E 's/[^GATCNgatcn]//g'
