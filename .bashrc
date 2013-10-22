@@ -427,17 +427,16 @@ if [[ $host =~ (zen) ]]; then
   export PATH=$PATH:~/bin:~/bx/code
 fi
 
-# are we in a remote shell?
+# a more "sophisticated" method for determining if we're in a remote shell
 remote=""
-if [[ $host =~ (zen|main|nsto|brubeck) ]]; then
-  # a more "sophisticated" method
+# check if parents is able to climb the entire process hierarchy
+if [[ $(parents | tail -n 1) == "init" ]]; then
   for process in $(parents); do
     if [[ "$process" == "sshd" ]]; then
       remote="true"
     fi
   done
 else
-  # confirmed: above method doesn't work on nfshost (permission restrictions)
   if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
     remote="true"
   fi
