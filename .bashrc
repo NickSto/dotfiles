@@ -427,9 +427,24 @@ if [[ $host =~ (zen) ]]; then
   export PATH=$PATH:~/bin:~/bx/code
 fi
 
+# are we in a remote shell?
+remote=""
+if [[ $host =~ (zen|main|nsto|brubeck) ]]; then
+  # a more "sophisticated" method
+  for process in $(parents); do
+    if [[ "$process" == "sshd" ]]; then
+      remote="true"
+    fi
+  done
+else
+  # confirmed: above method doesn't work on nfshost (permission restrictions)
+  if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
+    remote="true"
+  fi
+fi
+
 # if it's a remote shell, change $PS1 prompt format and enter a screen
-if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
-# if [[ $(ps -o comm= -p $PPID) == "sshd" ]]; then
+if [[ $remote ]]; then
   export PS1="[\d] \u@\h:\w\n\$ "
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   # also check that stdout is attached to a real terminal with -t 1
