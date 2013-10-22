@@ -251,7 +251,22 @@ vix () {
   fi
 }
 calc () {
-  python -c "from math import *; print $1"
+  if [ "$1" ]; then
+    python -c "from math import *; print $1"
+  else
+    python -c '
+import sys
+from math import *
+while True:
+  sys.stdout.write("> ")
+  try:
+    line = raw_input()
+  except EOFError:
+    print
+    break
+  print eval(line)
+'
+  fi
 }
 wcc () { echo -n "$@" | wc -c; }
 if [[ $host =~ (zen|main) ]]; then
