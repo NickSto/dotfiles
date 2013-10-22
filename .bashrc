@@ -275,6 +275,13 @@ pg () {
         pgrep -f $@ | xargs ps -o user,pid,stat,rss,%mem,pcpu,args --sort -pcpu,-rss;
     fi
 }
+parents () {
+  pid=$$
+  while [[ "$pid" -gt 0 ]]; do
+    ps -o comm= -p $pid
+    pid=$(ps -o ppid= -p $pid)
+  done
+}
 # readlink except it just returns the input path if it's not a link
 deref () {
   local file="$1"
@@ -422,6 +429,7 @@ fi
 
 # if it's a remote shell, change $PS1 prompt format and enter a screen
 if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
+# if [[ $(ps -o comm= -p $PPID) == "sshd" ]]; then
   export PS1="[\d] \u@\h:\w\n\$ "
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   # also check that stdout is attached to a real terminal with -t 1
