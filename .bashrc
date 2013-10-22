@@ -233,11 +233,10 @@ bak () { cp "$1" "$1.bak"; }
 # no more "cd ../../../.." (from http://serverfault.com/a/28649)
 up () { 
     local d="";
-    limit=$1;
-    for ((i=1 ; i <= limit ; i++)); do
+    for ((i=1 ; i <= $1 ; i++)); do
         d=$d/..;
     done;
-    d=$(echo $d | sed 's/^\///');
+    d=$(echo $d | sed 's#^/##');
     if [ -z "$d" ]; then
         d=..;
     fi;
@@ -258,13 +257,15 @@ calc () {
   fi
 }
 wcc () { echo -n "$@" | wc -c; }
-if [[ $host =~ (zen|main) ]]; then
+if which lynx > /dev/null; then
   lgoog () {
     local query=$(echo "$@" | sed -E 's/ /+/g')
-    lynx -dump http://www.google.com/search?q=$query
+    local output=$(lynx -dump "http://www.google.com/search?q=$query")
+    local end=$(echo "$output" | grep -n '^References' | cut -f 1 -d ':')
+    echo "$output" | head -n $((end-2))
   }
 fi
-if [[ $host =~ (zen|main) ]]; then
+if which lower.b > /dev/null; then
   lc () { echo "$1" | lower.b; }
 else
   lc () { echo "$1" | tr '[:upper:]' '[:lower:]'; }
@@ -309,7 +310,7 @@ getip () {
     last=$line
   done
 }
-# doesn't work on nfshost (FreeBSD)
+# doesn't work on nfshost (FreeBSD) because it currently needs full regex
 if [[ $host =~ (zen|main|nsto) ]]; then
   longurl () {
     url="$1"
