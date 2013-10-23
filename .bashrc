@@ -202,6 +202,11 @@ alias minelist="ssh vps 'screen -S minecraft -X stuff \"list
 \"; sleep 1; tail src/minecraft/server.log'"
 alias minemem='ssh vps "if pgrep -f java > /dev/null; then pgrep -f java | xargs ps -o %mem; fi"'
 
+if [[ $host =~ (nfshost) || $distro =~ bsd$ ]]; then
+  alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tty,start,time,comm'"
+else
+  alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tname,start_time,time,comm'"
+fi
 if [[ $host =~ (nfshost) ]]; then
   alias errlog='less +G /home/logs/error_log'
 elif [[ $host =~ (nsto) ]]; then
@@ -276,7 +281,11 @@ pg () {
     fi
 }
 parents () {
-  pid=$$
+  if [[ "$1" ]]; then
+    pid="$1"
+  else
+    pid=$$
+  fi
   while [[ "$pid" -gt 0 ]]; do
     ps -o comm= -p $pid
     pid=$(ps -o ppid= -p $pid)
@@ -416,8 +425,8 @@ mothur_report () {
 
 ##### Other #####
 
-# Stuff I don't want to post publicly on Github.
-# Still should be universal, not machine-specific.
+# Stuff I don't want to post publicly on Github. Still should be universal, not
+# machine-specific.
 if [ -f ~/.bashrc_private ]; then
   source ~/.bashrc_private
 fi
