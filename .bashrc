@@ -2,7 +2,7 @@
 ##### Detect host #####
 
 # supported hosts:
-# zen main nsto brubeck ndojo.nfshost.com nbs.nfshost.com
+# zen main nsto yarr brubeck ndojo.nfshost.com nbs.nfshost.com
 # partial support:
 # vbox
 host=$(hostname)
@@ -10,7 +10,7 @@ host=$(hostname)
 
 ##### Detect distro #####
 
-if [[ $host =~ (zen|main|nsto) ]]; then
+if [[ $host =~ (zen|main|nsto|yarr) ]]; then
   distro="ubuntu"
 elif [[ $host =~ (nfshost) ]]; then
   distro="freebsd"
@@ -150,7 +150,7 @@ alias l='ls -CF'
 home=$(echo $HOME | sed -E 's#/$##g')
 if [[ $host =~ (zen|main) ]]; then
   bashrc_dir="$home/aa/code/bash/bashrc"
-elif [[ $host =~ (nsto|brubeck|nfshost|vbox) ]]; then
+else # known location for nsto, brubeck, nfshost, vbox, yarr
   bashrc_dir="$home/code/bashrc"
 fi
 
@@ -170,7 +170,7 @@ shopt -s globstar
 
 ##### Aliases #####
 
-if [[ $host =~ (main|zen|nsto|brubeck|vbox) ]]; then
+if [[ $host =~ (brubeck) || $distro =~ ubuntu ]]; then
   alias lsl='ls -lFhAb --color=auto --group-directories-first'
   alias lsld='ls -lFhAbd --color=auto --group-directories-first'
 else
@@ -189,7 +189,7 @@ alias pingg='ping -c 1 google.com'
 alias curlip='curl icanhazip.com'
 alias rsynca='rsync -e ssh --delete -zavXA'
 alias kerb='kinit nick@BX.PSU.EDU'
-if [[ $host =~ (nfshost) ]]; then
+if [[ $host =~ (nfshost) || $distro =~ bsd$ ]]; then
   alias vib='vim ~/.bash_profile'
 else
   alias vib='vim ~/.bashrc'
@@ -203,22 +203,22 @@ alias minelist="ssh vps 'screen -S minecraft -X stuff \"list
 alias minemem='ssh vps "if pgrep -f java > /dev/null; then pgrep -f java | xargs ps -o %mem; fi"'
 
 if [[ $host =~ (nfshost) || $distro =~ bsd$ ]]; then
-  alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tty,start,time,comm'"
+  alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tty,start,time,args'"
 else
-  alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tname,start_time,time,comm'"
+  alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tname,start_time,time,args'"
 fi
 if [[ $host =~ (nfshost) ]]; then
   alias errlog='less +G /home/logs/error_log'
 elif [[ $host =~ (nsto) ]]; then
   alias errlog='less +G /var/www/logs/error.log'
-elif [[ $host =~ (main|zen) ]]; then
+elif [[ $distro =~ ubuntu ]]; then
   alias errlog='less +G /var/log/syslog'
 fi
 alias temp="sensors | extract Physical 'Core 1' | sed 's/(.*)//' | grep -P '\d+\.\d'"
 alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user me --config proxpn.ovpn'
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
 alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
-if [[ $host =~ (nfshost) ]]; then
+if [[ $host =~ (nfshost) || $distro =~ bsd$ ]]; then
   alias updaterc="cd $bashrc_dir && git pull && cd -"
 else
   alias updaterc="git --work-tree=$bashrc_dir --git-dir=$bashrc_dir/.git pull"
@@ -291,18 +291,13 @@ parents () {
     pid=$(ps -o ppid= -p $pid)
   done
 }
-# readlink except it just returns the input path if it's not a link
+# readlink -f except it handles commands on the PATH too
 deref () {
   local file="$1"
   if [ ! -e "$file" ]; then
     file=$(which "$file")
   fi
-  local deref=$(readlink -f "$file")
-  if [[ "$deref" ]]; then
-    echo $deref
-  else
-    echo $1
-  fi
+  readlink -f "$file"
 }
 # this requires deref()!
 vil () { vi $(deref "$1"); }
@@ -326,22 +321,24 @@ getip () {
     last=$line
   done
 }
-# doesn't work on nfshost (FreeBSD) because it currently needs full regex
-if [[ $host =~ (zen|main|nsto) ]]; then
-  longurl () {
-    url="$1"
-    while [ "$url" ]; do
-      echo "$url"
-      echo -n "$url" | sed -r 's#^https?://([^/]+)/?.*$#\1#g' | xclip -sel clip
-      line=$(curl -sI "$url" | grep -P '^[Ll]ocation:\s' | head -n 1)
-      url=$(echo "$line" | sed -r 's#^[Ll]ocation:\s+(\S.*\S)\s*$#\1#g')
-    done
-  }
-# so apparently curl has the -L option
-else
-  longurl () {
-    echo "$1"; curl -LIs "$1" | grep '^[Ll]ocation' | cut -d ' ' -f 2
-  }
+if ! which longurl > /dev/null; then
+  # doesn't work on nfshost (FreeBSD) because it currently needs full regex
+  if [[ $distro =~ ubuntu ]]; then
+    longurl () {
+      url="$1"
+      while [ "$url" ]; do
+        echo "$url"
+        echo -n "$url" | sed -r 's#^https?://([^/]+)/?.*$#\1#g' | xclip -sel clip
+        line=$(curl -sI "$url" | grep -P '^[Ll]ocation:\s' | head -n 1)
+        url=$(echo "$line" | sed -r 's#^[Ll]ocation:\s+(\S.*\S)\s*$#\1#g')
+      done
+    }
+  # so apparently curl has the -L option
+  else
+    longurl () {
+      echo "$1"; curl -LIs "$1" | grep '^[Ll]ocation' | cut -d ' ' -f 2
+    }
+  fi
 fi
 
 # Get totals of a specified column
@@ -398,6 +395,13 @@ bintoascii () {
 
 ##### Bioinformatics #####
 
+if [[ $host =~ (brubeck) ]]; then
+  alias igv='java -Xmx16384M -jar ~/bin/igv.jar'
+elif [[ $host =~ (zen|main) ]]; then
+  alias igv='java -Xmx4096M -jar ~/bin/igv.jar'
+elif [[ $host =~ (nsto) ]]; then
+  alias igv='java -Xmx256M -jar ~/bin/igv.jar'
+fi
 alias rdp='java -Xmx1g -jar ~/bin/MultiClassifier.jar'
 alias gatk="java -jar ~/bin/GenomeAnalysisTK.jar"
 #alias qsh='source $home/src/qiime_software/activate.sh'
@@ -432,9 +436,9 @@ if [ -f ~/.bashrc_private ]; then
 fi
 
 export PS1="\e[0;36m[\d]\e[m \e[0;32m\u@\h:\w\e[m\n\$ "
-if [[ $host =~ (zen) ]]; then
-  export PATH=$PATH:~/bin:~/bx/code
-fi
+#if [[ $host =~ (zen) ]]; then
+#  export PATH=$PATH:~/bin:~/bx/code
+#fi
 
 # a more "sophisticated" method for determining if we're in a remote shell
 remote=""
@@ -458,10 +462,9 @@ if [[ $remote ]]; then
   # also check that stdout is attached to a real terminal with -t 1
   if [[ ! "$STY" && -t 1 ]]; then
     # Don't export PATH again if in a screen.
-    if [[ $host =~ (nsto|brubeck) ]]; then
-      export PATH=$PATH:~/bin:~/code
-    elif [[ $host =~ (zen|main|nfshost) ]]; then
-      export PATH=$PATH:~/bin
+    export PATH=$PATH:~/bin
+    if [[ ! $host =~ (main|zen) ]]; then
+      export PATH=$PATH:~/code
     fi
     if [[ $host =~ (nfshost) ]]; then
       true  # no screen there
@@ -470,5 +473,9 @@ if [[ $remote ]]; then
     else
       exec screen -RR -S auto
     fi
+  fi
+else
+  if [[ $host =~ (zen) ]]; then
+    export PATH=$PATH:~/bx/code
   fi
 fi
