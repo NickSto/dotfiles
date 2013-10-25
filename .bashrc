@@ -1,10 +1,9 @@
-
 ##### Detect host #####
 
 # supported hosts:
 # zen main nsto yarr brubeck ndojo.nfshost.com nbs.nfshost.com
 # partial support:
-# vbox
+# vbox (cygwin)
 host=$(hostname)
 
 
@@ -170,7 +169,7 @@ shopt -s globstar
 
 ##### Aliases #####
 
-if [[ $host =~ (brubeck) || $distro =~ ubuntu ]]; then
+if [[ $host =~ (brubeck) || $distro =~ (ubuntu|cygwin) ]]; then
   alias lsl='ls -lFhAb --color=auto --group-directories-first'
   alias lsld='ls -lFhAbd --color=auto --group-directories-first'
 else
@@ -204,7 +203,7 @@ alias minemem='ssh vps "if pgrep -f java > /dev/null; then pgrep -f java | xargs
 
 if [[ $host =~ (nfshost) || $distro =~ bsd$ ]]; then
   alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tty,start,time,args'"
-else
+else # doesn't work in cygwin, but no harm
   alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tname,start_time,time,args'"
 fi
 if [[ $host =~ (nfshost) ]]; then
@@ -436,9 +435,6 @@ if [ -f ~/.bashrc_private ]; then
 fi
 
 export PS1="\e[0;36m[\d]\e[m \e[0;32m\u@\h:\w\e[m\n\$ "
-#if [[ $host =~ (zen) ]]; then
-#  export PATH=$PATH:~/bin:~/bx/code
-#fi
 
 # a more "sophisticated" method for determining if we're in a remote shell
 remote=""
