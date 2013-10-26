@@ -199,7 +199,7 @@ alias minelog='ssh vps "tail src/minecraft/server.log"'
 alias mineme='ssh vps "cat src/minecraft/server.log" | grep -i nick | tail'
 alias minelist="ssh vps 'screen -S minecraft -X stuff \"list
 \"; sleep 1; tail src/minecraft/server.log'"
-alias minemem='ssh vps "if pgrep -f java > /dev/null; then pgrep -f java | xargs ps -o %mem; fi"'
+alias minemem='ssh vps "if pgrep -f java >/dev/null; then pgrep -f java | xargs ps -o %mem; fi"'
 
 if [[ $host =~ (nfshost) || $distro =~ bsd$ ]]; then
   alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tty,start,time,args'"
@@ -261,7 +261,7 @@ calc () {
   fi
 }
 wcc () { echo -n "$@" | wc -c; }
-if which lynx > /dev/null; then
+if which lynx >/dev/null 2>/dev/null; then
   lgoog () {
     local query=$(echo "$@" | sed -E 's/ /+/g')
     local output=$(lynx -dump "http://www.google.com/search?q=$query")
@@ -269,13 +269,13 @@ if which lynx > /dev/null; then
     echo "$output" | head -n $((end-2))
   }
 fi
-if which lower.b > /dev/null; then
+if which lower.b >/dev/null 2>/dev/null; then
   lc () { echo "$1" | lower.b; }
 else
   lc () { echo "$1" | tr '[:upper:]' '[:lower:]'; }
 fi
 pg () {
-    if pgrep -f $@ > /dev/null; then
+    if pgrep -f $@ >/dev/null; then
         pgrep -f $@ | xargs ps -o user,pid,stat,rss,%mem,pcpu,args --sort -pcpu,-rss;
     fi
 }
@@ -286,15 +286,15 @@ parents () {
     pid=$$
   fi
   while [[ "$pid" -gt 0 ]]; do
-    ps -o comm= -p $pid
-    pid=$(ps -o ppid= -p $pid)
+    ps -o comm="" -p $pid
+    pid=$(ps -o ppid="" -p $pid)
   done
 }
 # readlink -f except it handles commands on the PATH too
 deref () {
   local file="$1"
   if [ ! -e "$file" ]; then
-    file=$(which "$file")
+    file=$(which "$file" 2>/dev/null)
   fi
   readlink -f "$file"
 }
@@ -320,7 +320,7 @@ getip () {
     last=$line
   done
 }
-if ! which longurl > /dev/null; then
+if ! which longurl >/dev/null 2>/dev/null; then
   # doesn't work on nfshost (FreeBSD) because it currently needs full regex
   if [[ $distro =~ ubuntu ]]; then
     longurl () {
@@ -438,8 +438,9 @@ export PS1="\e[0;36m[\d]\e[m \e[0;32m\u@\h:\w\e[m\n\$ "
 
 # a more "sophisticated" method for determining if we're in a remote shell
 remote=""
-# check if parents is able to climb the entire process hierarchy
-if [[ $(parents | tail -n 1) == "init" ]]; then
+# check if the system supports the right ps parameters and if parents is able to
+# climb the entire process hierarchy
+if ps -o comm="" -p 1 >/dev/null 2>/dev/null && [[ $(parents | tail -n 1) == "init" ]]; then
   for process in $(parents); do
     if [[ "$process" == "sshd" ]]; then
       remote="true"
