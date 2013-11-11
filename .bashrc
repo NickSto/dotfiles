@@ -186,13 +186,19 @@ alias tarb='tar -jxvpf'
 alias awkt="awk -F '\t' -v OFS='\t'"
 alias pingg='ping -c 1 google.com'
 alias curlip='curl icanhazip.com'
-alias rsynca='rsync -e ssh --delete -zavXA'
-alias kerb='kinit nick@BX.PSU.EDU'
+geoip () { curl http://freegeoip.net/csv/$1; }
 if [[ $host =~ (nfshost) || $distro =~ bsd$ ]]; then
   alias vib='vim ~/.bash_profile'
 else
   alias vib='vim ~/.bashrc'
 fi
+if [[ $host =~ (brubeck) ]]; then
+  alias cds='cd ~/scratch2'
+fi
+alias kerb='kinit nick@BX.PSU.EDU'
+alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
+alias rsynchome='rsync -e ssh -zaXAv --itemize-changes --delete /home/me/aa/ home:/home/me/aa/ && rsync -e ssh -zaXAv --itemize-changes --delete /home/me/annex/ home:/home/me/annex/'
+alias swapkeys="loadkeys-safe.sh && sudo loadkeys $HOME/aa/misc/computerthings/keymap-loadkeys.txt"
 
 alias minecraft="cd ~/src/minecraft && java -Xmx400M -Xincgc -jar $home/src/minecraft_server.jar nogui"
 alias minelog='ssh vps "tail src/minecraft/server.log"'
@@ -214,7 +220,7 @@ elif [[ $distro =~ ubuntu ]]; then
   alias errlog='less +G /var/log/syslog'
 fi
 alias temp="sensors | extract Physical 'Core 1' | sed 's/(.*)//' | grep -P '\d+\.\d'"
-alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user me --config proxpn.ovpn'
+alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user $USER --config proxpn.ovpn'
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
 alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
 if [[ $host =~ (nfshost) || $distro =~ bsd$ ]]; then
@@ -233,7 +239,7 @@ fi
 
 ##### Functions #####
 
-bak () { cp "$1" "$1.bak"; }
+bak () { cp -r "$1" "$1.bak"; }
 # no more "cd ../../../.." (from http://serverfault.com/a/28649)
 up () { 
     local d="";
