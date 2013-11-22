@@ -193,7 +193,7 @@ else
   alias vib='vim ~/.bashrc'
 fi
 if [[ $host =~ (brubeck) ]]; then
-  alias cds='cd ~/scratch2'
+  alias cds='cd /scratch2/nick'
 fi
 alias kerb='kinit nick@BX.PSU.EDU'
 alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
@@ -223,6 +223,7 @@ alias temp="sensors | extract Physical 'Core 1' | sed 's/(.*)//' | grep -P '\d+\
 alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user $USER --config proxpn.ovpn'
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
 alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
+alias bitcoin="curl -s http://data.mtgox.com/api/2/BTCUSD/money/ticker_fast | grep -Eo '"'"last":\{"value":"[0-9.]+"'"' | grep -Eo '[0-9.]+'"
 if [[ $host =~ (nfshost) || $distro =~ bsd$ ]]; then
   alias updaterc="cd $bashrc_dir && git pull && cd -"
 else
@@ -240,6 +241,13 @@ fi
 ##### Functions #####
 
 bak () { cp -r "$1" "$1.bak"; }
+# a quick shortcut to placing a script in the ~/bin dir
+# only if the system supports readlink -f (BSD doesn't)
+if readlink -f / >/dev/null 2>/dev/null; then
+  bin () {
+    ln -s $(readlink -f $1) ~/bin/$(basename $1)
+  }
+fi
 # no more "cd ../../../.." (from http://serverfault.com/a/28649)
 up () { 
     local d="";
@@ -261,9 +269,9 @@ vix () {
 }
 calc () {
   if [ "$1" ]; then
-    python -c "from math import *; print $1"
+    python -c "from __future__ import division; from math import *; print $1"
   else
-    python -i -c "from math import *"
+    python -i -c "from __future__ import division; from math import *"
   fi
 }
 wcc () { echo -n "$@" | wc -c; }
@@ -407,6 +415,7 @@ elif [[ $host =~ (zen|main) ]]; then
 elif [[ $host =~ (nsto) ]]; then
   alias igv='java -Xmx256M -jar ~/bin/igv.jar'
 fi
+alias seqlen="bioawk -c fastx '{ print \$name, length(\$seq) }'"
 alias rdp='java -Xmx1g -jar ~/bin/MultiClassifier.jar'
 alias gatk="java -jar ~/bin/GenomeAnalysisTK.jar"
 #alias qsh='source $home/src/qiime_software/activate.sh'
@@ -414,8 +423,15 @@ alias readsfa='grep -Ec "^>"'
 readsfq () {
   echo "$(wc -l $1 |  cut -f 1 -d ' ')/4" | bc
 }
-gatc () {
-  echo "$1" | sed -E 's/[^GATCNgatcn]//g'
+alias bcat="samtools view -h"
+gatc () { 
+  if [ "$1" ]; then
+    echo "$1" | sed -E 's/[^GATCNgatcn]//g';
+  else
+    while read data; do
+      echo "$data" | sed -E 's/[^GATCNgatcn]//g';
+    done;
+  fi
 }
 revcomp () {
   echo "$1" | tr 'ATGCatgc' 'TACGtacg' | rev
@@ -476,9 +492,5 @@ if [[ $remote ]]; then
     else
       exec screen -RR -S auto
     fi
-  fi
-else
-  if [[ $host =~ (zen) ]]; then
-    export PATH=$PATH:~/bx/code
   fi
 fi
