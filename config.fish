@@ -5,21 +5,20 @@ set host (hostname)
 
 ##### Detect distro #####
 
+#TODO: a workaround for the bug in else if with piped conditionals, to reduce
+#      the number of grep processes that run
 set distro ''
 if echo $host | grep -Eq '(zen|main|nsto|yarr)'
   set distro 'ubuntu'
-else
-  if echo $host | grep -Eq '(nfshost)'
-    set distro 'freebsd'
-  else
-    if echo $host | grep -Eq '(brubeck)'
-      set distro 'debian'
-    else
-      if echo $host | grep -Eq 'vbox'
-        set distro 'cygwin'
-      end
-    end
-  end
+end
+if echo $host | grep -Eq '(nfshost)'
+  set distro 'freebsd'
+end
+if echo $host | grep -Eq '(brubeck)'
+  set distro 'debian'
+end
+if echo $host | grep -Eq 'vbox'
+  set distro 'cygwin'
 end
 # Do your best to detect the distro
 # Uses info from http://www.novell.com/coolsolutions/feature/11251.html
@@ -31,46 +30,42 @@ if test -z $distro
   else
     if echo $kernel | grep -Eq 'bsd$'
       set distro 'bsd'
-    else
-      if echo $kernel | grep -Eq 'darwin'
-        set distro 'mac'
-      else
-        if echo $kernel | grep -Eq 'cygwin'
-          set distro 'cygwin'
-        else
-          if echo $kernel | grep -Eq 'mingw'
-            set distro 'mingw'
-          else
-            if echo $kernel | grep -Eq 'sunos'
-              set distro 'solaris'
-            else
-              if echo $kernel | grep -Eq 'haiku'
-                set distro 'haiku'
-              end
-            end
-          end
-        end
-      end
     end
   end
+  if echo $kernel | grep -Eq 'darwin'
+    set distro 'mac'
+  end
+  if echo $kernel | grep -Eq 'cygwin'
+    set distro 'cygwin'
+  end
+  if echo $kernel | grep -Eq 'mingw'
+    set distro 'mingw'
+  end
+  if echo $kernel | grep -Eq 'sunos'
+    set distro 'solaris'
+  end
+  if echo $kernel | grep -Eq 'haiku'
+    set distro 'haiku'
+  end
   if echo $kernel | grep -Eq 'linux'
+    # try /etc/os-release
     if test -f /etc/os-release
       set distro (grep '^NAME' /etc/os-release | sed -E 's/^NAME="([^"]+)"$/\1/g' | tr '[:upper:]' '[:lower:]')
     end
+    # try any /etc/*-release
     if test -z $distro
       set distro (ls /etc/*-release | sed -E 's#/etc/([^-]+)-release#\1#' | head -n 1)
     end
+    # distro-specific variations of /etc/os-release
     if test -z $distro
       if test -f /etc/debian_version
         set distro 'debian'
-      else
-        if test -f /etc/redhat_version
-          set distro 'redhat'
-        else
-          if test -f /etc/slackware-version
-            set distro 'slackware'
-          end
-        end
+      end
+      if test -f /etc/redhat_version
+        set distro 'redhat'
+      end
+      if test -f /etc/slackware-version
+        set distro 'slackware'
       end
     end
     if test -z $distro
@@ -102,12 +97,40 @@ if echo $distro | grep -Eq 'bsd$'
 else
   function vib; vim ~/.bashrc; end
 end
+function bak
+  if not test -z $argv; and test -f $argv[1]
+    cp -r $argv[1] $argv[1]'.bak'
+  end
+end
+# readlink -f except it handles commands on the PATH too
+function deref
+  set file $argv[1]
+  if not test -f $file
+    set file (which $file)
+  end
+  readlink -f "$file"
+end
+# this requires deref!
+function vil
+  if not test -z $argv
+    vim (deref "$argv[1]")
+  end
+end
+function vix
+  if test -z $argv
+    return
+  else if test -f $argv[1]
+    vim $argv[1]
+  else
+    touch $argv[1]; chmod +x $argv[1]; vim $argv[1]
+  end
+end
 
 function calc
-  if test (count $argv) -gt 0
-    python -c "from __future__ import division; from math import *; print $argv"
-  else
+  if test -z $argv
     python -i -c "from __future__ import division; from math import *"
+  else
+    python -c "from __future__ import division; from math import *; print $argv"
   end
 end
 
