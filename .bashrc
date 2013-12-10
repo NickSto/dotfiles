@@ -169,7 +169,7 @@ shopt -s globstar
 
 ##### Aliases #####
 
-if [[ $host =~ (brubeck) || $distro =~ (ubuntu|cygwin) ]]; then
+if [[ $distro =~ (ubuntu|cygwin|debian) ]]; then
   alias lsl='ls -lFhAb --color=auto --group-directories-first'
   alias lsld='ls -lFhAbd --color=auto --group-directories-first'
 else
@@ -177,6 +177,7 @@ else
   alias lsl='ls -lFhAb'
   alias lsld='ls -lFhAbd'
 fi
+alias sll='sl' # choo choo
 alias mv="mv -i"
 alias cp="cp -i"
 alias trash='trash-put'
@@ -221,6 +222,7 @@ elif [[ $distro =~ ubuntu ]]; then
 fi
 alias temp="sensors | extract Physical 'Core 1' | sed 's/(.*)//' | grep -P '\d+\.\d'"
 alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user $USER --config proxpn.ovpn'
+alias mountv="sudo mount -t vboxsf -o uid=1000,gid=1000,rw shared $HOME/shared"
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
 alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
 alias bitcoin="curl -s http://data.mtgox.com/api/2/BTCUSD/money/ticker_fast | grep -Eo '"'"last":\{"value":"[0-9.]+"'"' | grep -Eo '[0-9.]+'"
@@ -269,7 +271,8 @@ vix () {
 }
 calc () {
   if [ "$1" ]; then
-    python -c "from __future__ import division; from math import *; print $1"
+    pycode="from __future__ import division; from math import *; print $@"
+    python -c "$pycode" # this kludge is needed because of bash.
   else
     python -i -c "from __future__ import division; from math import *"
   fi
@@ -354,10 +357,15 @@ if ! which longurl >/dev/null 2>/dev/null; then
   fi
 fi
 
+# What are the most common column widths?
+columns () {
+  echo " totals|columns"
+  awkt '{print NF}' $1 | sort -g | uniq -c | sort -rg -k 1
+}
 # Get totals of a specified column
 sumcolumn () {
   if [ ! "$1" ] || [ ! "$2" ]; then
-    echo 'USAGE: $ cutsum 3 file.csv'
+    echo 'USAGE: $ sumcolumn 3 file.csv'
     return
   fi
   awk -F '\t' '{ tot+=$'"$1"' } END { print tot }' "$2"
@@ -424,7 +432,7 @@ readsfq () {
   echo "$(wc -l $1 |  cut -f 1 -d ' ')/4" | bc
 }
 alias bcat="samtools view -h"
-gatc () { 
+gatc () {
   if [ "$1" ]; then
     echo "$1" | sed -E 's/[^GATCNgatcn]//g';
   else
@@ -456,7 +464,7 @@ if [ -f ~/.bashrc_private ]; then
   source ~/.bashrc_private
 fi
 
-export PS1="\e[0;36m[\d]\e[m \e[0;32m\u@\h:\w\e[m\n\$ "
+export PS1="\e[0;36m[\d]\e[m \e[0;32m\u@\h: \w\e[m\n\$ "
 
 # a more "sophisticated" method for determining if we're in a remote shell
 remote=""
@@ -476,7 +484,7 @@ fi
 
 # if it's a remote shell, change $PS1 prompt format and enter a screen
 if [[ $remote ]]; then
-  export PS1="[\d] \u@\h:\w\n\$ "
+  export PS1="[\d] \u@\h: \w\n\$ "
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   # also check that stdout is attached to a real terminal with -t 1
   if [[ ! "$STY" && -t 1 ]]; then
