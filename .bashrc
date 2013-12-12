@@ -1,3 +1,4 @@
+#TODO: make all relevant functions work on stdin too
 ##### Detect host #####
 
 # supported hosts:
@@ -433,7 +434,7 @@ readsfq () {
 }
 alias bcat="samtools view -h"
 gatc () {
-  if [ "$1" ]; then
+  if [[ -n $1 ]]; then
     echo "$1" | sed -E 's/[^GATCNgatcn]//g';
   else
     while read data; do
@@ -453,7 +454,27 @@ mothur_report () {
   dedup=$(echo "100*$dedup/$total" | bc)
   echo -e "100%\t$quality%\t$dedup%"
 }
-
+# Get some quality stats on a BAM using samtools
+bamsummary () {
+  for bam in $@; do
+    if [[ $# -gt 1 ]]; then echo -e "    $bam:"; fi
+    local total=$(samtools view -c $bam)
+    pct () { python -c "print round(100.0 * $1/$total, 2)"; }
+    echo -e "total reads:\t $total"
+    local unmapped=$(samtools view -c -f 4 $bam)
+    echo -e "unmapped reads:\t $unmapped\t"$(pct $unmapped)"%"
+    local improper_pair=$(samtools view -c -F 2 $bam)
+    echo -e "not proper pair: $improper_pair\t"$(pct $improper_pair)"%"
+    local q0=$(echo $total-$(samtools view -c -q 1 $bam) | bc)
+    echo -e "MAPQ 0 reads:\t $q0\t"$(pct $q0)"%"
+    local q20=$(echo $total-$(samtools view -c -q 20 $bam) | bc)
+    echo -e "< MAPQ 20 reads: $q20\t"$(pct $q20)"%"
+    local q30=$(echo $total-$(samtools view -c -q 30 $bam) | bc)
+    echo -e "< MAPQ 30 reads: $q30\t"$(pct $q30)"%"
+    local duplicates=$(samtools view -c -f 1024 $bam)
+    echo -e "duplicates:\t $duplicates\t"$(pct $duplicates)"%"
+  done 
+}
 
 
 ##### Other #####
@@ -490,7 +511,7 @@ if [[ $remote ]]; then
   if [[ ! "$STY" && -t 1 ]]; then
     # Don't export PATH again if in a screen.
     export PATH=$PATH:~/bin
-    if [[ ! $host =~ (main|zen) ]]; then
+    if [[ ! $host =~ (main|zen|brubeck) ]]; then
       export PATH=$PATH:~/code
     fi
     if [[ $host =~ (nfshost) ]]; then
