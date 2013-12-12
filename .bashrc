@@ -38,8 +38,9 @@ else
   elif [[ $kernel =~ haiku ]]; then
     distro="haiku"
   elif [[ $kernel =~ linux ]]; then
-    if [ -f /etc/os-release ]; then
-      distro=$(grep '^NAME' /etc/os-release | sed -E 's/^NAME="([^ "]+).*"$/\1/g' | tr '[:upper:]' '[:lower:]')
+    if [[ -f /etc/os-release ]]; then
+      source /etc/os-release
+      distro="$ID"
     fi
     if [[ ! $distro ]]; then
       distro=$(ls /etc/*-release 2>/dev/null | sed -E 's#/etc/([^-]+)-release#\1#' | head -n 1)
@@ -200,7 +201,7 @@ if [[ $host =~ (brubeck) ]]; then
   alias cds='cd /scratch2/nick'
 fi
 if [[ $host =~ (scofield) ]]; then
-  alias srunb='HOME=/home/nick/ srun -w nn4 -D /home/nick/ --pty bash'
+  alias srunb='HOME=/galaxy/home/nick srun -w nn4 -D /galaxy/home/nick --pty bash'
 fi
 alias kerb='kinit nick@BX.PSU.EDU'
 alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
