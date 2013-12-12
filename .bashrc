@@ -4,7 +4,7 @@
 # supported hosts:
 # zen main nsto yarr brubeck ndojo.nfshost.com nbs.nfshost.com
 # partial support:
-# vbox (cygwin)
+# vbox scofield (cygwin)
 host=$(hostname)
 
 
@@ -14,7 +14,7 @@ if [[ $host =~ (zen|main|nsto|yarr) ]]; then
   distro="ubuntu"
 elif [[ $host =~ (nfshost) ]]; then
   distro="freebsd"
-elif [[ $host =~ (brubeck) ]]; then
+elif [[ $host =~ (brubeck|scofield) ]]; then
   distro="debian"
 elif [[ $host =~ (vbox) ]]; then
   distro="cygwin"
@@ -42,7 +42,7 @@ else
       distro=$(grep '^NAME' /etc/os-release | sed -E 's/^NAME="([^"]+)"$/\1/g' | tr '[:upper:]' '[:lower:]')
     fi
     if [[ ! $distro ]]; then
-      distro=$(ls /etc/*-release | sed -E 's#/etc/([^-]+)-release#\1#' | head -n 1)
+      distro=$(ls /etc/*-release 2>/dev/null | sed -E 's#/etc/([^-]+)-release#\1#' | head -n 1)
     fi
     if [[ ! $distro ]]; then
       if [ -f /etc/debian_version ]; then
@@ -97,7 +97,7 @@ if [[ $distro == "ubuntu" ]]; then
 
 
 # All comments in this block are from brubeck's default .bashrc
-elif [[ $distro == "debian" ]]; then
+elif [[ $host == "brubeck" ]]; then
 
   # System wide functions and aliases
   # Environment stuff goes in /etc/profile
