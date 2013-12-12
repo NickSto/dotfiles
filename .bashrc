@@ -4,7 +4,7 @@
 # supported hosts:
 # zen main nsto yarr brubeck ndojo.nfshost.com nbs.nfshost.com
 # partial support:
-# vbox scofield (cygwin)
+# vbox scofield (cygwin) (nn4)
 host=$(hostname)
 
 
@@ -22,7 +22,7 @@ elif [[ $host =~ (vbox) ]]; then
 # Uses info from http://www.novell.com/coolsolutions/feature/11251.html
 # and http://en.wikipedia.org/wiki/Uname
 else
-  kernel=$(uname -s | tr '[:upper:]' '[:lower:]')
+  kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')
   if [[ $kernel =~ freebsd ]]; then
     distro="freebsd"
   elif [[ $kernel =~ bsd$ ]]; then
@@ -39,7 +39,7 @@ else
     distro="haiku"
   elif [[ $kernel =~ linux ]]; then
     if [ -f /etc/os-release ]; then
-      distro=$(grep '^NAME' /etc/os-release | sed -E 's/^NAME="([^"]+)"$/\1/g' | tr '[:upper:]' '[:lower:]')
+      distro=$(grep '^NAME' /etc/os-release | sed -E 's/^NAME="([^ "]+).*"$/\1/g' | tr '[:upper:]' '[:lower:]')
     fi
     if [[ ! $distro ]]; then
       distro=$(ls /etc/*-release 2>/dev/null | sed -E 's#/etc/([^-]+)-release#\1#' | head -n 1)
@@ -56,6 +56,8 @@ else
     if [[ ! $distro ]]; then
       distro="linux"
     fi
+  elif [[ "$kernel" ]]; then
+    distro="$kernel"
   else
     distro="unknown"
   fi
@@ -196,6 +198,9 @@ else
 fi
 if [[ $host =~ (brubeck) ]]; then
   alias cds='cd /scratch2/nick'
+fi
+if [[ $host =~ (scofield) ]]; then
+  alias srunb='HOME=/home/nick/ srun -w nn4 -D /home/nick/ --pty bash'
 fi
 alias kerb='kinit nick@BX.PSU.EDU'
 alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
@@ -493,7 +498,7 @@ remote=""
 # climb the entire process hierarchy
 if ps -o comm="" -p 1 >/dev/null 2>/dev/null && [[ $(parents | tail -n 1) == "init" ]]; then
   for process in $(parents); do
-    if [[ "$process" == "sshd" ]]; then
+    if [[ "$process" == "sshd" || "$process" == "slurmstepd" ]]; then
       remote="true"
     fi
   done
@@ -514,9 +519,9 @@ if [[ $remote ]]; then
     if [[ ! $host =~ (main|zen|brubeck) ]]; then
       export PATH=$PATH:~/code
     fi
-    if [[ $host =~ (nfshost) ]]; then
+    if [[ $host =~ (nfshost|nn4) ]]; then
       true  # no screen there
-    elif [[ $host =~ (brubeck) ]]; then
+    elif [[ $host =~ (brubeck|scofield) ]]; then
       exec ~/code/pagscr-me.sh '-RR -S auto'
     else
       exec screen -RR -S auto
