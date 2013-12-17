@@ -199,9 +199,12 @@ else
 fi
 if [[ $host =~ (brubeck) ]]; then
   alias cds='cd /scratch2/nick'
+elif [[ $host =~ (zen) ]]; then
+  alias cds='cd ~/school'
 fi
 if [[ $host =~ (scofield) ]]; then
-  alias srunb='HOME=/galaxy/home/nick srun -w nn4 -D /galaxy/home/nick --pty bash'
+  alias srunb='HOME=/galaxy/home/nick srun -C new -D /galaxy/home/nick --pty bash'
+  aklog bx.psu.edu
 fi
 alias kerb='kinit nick@BX.PSU.EDU'
 alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
