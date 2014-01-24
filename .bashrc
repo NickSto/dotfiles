@@ -1,10 +1,11 @@
 #TODO: make all relevant functions work on stdin too
+
 ##### Detect host #####
 
 # supported hosts:
 # zen main nsto yarr brubeck ndojo.nfshost.com nbs.nfshost.com
 # partial support:
-# vbox scofield (cygwin) (nn4)
+# vbox scofield (cygwin)
 host=$(hostname)
 
 
@@ -190,7 +191,7 @@ alias tarb='tar -jxvpf'
 
 alias awkt="awk -F '\t' -v OFS='\t'"
 alias pingg='ping -c 1 google.com'
-alias curlip='curl icanhazip.com'
+alias curlip='curl -s icanhazip.com'
 geoip () { curl http://freegeoip.net/csv/$1; }
 if [[ $host =~ (nfshost) || $distro =~ bsd$ ]]; then
   alias vib='vim ~/.bash_profile'
@@ -202,11 +203,7 @@ if [[ $host =~ (brubeck) ]]; then
 elif [[ $host =~ (zen) ]]; then
   alias cds='cd ~/school'
 fi
-if [[ $host =~ (scofield) ]]; then
-  alias srunb='HOME=/galaxy/home/nick srun -C new -D /galaxy/home/nick --pty bash'
-  aklog bx.psu.edu
-fi
-alias kerb='kinit nick@BX.PSU.EDU'
+alias kerb='kinit -l 90d nick@BX.PSU.EDU'
 alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
 alias rsynchome='rsync -e ssh -zaXAv --itemize-changes --delete /home/me/aa/ home:/home/me/aa/ && rsync -e ssh -zaXAv --itemize-changes --delete /home/me/annex/ home:/home/me/annex/'
 alias swapkeys="loadkeys-safe.sh && sudo loadkeys $HOME/aa/misc/computerthings/keymap-loadkeys.txt"
@@ -253,6 +250,31 @@ fi
 ##### Functions #####
 
 bak () { cp -r "$1" "$1.bak"; }
+# add to path **if it's not already there**
+pathadd () {
+  if [[ ! -d "$1" ]]; then return; fi
+  # handle empty PATH
+  if [[ ! "$PATH" ]]; then export PATH="$1"; return; fi
+  for path in $(echo "$PATH" | tr ':' '\n'); do
+    if [[ "$path" == "$1" ]]; then return; fi
+  done
+  PATH="$PATH:$1"
+}
+# subtract from path
+pathsub () {
+  newpath=""
+  for path in $(echo "$PATH" | tr ':' '\n'); do
+    if [[ "$path" != "$1" ]]; then
+      # handle empty path
+      if [[ "$newpath" ]]; then
+        newpath="$newpath:$path"
+      else
+        newpath="$path"
+      fi
+    fi
+  done
+  PATH="$newpath"
+}
 # a quick shortcut to placing a script in the ~/bin dir
 # only if the system supports readlink -f (BSD doesn't)
 if readlink -f / >/dev/null 2>/dev/null; then
@@ -494,6 +516,7 @@ if [ -f ~/.bashrc_private ]; then
   source ~/.bashrc_private
 fi
 
+pathadd ~/bin
 export PS1="\e[0;36m[\d]\e[m \e[0;32m\u@\h: \w\e[m\n\$ "
 
 # a more "sophisticated" method for determining if we're in a remote shell
@@ -518,12 +541,10 @@ if [[ $remote ]]; then
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   # also check that stdout is attached to a real terminal with -t 1
   if [[ ! "$STY" && -t 1 ]]; then
-    # Don't export PATH again if in a screen.
-    export PATH=$PATH:~/bin
     if [[ ! $host =~ (main|zen|brubeck) ]]; then
       export PATH=$PATH:~/code
     fi
-    if [[ $host =~ (nfshost|nn4) ]]; then
+    if [[ $host =~ (nfshost) ]]; then
       true  # no screen there
     elif [[ $host =~ (brubeck|scofield) ]]; then
       exec ~/code/pagscr-me.sh '-RR -S auto'
