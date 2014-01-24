@@ -516,13 +516,13 @@ if [ -f ~/.bashrc_private ]; then
   source ~/.bashrc_private
 fi
 
-export PS1="\e[0;36m[\d]\e[m \e[0;32m\u@\h: \w\e[m\n\$ "
-pathadd ~/bin
-if [[ ! $host =~ (main|zen|brubeck|scofield) ]]; then
-  pathadd ~/code
-fi
+# add correct bin directory to PATH
 if [[ $host =~ (scofield) ]]; then
   pathadd /galaxy/home/nick/bin
+elif [[ $host =~ (^nn[0-9]) ]]; then
+  true  # inherited from scofield
+else
+  pathadd ~/bin
 fi
 
 # a more "sophisticated" method for determining if we're in a remote shell
@@ -555,4 +555,6 @@ if [[ $remote ]]; then
       exec screen -RR -S auto
     fi
   fi
+else
+  export PS1="\e[0;36m[\d]\e[m \e[0;32m\u@\h: \w\e[m\n\$ "
 fi
