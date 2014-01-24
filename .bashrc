@@ -516,8 +516,14 @@ if [ -f ~/.bashrc_private ]; then
   source ~/.bashrc_private
 fi
 
-pathadd ~/bin
 export PS1="\e[0;36m[\d]\e[m \e[0;32m\u@\h: \w\e[m\n\$ "
+pathadd ~/bin
+if [[ ! $host =~ (main|zen|brubeck|scofield) ]]; then
+  pathadd ~/code
+fi
+if [[ $host =~ (scofield) ]]; then
+  pathadd /galaxy/home/nick/bin
+fi
 
 # a more "sophisticated" method for determining if we're in a remote shell
 remote=""
@@ -541,9 +547,6 @@ if [[ $remote ]]; then
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   # also check that stdout is attached to a real terminal with -t 1
   if [[ ! "$STY" && -t 1 ]]; then
-    if [[ ! $host =~ (main|zen|brubeck) ]]; then
-      export PATH=$PATH:~/code
-    fi
     if [[ $host =~ (nfshost) ]]; then
       true  # no screen there
     elif [[ $host =~ (brubeck|scofield) ]]; then
