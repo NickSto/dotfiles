@@ -200,6 +200,8 @@ else
 fi
 if [[ $host =~ (brubeck) ]]; then
   alias cds='cd /scratch2/nick'
+elif [[ $host =~ (scofield) ]]; then
+  alias cds='cd /brubeck/scratch2/nick'
 elif [[ $host =~ (zen) ]]; then
   alias cds='cd ~/school'
 fi
@@ -448,12 +450,12 @@ bintoascii () {
 
 ##### Bioinformatics #####
 
-if [[ $host =~ (brubeck) ]]; then
-  alias igv='java -Xmx16384M -jar ~/bin/igv.jar'
-elif [[ $host =~ (zen|main) ]]; then
+if [[ $host =~ (zen|main) ]]; then
   alias igv='java -Xmx4096M -jar ~/bin/igv.jar'
 elif [[ $host =~ (nsto) ]]; then
   alias igv='java -Xmx256M -jar ~/bin/igv.jar'
+else
+  alias igv='java -jar ~/bin/igv.jar'
 fi
 alias seqlen="bioawk -c fastx '{ print \$name, length(\$seq) }'"
 alias rdp='java -Xmx1g -jar ~/bin/MultiClassifier.jar'
@@ -488,7 +490,7 @@ mothur_report () {
 # Get some quality stats on a BAM using samtools
 bamsummary () {
   for bam in $@; do
-    if [[ $# -gt 1 ]]; then echo -e "    $bam:"; fi
+    echo -e "    $bam:"
     local total=$(samtools view -c $bam)
     pct () { python -c "print round(100.0 * $1/$total, 2)"; }
     echo -e "total reads:\t $total"
