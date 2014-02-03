@@ -229,6 +229,11 @@ elif [[ $host =~ (nsto) ]]; then
 elif [[ $distro =~ ubuntu ]]; then
   alias errlog='less +G /var/log/syslog'
 fi
+if [[ $host =~ (scofield) ]]; then
+  alias srunb='HOME=/galaxy/home/nick srun -C new -D /galaxy/home/nick --pty bash'
+  alias srunc='HOME=/galaxy/home/nick srun -C new -D /galaxy/home/nick'
+  aklog bx.psu.edu
+fi
 alias temp="sensors | extract Physical 'Core 1' | sed 's/(.*)//' | grep -P '\d+\.\d'"
 alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user $USER --config proxpn.ovpn'
 alias mountv="sudo mount -t vboxsf -o uid=1000,gid=1000,rw shared $HOME/shared"
