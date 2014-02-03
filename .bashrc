@@ -200,7 +200,7 @@ else
 fi
 if [[ $host =~ (brubeck) ]]; then
   alias cds='cd /scratch2/nick'
-elif [[ $host =~ (scofield) ]]; then
+elif [[ $host =~ (^nn[0-9]) ]]; then
   alias cds='cd /brubeck/scratch2/nick'
 elif [[ $host =~ (zen) ]]; then
   alias cds='cd ~/school'
@@ -525,6 +525,15 @@ elif [[ $host =~ (^nn[0-9]) ]]; then
   true  # inherited from scofield
 else
   pathadd ~/bin
+fi
+pathadd /sbin
+pathadd /usr/sbin
+pathadd /usr/local/sbin
+
+# change effective home directory on scofield
+if [[ $host =~ (scofield) ]]; then
+  HOME=/galaxy/home/nick
+  cd $HOME
 fi
 
 # a more "sophisticated" method for determining if we're in a remote shell
