@@ -230,8 +230,8 @@ elif [[ $distro =~ ubuntu ]]; then
   alias errlog='less +G /var/log/syslog'
 fi
 if [[ $host =~ (scofield) ]]; then
-  alias srunb='HOME=/galaxy/home/nick srun -C new -D /galaxy/home/nick --pty bash'
-  alias srunc='HOME=/galaxy/home/nick srun -C new -D /galaxy/home/nick'
+  alias srunb='srun -C new --pty bash'
+  alias srunc='srun -C new'
   aklog bx.psu.edu
 fi
 alias temp="sensors | extract Physical 'Core 1' | sed 's/(.*)//' | grep -P '\d+\.\d'"
@@ -451,6 +451,35 @@ wifiip () {
 bintoascii () {
   for i in $( seq 0 8 ${#1} ); do echo -n $(python -c "print chr($((2#${1:$i:8})))"); done; echo
 }
+# For PS1 prompt (thanks to https://stackoverflow.com/a/1862762/726773)
+function timer_start {
+  timer=${timer:-$SECONDS}
+}
+function timer_stop {
+  local seconds=$(($SECONDS - $timer))
+  timer_show=''
+  if [[ $seconds -gt 10 ]]; then
+    timer_show="$(time_format $seconds) "
+  fi
+  unset timer
+}
+# format a number of seconds into a readable time
+function time_format {
+  local seconds=$1
+  local minutes=$(($seconds/60))
+  local hours=$(($minutes/60))
+  local seconds=$(($seconds - $minutes*60))
+  local minutes=$(($minutes - $hours*60))
+  if [[ $minutes -lt 1 ]]; then
+    echo $seconds's'
+  elif [[ $hours -lt 1 ]]; then
+    echo $minutes'm'$seconds's'
+  else
+    echo $hours'h'$minutes'm'
+  fi
+}
+trap 'timer_start' DEBUG
+PROMPT_COMMAND=timer_stop
 
 
 ##### Bioinformatics #####
@@ -559,18 +588,18 @@ fi
 
 # if it's a remote shell, change $PS1 prompt format and enter a screen
 if [[ $remote ]]; then
-  export PS1="[\d] \u@\h: \w\n\$ "
+  export PS1='${timer_show}[\d] \u@\h: \w\n\$ '
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   # also check that stdout is attached to a real terminal with -t 1
   if [[ ! "$STY" && -t 1 ]]; then
     if [[ $host =~ (nfshost) ]]; then
       true  # no screen there
     elif [[ $host =~ (brubeck|scofield) ]]; then
-      exec ~/code/pagscr-me.sh '-RR -S auto'
+      exec ~/code/pagscr-me.sh -RR -S auto
     else
       exec screen -RR -S auto
     fi
   fi
 else
-  export PS1="\e[0;36m[\d]\e[m \e[0;32m\u@\h: \w\e[m\n\$ "
+  export PS1='${timer_show}\e[0;36m[\d]\e[m \e[0;32m\u@\h: \w\e[m\n\$ '
 fi
