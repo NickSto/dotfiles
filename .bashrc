@@ -451,14 +451,30 @@ wifiip () {
 bintoascii () {
   for i in $( seq 0 8 ${#1} ); do echo -n $(python -c "print chr($((2#${1:$i:8})))"); done; echo
 }
+function wtf {
+  local url="$1"
+  if [[ "${url:0:47}" != 'http://traffic.libsyn.com/wtfpod/WTF_-_EPISODE_' ]] || [[ "${url:(-4)}" != '.mp3' ]]; then
+    echo "URL doesn't look right: $url" >&2; return
+  fi
+  local num=$(echo "${url:47}" | sed -E 's/^([0-9]+).*$/\1/')
+  local rawname=$(echo "${url:47}" | sed -E 's/^[0-9]+_(.*)\.mp3$/\1/g' | sed -E 's/_/ /g')
+  local name=$(python -c 'import sys, titlecase; print titlecase.titlecase(sys.argv[1])' "$rawname")
+  local filename="WTF $num - $name.mp3"
+  if curl -L -b libsyn-paywall=leitdl8tf8rs7qsg0kmbju61c3 "$url" > "$filename"; then
+    echo "saved to $filename"
+  else
+    echo "error downloading" >&2
+  fi
+}
 # For PS1 prompt (thanks to https://stackoverflow.com/a/1862762/726773)
+timer_thres=10
 function timer_start {
   timer=${timer:-$SECONDS}
 }
 function timer_stop {
   local seconds=$(($SECONDS - $timer))
   timer_show=''
-  if [[ $seconds -gt 10 ]]; then
+  if [[ $seconds -ge $timer_thres ]]; then
     timer_show="$(time_format $seconds) "
   fi
   unset timer
