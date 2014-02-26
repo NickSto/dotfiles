@@ -205,7 +205,8 @@ elif [[ $host =~ (^nn[0-9]) ]]; then
 elif [[ $host =~ (zen) ]]; then
   alias cds='cd ~/school'
 fi
-alias kerb='kinit -l 90d nick@BX.PSU.EDU'
+#alias kerb='kinit -l 90d nick@BX.PSU.EDU'
+alias kerb='kinit -l 90d nick@GALAXYPROJECT.ORG'
 alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
 alias rsynchome='rsync -e ssh -zaXAv --itemize-changes --delete /home/me/aa/ home:/home/me/aa/ && rsync -e ssh -zaXAv --itemize-changes --delete /home/me/annex/ home:/home/me/annex/'
 alias swapkeys="loadkeys-safe.sh && sudo loadkeys $HOME/aa/misc/computerthings/keymap-loadkeys.txt"
@@ -453,20 +454,38 @@ bintoascii () {
 }
 function wtf {
   local url="$1"
-  if [[ "${url:0:47}" != 'http://traffic.libsyn.com/wtfpod/WTF_-_EPISODE_' ]] || [[ "${url:(-4)}" != '.mp3' ]]; then
+  if ! echo "$url" | grep -qE '^http://traffic.libsyn.com/wtfpod/_?WTF_-_EPISODE_[0-9]+.*\.mp3$'; then
     echo "URL doesn't look right: $url" >&2; return
   fi
-  local num=$(echo "${url:47}" | sed -E 's/^([0-9]+).*$/\1/')
-  local rawname=$(echo "${url:47}" | sed -E 's/^[0-9]+_(.*)\.mp3$/\1/g' | sed -E 's/_/ /g')
-  local name=$(python -c 'import sys, titlecase; print titlecase.titlecase(sys.argv[1])' "$rawname")
-  local filename="WTF $num - $name.mp3"
-  if curl -L -b libsyn-paywall=leitdl8tf8rs7qsg0kmbju61c3 "$url" > "$filename"; then
+  local num=$(echo "${url:47}" | sed -E 's/^_?([0-9]+).*$/\1/')
+  if echo "${url:47}" | grep -qE '^_?[0-9]+_\w.*\.mp3'; then
+    local rawname=$(echo "${url:47}" | sed -E 's/^_?[0-9]+_(.*)\.mp3$/\1/g' | sed -E 's/_/ /g')
+    local name=$(python -c 'import sys, titlecase; print titlecase.titlecase(sys.argv[1])' "$rawname")
+    local filename="WTF $num - $name.mp3"
+  else
+    if [[ $# -ge 2 ]]; then
+      local name=" - $2"
+    fi
+    local filename="WTF $num$name.mp3"
+  fi
+  if curl -L -b libsyn-paywall=m5fs71vi8lve5p5nkhjovq0a54 "$url" > "$filename"; then
     echo "saved to $filename"
   else
     echo "error downloading" >&2
   fi
 }
 # For PS1 prompt (thanks to https://stackoverflow.com/a/1862762/726773)
+function prompt_color {
+  if [[ $? == 0 ]]; then
+    if [[ "$remote" ]]; then
+      pcol='0;30m' # black
+    else
+      pcol='0;36m' # teal
+    fi
+  else # if error
+    pcol='0;31m' # red
+  fi
+}
 timer_thres=10
 function timer_start {
   timer=${timer:-$SECONDS}
@@ -495,7 +514,6 @@ function time_format {
   fi
 }
 trap 'timer_start' DEBUG
-PROMPT_COMMAND=timer_stop
 
 
 ##### Bioinformatics #####
@@ -602,9 +620,12 @@ else
   fi
 fi
 
+PROMPT_COMMAND='prompt_color;timer_stop'
+ROOTPS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
+
 # if it's a remote shell, change $PS1 prompt format and enter a screen
 if [[ $remote ]]; then
-  export PS1='${timer_show}[\d] \u@\h: \w\n\$ '
+  export PS1='${timer_show}\e[${pcol}[\d]\e[m \u@\h: \w\n\$ '
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   # also check that stdout is attached to a real terminal with -t 1
   if [[ ! "$STY" && -t 1 ]]; then
@@ -617,5 +638,5 @@ if [[ $remote ]]; then
     fi
   fi
 else
-  export PS1='${timer_show}\e[0;36m[\d]\e[m \e[0;32m\u@\h: \w\e[m\n\$ '
+  export PS1='${timer_show}\e[${pcol}[\d]\e[m \e[0;32m\u@\h: \w\e[m\n\$ '
 fi
