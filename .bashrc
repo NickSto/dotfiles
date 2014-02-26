@@ -477,13 +477,9 @@ function wtf {
 # For PS1 prompt (thanks to https://stackoverflow.com/a/1862762/726773)
 function prompt_color {
   if [[ $? == 0 ]]; then
-    if [[ "$remote" ]]; then
-      pcol='0;30m' # black
-    else
-      pcol='0;36m' # teal
-    fi
+    bcol='48m' # white
   else # if error
-    pcol='0;31m' # red
+    bcol='41m' # red
   fi
 }
 timer_thres=10
@@ -625,7 +621,7 @@ ROOTPS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
 
 # if it's a remote shell, change $PS1 prompt format and enter a screen
 if [[ $remote ]]; then
-  export PS1='${timer_show}\e[${pcol}[\d]\e[m \u@\h: \w\n\$ '
+  export PS1='${timer_show}\e[${bcol}[\d]\e[m \u@\h: \w\n\$ '
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   # also check that stdout is attached to a real terminal with -t 1
   if [[ ! "$STY" && -t 1 ]]; then
@@ -638,5 +634,5 @@ if [[ $remote ]]; then
     fi
   fi
 else
-  export PS1='${timer_show}\e[${pcol}[\d]\e[m \e[0;32m\u@\h: \w\e[m\n\$ '
+  export PS1='${timer_show}\e[0;36m\e[${bcol}[\d]\e[m \e[0;32m\u@\h: \w\e[m\n\$ '
 fi
