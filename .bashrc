@@ -153,9 +153,12 @@ alias l='ls -CF'
 
 home=$(echo $HOME | sed -E 's#/$##g')
 if [[ $host =~ (zen|main) ]]; then
-  bashrc_dir="$home/aa/code/bash/bashrc"
+  bashrc_dir="$home/aa/code/bash/dotfiles"
 else # known location for nsto, brubeck, nfshost, vbox, yarr
-  bashrc_dir="$home/code/bashrc"
+  bashrc_dir="$home/code/dotfiles"
+  if [[ ! -d $bashrc_dir ]]; then
+    bashrc_dir="$home/code/bashrc"
+  fi
 fi
 
 
