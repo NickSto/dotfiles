@@ -3,21 +3,25 @@
 ##### Detect host #####
 
 # supported hosts:
-# zen main nsto yarr brubeck ndojo.nfshost.com nbs.nfshost.com
+#   zen main nsto yarr brubeck ndojo.nfshost.com nbs.nfshost.com
 # partial support:
-# vbox scofield (cygwin)
+#   vbox scofield
 host=$(hostname)
 
+# supported distros:
+#   ubuntu debian freebsd
+# partial support:
+#   cygwin osx
 
 ##### Detect distro #####
 
-if [[ $host =~ (zen|main|nsto|yarr) ]]; then
+if [[ $host =~ (^zen$|^main$|^nsto$|yarr) ]]; then
   distro="ubuntu"
-elif [[ $host =~ (nfshost) ]]; then
+elif [[ $host =~ nfshost ]]; then
   distro="freebsd"
 elif [[ $host =~ (brubeck|scofield) ]]; then
   distro="debian"
-elif [[ $host =~ (vbox) ]]; then
+elif [[ $host == vbox ]]; then
   distro="cygwin"
 # Do your best to detect the distro
 # Uses info from http://www.novell.com/coolsolutions/feature/11251.html
@@ -29,7 +33,7 @@ else
   elif [[ $kernel =~ bsd$ ]]; then
     distro="bsd"
   elif [[ $kernel =~ darwin ]]; then
-    distro="mac"
+    distro="osx"
   elif [[ $kernel =~ cygwin ]]; then
     distro="cygwin"
   elif [[ $kernel =~ mingw ]]; then
@@ -71,7 +75,7 @@ fi
 
 
 # All comments in this block are from Ubuntu's default .bashrc
-if [[ $distro == "ubuntu" ]]; then
+if [[ $distro == ubuntu ]]; then
 
   # ~/.bashrc: executed by bash(1) for non-login shells.
   # examples: /usr/share/doc/bash/examples/startup-files (in package bash-doc)
@@ -101,7 +105,7 @@ if [[ $distro == "ubuntu" ]]; then
 
 
 # All comments in this block are from brubeck's default .bashrc
-elif [[ $host == "brubeck" ]]; then
+elif [[ $host == brubeck ]]; then
 
   # System wide functions and aliases
   # Environment stuff goes in /etc/profile
@@ -152,7 +156,7 @@ alias l='ls -CF'
 
 
 home=$(echo $HOME | sed -E 's#/$##g')
-if [[ $host =~ (zen|main) ]]; then
+if [[ $host =~ (^zen$|^main$) ]]; then
   bashrc_dir="$home/aa/code/bash/dotfiles"
 else # known location for nsto, brubeck, nfshost, vbox, yarr
   bashrc_dir="$home/code/dotfiles"
@@ -172,7 +176,8 @@ shopt -s histappend # append to the history file, don't overwrite it
 # check the window size after each command and update LINES and COLUMNS.
 shopt -s checkwinsize
 # Make "**" glob all files and subdirectories recursively
-shopt -s globstar
+# Does not exist in Bash < 4.0, so silently fail.
+shopt -s globstar 2>/dev/null || true
 
 
 ##### Aliases #####
@@ -181,7 +186,7 @@ if [[ $distro =~ (ubuntu|cygwin|debian) ]]; then
   alias lsl='ls -lFhAb --color=auto --group-directories-first'
   alias lsld='ls -lFhAbd --color=auto --group-directories-first'
 else
-  # long options don't work on nfshost (freebsd)
+  # long options don't work on nfshost (freebsd) or OS X
   alias lsl='ls -lFhAb'
   alias lsld='ls -lFhAbd'
 fi
@@ -196,18 +201,19 @@ alias awkt="awk -F '\t' -v OFS='\t'"
 alias pingg='ping -c 1 google.com'
 alias curlip='curl -s icanhazip.com'
 geoip () { curl http://freegeoip.net/csv/$1; }
-if [[ $host =~ (nfshost) || $distro =~ bsd$ ]]; then
+if [[ $host =~ nfshost || $distro =~ bsd$ ]]; then
   alias vib='vim ~/.bash_profile'
 else
   alias vib='vim ~/.bashrc'
 fi
-if [[ $host =~ (brubeck) ]]; then
+if [[ $host == brubeck ]]; then
   alias cds='cd /scratch2/nick'
-elif [[ $host =~ (^nn[0-9]) ]]; then
+elif [[ $host =~ ^nn[0-9] ]]; then
   alias cds='cd /brubeck/scratch2/nick'
-elif [[ $host =~ (zen) ]]; then
+elif [[ $host == zen ]]; then
   alias cds='cd ~/school'
 fi
+alias noheader='grep -v "^#"'
 #alias kerb='kinit -l 90d nick@BX.PSU.EDU'
 alias kerb='kinit -l 90d nick@GALAXYPROJECT.ORG'
 alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
@@ -221,19 +227,19 @@ alias minelist="ssh vps 'screen -S minecraft -X stuff \"list
 \"; sleep 1; tail src/minecraft/server.log'"
 alias minemem='ssh vps "if pgrep -f java >/dev/null; then pgrep -f java | xargs ps -o %mem; fi"'
 
-if [[ $host =~ (nfshost) || $distro =~ bsd$ ]]; then
+if [[ $host =~ nfshost || $distro =~ (^osx$|bsd$) ]]; then
   alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tty,start,time,args'"
 else # doesn't work in cygwin, but no harm
   alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tname,start_time,time,args'"
 fi
-if [[ $host =~ (nfshost) ]]; then
+if [[ $host =~ nfshost ]]; then
   alias errlog='less +G /home/logs/error_log'
-elif [[ $host =~ (nsto) ]]; then
+elif [[ $host == nsto ]]; then
   alias errlog='less +G /var/www/logs/error.log'
-elif [[ $distro =~ ubuntu ]]; then
+elif [[ $distro =~ (ubuntu|debian) ]]; then
   alias errlog='less +G /var/log/syslog'
 fi
-if [[ $host =~ (scofield) ]]; then
+if [[ $host == scofield ]]; then
   alias srunb='srun -C new --pty bash'
   alias srunc='srun -C new'
   aklog bx.psu.edu
@@ -244,15 +250,15 @@ alias mountv="sudo mount -t vboxsf -o uid=1000,gid=1000,rw shared $HOME/shared"
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
 alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
 alias bitcoin="curl -s http://data.mtgox.com/api/2/BTCUSD/money/ticker_fast | grep -Eo '"'"last":\{"value":"[0-9.]+"'"' | grep -Eo '[0-9.]+'"
-if [[ $host =~ (nfshost) || $distro =~ bsd$ ]]; then
+if [[ $host =~ nfshost || $distro =~ bsd$ ]]; then
   alias updaterc="cd $bashrc_dir && git pull && cd -"
 else
   alias updaterc="git --work-tree=$bashrc_dir --git-dir=$bashrc_dir/.git pull"
 fi
-if [[ $host =~ (zen) ]]; then
+if [[ $host == zen ]]; then
   alias logtail='ssh home "~/bin/logtail.sh 100" | less +G'
   logrep () { ssh home "cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab; grep -r $@"; }
-elif [[ $host =~ (main) ]]; then
+elif [[ $host == main ]]; then
   alias logtail='~/bin/logtail.sh 100 | less +G'
   logrep () { cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab; grep -r $@; }
 fi
@@ -382,7 +388,7 @@ getip () {
 }
 if ! which longurl >/dev/null 2>/dev/null; then
   # doesn't work on nfshost (FreeBSD) because it currently needs full regex
-  if [[ $distro =~ ubuntu ]]; then
+  if [[ $distro =~ (ubuntu|debian) ]]; then
     longurl () {
       url="$1"
       while [ "$url" ]; do
@@ -415,13 +421,23 @@ sumcolumn () {
 }
 # Get totals of all columns in stdin or in all filename arguments
 sumcolumns () {
-  perl -we 'my @tot; my $first = 1;
+  perl -we '
+  my @tot; my $first = 1;
   while (<>) {
     next if (m/[a-z]/i); # skip lines with non-numerics
     my @fields = split("\t");
-    if ($first) { $first = 0; for my $field (@fields) { push(@tot, $field) }
-    } else { for ($i = 0; $i < @tot; $i++) { $tot[$i] += $fields[$i] } }
-  } print join("\t", @tot)."\n"'
+    if ($first) {
+      $first = 0;
+      for my $field (@fields) {
+        push(@tot, $field)
+      }
+    } else {
+      for ($i = 0; $i < @tot; $i++) {
+        $tot[$i] += $fields[$i]
+      }
+    }
+  }
+  print join("\t", @tot)."\n"'
 }
 showdups () {
   cat "$1" | while read line; do
@@ -471,10 +487,18 @@ function wtf {
     fi
     local filename="WTF $num$name.mp3"
   fi
-  if curl -L -b libsyn-paywall=m5fs71vi8lve5p5nkhjovq0a54 "$url" > "$filename"; then
+  if [[ -n $COOKIE ]]; then
+    local cookie="$COOKIE"
+  else:
+    local cookie="ketjivcs8avqonscekku2jij75"
+  fi
+  if curl -L -b "libsyn-paywall=$cookie" "$url" > "$filename"; then
     echo "saved to $filename"
   else
     echo "error downloading" >&2
+  fi
+  if [[ $(du -sb "$filename") -lt 524288 ]]; then
+    echo "possible error: the file is only $(du -sb "$filename")" >&2
   fi
 }
 # For PS1 prompt (thanks to https://stackoverflow.com/a/1862762/726773)
@@ -521,9 +545,9 @@ trap 'timer_start' DEBUG
 
 ##### Bioinformatics #####
 
-if [[ $host =~ (zen|main) ]]; then
-  alias igv='java -Xmx4096M -jar ~/bin/igv.jar'
-elif [[ $host =~ (nsto) ]]; then
+if [[ $host =~ (^zen$|^main$) ]]; then
+  true #alias igv='java -Xmx4096M -jar ~/bin/igv.jar'
+elif [[ $host == nsto ]]; then
   alias igv='java -Xmx256M -jar ~/bin/igv.jar'
 else
   alias igv='java -jar ~/bin/igv.jar'
@@ -590,9 +614,9 @@ if [ -f ~/.bashrc_private ]; then
 fi
 
 # add correct bin directory to PATH
-if [[ $host =~ (scofield) ]]; then
+if [[ $host == scofield ]]; then
   pathadd /galaxy/home/nick/bin
-elif [[ $host =~ (^nn[0-9]) ]]; then
+elif [[ $host =~ ^nn[0-9] ]]; then
   true  # inherited from scofield
 else
   pathadd ~/bin
@@ -602,7 +626,7 @@ pathadd /usr/sbin
 pathadd /usr/local/sbin
 
 # change effective home directory on scofield
-if [[ $host =~ (scofield) ]]; then
+if [[ $host == scofield ]]; then
   HOME=/galaxy/home/nick
   cd $HOME
 fi
@@ -632,7 +656,7 @@ if [[ $remote ]]; then
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   # also check that stdout is attached to a real terminal with -t 1
   if [[ ! "$STY" && -t 1 ]]; then
-    if [[ $host =~ (nfshost) ]]; then
+    if [[ $host =~ nfshost ]]; then
       true  # no screen there
     elif [[ $host =~ (brubeck|scofield) ]]; then
       exec ~/code/pagscr-me.sh -RR -S auto
