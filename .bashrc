@@ -4,7 +4,7 @@
 ##### Detect host #####
 
 # supported hosts:
-#   zen main nsto yarr brubeck ndojo nbs
+#   zen main nsto yarr brubeck ndojo nbs lion
 # partial support:
 #   vbox scofield
 host=$(hostname -s)
@@ -621,6 +621,9 @@ elif [[ $host =~ ^nn[0-9] ]]; then
   true  # inherited from scofield
 else
   pathadd ~/bin
+fi
+if [[ $host == lion ]]; then
+  pathadd /opt/local/bin
 fi
 pathadd /sbin
 pathadd /usr/sbin
