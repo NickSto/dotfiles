@@ -1,12 +1,13 @@
 #TODO: make all relevant functions work on stdin too
+#TODO: reduce number of regex =~ tests
 
 ##### Detect host #####
 
 # supported hosts:
-#   zen main nsto yarr brubeck ndojo.nfshost.com nbs.nfshost.com
+#   zen main nsto yarr brubeck ndojo nbs
 # partial support:
 #   vbox scofield
-host=$(hostname)
+host=$(hostname -s)
 
 # supported distros:
 #   ubuntu debian freebsd
@@ -17,7 +18,7 @@ host=$(hostname)
 
 if [[ $host =~ (^zen$|^main$|^nsto$|yarr) ]]; then
   distro="ubuntu"
-elif [[ $host =~ nfshost ]]; then
+elif [[ $host =~ (^ndojo$|^nbs$) ]]; then
   distro="freebsd"
 elif [[ $host =~ (brubeck|scofield) ]]; then
   distro="debian"
@@ -201,7 +202,7 @@ alias awkt="awk -F '\t' -v OFS='\t'"
 alias pingg='ping -c 1 google.com'
 alias curlip='curl -s icanhazip.com'
 geoip () { curl http://freegeoip.net/csv/$1; }
-if [[ $host =~ nfshost || $distro =~ bsd$ ]]; then
+if [[ $host =~ (^ndojo$|^nbs$) || $distro =~ bsd$ ]]; then
   alias vib='vim ~/.bash_profile'
 else
   alias vib='vim ~/.bashrc'
@@ -227,12 +228,12 @@ alias minelist="ssh vps 'screen -S minecraft -X stuff \"list
 \"; sleep 1; tail src/minecraft/server.log'"
 alias minemem='ssh vps "if pgrep -f java >/dev/null; then pgrep -f java | xargs ps -o %mem; fi"'
 
-if [[ $host =~ nfshost || $distro =~ (^osx$|bsd$) ]]; then
+if [[ $host =~ (^ndojo$|^nbs$) || $distro =~ (^osx$|bsd$) ]]; then
   alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tty,start,time,args'"
 else # doesn't work in cygwin, but no harm
   alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tname,start_time,time,args'"
 fi
-if [[ $host =~ nfshost ]]; then
+if [[ $host =~ (^ndojo$|^nbs$) ]]; then
   alias errlog='less +G /home/logs/error_log'
 elif [[ $host == nsto ]]; then
   alias errlog='less +G /var/www/logs/error.log'
@@ -250,7 +251,7 @@ alias mountv="sudo mount -t vboxsf -o uid=1000,gid=1000,rw shared $HOME/shared"
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
 alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
 alias bitcoin="curl -s http://data.mtgox.com/api/2/BTCUSD/money/ticker_fast | grep -Eo '"'"last":\{"value":"[0-9.]+"'"' | grep -Eo '[0-9.]+'"
-if [[ $host =~ nfshost || $distro =~ bsd$ ]]; then
+if [[ $host =~ (^ndojo$|^nbs$) || $distro =~ bsd$ ]]; then
   alias updaterc="cd $bashrc_dir && git pull && cd -"
 else
   alias updaterc="git --work-tree=$bashrc_dir --git-dir=$bashrc_dir/.git pull"
@@ -656,7 +657,7 @@ if [[ $remote ]]; then
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   # also check that stdout is attached to a real terminal with -t 1
   if [[ ! "$STY" && -t 1 ]]; then
-    if [[ $host =~ nfshost ]]; then
+    if [[ $host =~ (^ndojo$|^nbs$) ]]; then
       true  # no screen there
     elif [[ $host =~ (brubeck|scofield) ]]; then
       exec ~/code/pagscr-me.sh -RR -S auto
