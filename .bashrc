@@ -3,11 +3,12 @@
 
 ##### Detect host #####
 
+host=$(hostname -s)
+
 # supported hosts:
 #   zen main nsto yarr brubeck ndojo nbs lion
 # partial support:
 #   vbox scofield
-host=$(hostname -s)
 
 # supported distros:
 #   ubuntu debian freebsd
@@ -16,6 +17,16 @@ host=$(hostname -s)
 
 ##### Determine distro #####
 
+# Determine directory with .bashrc files
+if [[ -f $HOME/.bashrc ]]; then
+  bashrc_dir=$HOME/$(dirname $(readlink $HOME/.bashrc))
+elif [[ -f $HOME/.bash_profile ]]; then
+  bashrc_dir=$HOME/$(dirname $(readlink $HOME/.bash_profile))
+else
+  bashrc_dir="$HOME/code/dotfiles"
+fi
+
+# Set distro based on known hostnames, or if unknown, use detect-distro.sh
 if [[ $host =~ (^zen$|^main$|^nsto$|yarr) ]]; then
   distro="ubuntu"
 elif [[ $host =~ (^ndojo$|^nbs$) ]]; then
@@ -25,7 +36,7 @@ elif [[ $host =~ (brubeck|scofield) ]]; then
 elif [[ $host == vbox ]]; then
   distro="cygwin"
 else
-  source detect-distro.sh
+  source $bashrc_dir/detect-distro.sh
 fi
 
 # Get the kernel string if detect-distro.sh didn't.
@@ -119,17 +130,6 @@ alias l='ls -CF'
 #################### My stuff ####################
 
 
-home=$(echo $HOME | sed -E 's#/$##g')
-if [[ $host =~ (^zen$|^main$) ]]; then
-  bashrc_dir="$home/aa/code/bash/dotfiles"
-else # known location for nsto, brubeck, nfshost, vbox, yarr
-  bashrc_dir="$home/code/dotfiles"
-  if [[ ! -d $bashrc_dir ]]; then
-    bashrc_dir="$home/code/bashrc"
-  fi
-fi
-
-
 ##### Bash options #####
 
 # don't put duplicate lines or lines starting with space in the history.
@@ -184,7 +184,7 @@ alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
 alias rsynchome='rsync -e ssh -zaXAv --itemize-changes --delete /home/me/aa/ home:/home/me/aa/ && rsync -e ssh -zaXAv --itemize-changes --delete /home/me/annex/ home:/home/me/annex/'
 alias swapkeys="loadkeys-safe.sh && sudo loadkeys $HOME/aa/misc/computerthings/keymap-loadkeys.txt"
 
-alias minecraft="cd ~/src/minecraft && java -Xmx400M -Xincgc -jar $home/src/minecraft_server.jar nogui"
+alias minecraft="cd ~/src/minecraft && java -Xmx400M -Xincgc -jar $HOME/src/minecraft_server.jar nogui"
 alias minelog='ssh vps "tail src/minecraft/server.log"'
 alias mineme='ssh vps "cat src/minecraft/server.log" | grep -i nick | tail'
 alias minelist="ssh vps 'screen -S minecraft -X stuff \"list
@@ -523,7 +523,7 @@ fi
 alias seqlen="bioawk -c fastx '{ print \$name, length(\$seq) }'"
 alias rdp='java -Xmx1g -jar ~/bin/MultiClassifier.jar'
 alias gatk="java -jar ~/bin/GenomeAnalysisTK.jar"
-#alias qsh='source $home/src/qiime_software/activate.sh'
+#alias qsh='source $HOME/src/qiime_software/activate.sh'
 alias readsfa='grep -Ec "^>"'
 readsfq () {
   echo "$(wc -l $1 |  cut -f 1 -d ' ')/4" | bc
