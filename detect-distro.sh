@@ -67,8 +67,9 @@ else
   distro="unknown"
 fi
 
-# Print results, unless we're being sourced
-if [[ $0 != 'bash' ]]; then
+# Print results, unless we're being sourced from .bashrc
+# (N.B.: If it's sourced from another script, $0 won't be "bash".)
+if [[ $(basename $0) != 'bash' ]]; then
   echo $distro
   echo $kernel
 fi
