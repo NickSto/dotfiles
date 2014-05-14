@@ -14,7 +14,7 @@ host=$(hostname -s)
 # partial support:
 #   cygwin osx
 
-##### Detect distro #####
+##### Determine distro #####
 
 if [[ $host =~ (^zen$|^main$|^nsto$|yarr) ]]; then
   distro="ubuntu"
@@ -24,50 +24,13 @@ elif [[ $host =~ (brubeck|scofield) ]]; then
   distro="debian"
 elif [[ $host == vbox ]]; then
   distro="cygwin"
-# Do your best to detect the distro
-# Uses info from http://www.novell.com/coolsolutions/feature/11251.html
-# and http://en.wikipedia.org/wiki/Uname
 else
+  source detect-distro.sh
+fi
+
+# Get the kernel string if detect-distro.sh didn't.
+if [[ ! $kernel ]]; then
   kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')
-  if [[ $kernel =~ freebsd ]]; then
-    distro="freebsd"
-  elif [[ $kernel =~ bsd$ ]]; then
-    distro="bsd"
-  elif [[ $kernel =~ darwin ]]; then
-    distro="osx"
-  elif [[ $kernel =~ cygwin ]]; then
-    distro="cygwin"
-  elif [[ $kernel =~ mingw ]]; then
-    distro="mingw"
-  elif [[ $kernel =~ sunos ]]; then
-    distro="solaris"
-  elif [[ $kernel =~ haiku ]]; then
-    distro="haiku"
-  elif [[ $kernel =~ linux ]]; then
-    if [[ -f /etc/os-release ]]; then
-      source /etc/os-release
-      distro="$ID"
-    fi
-    if [[ ! $distro ]]; then
-      distro=$(ls /etc/*-release 2>/dev/null | sed -E 's#/etc/([^-]+)-release#\1#' | head -n 1)
-    fi
-    if [[ ! $distro ]]; then
-      if [ -f /etc/debian_version ]; then
-        distro="debian"
-      elif [ -f /etc/redhat_version ]; then
-        distro="redhat"
-      elif [ -f /etc/slackware-version ]; then
-        distro="slackware"
-      fi
-    fi
-    if [[ ! $distro ]]; then
-      distro="linux"
-    fi
-  elif [[ "$kernel" ]]; then
-    distro="$kernel"
-  else
-    distro="unknown"
-  fi
 fi
 
 
@@ -258,10 +221,14 @@ else
 fi
 if [[ $host == zen ]]; then
   alias logtail='ssh home "~/bin/logtail.sh 100" | less +G'
-  logrep () { ssh home "cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab; grep -r $@"; }
+  logrep () {
+    ssh home "cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab && grep -r $@"
+  }
 elif [[ $host == main ]]; then
   alias logtail='~/bin/logtail.sh 100 | less +G'
-  logrep () { cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab; grep -r $@; }
+  logrep () {
+    cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab && grep -r $@
+  }
 fi
 
 
@@ -641,7 +608,7 @@ remote=""
 # climb the entire process hierarchy
 if ps -o comm="" -p 1 >/dev/null 2>/dev/null && [[ $(parents | tail -n 1) == "init" ]]; then
   for process in $(parents); do
-    if [[ "$process" == "sshd" || "$process" == "slurmstepd" ]]; then
+    if [[ $process == sshd || $process == slurmstepd ]]; then
       remote="true"
     fi
   done
