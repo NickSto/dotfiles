@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
 
+USAGE="Best-effort detection of the distro and kernel.
+
+Source this to set \$distro and \$kernel to the detected values:
+    source $(basename $0)
+Or you can execute it, and get have it print the values (one per line), with the
+-p option:
+    \$ read distro kernel <<< \$("$(basename $0)" -p)
+    \$ echo \$distro \$kernel
+    ubuntu linux"
+
+print=""
 if [[ $# -gt 0 ]]; then
-  echo "This will try to detect the distro and kernel, and it will print them on
-two separate lines, like:
-    \$ $(basename $0)
-    ubuntu
-    linux
-You can read them into variable names at once like this:
-    \$ read distro kernel <<< \$("$(basename $0)")
-    \$ echo \$distro: \$kernel
-    ubuntu: linux" >&2
-  exit 1
+  if [[ $1 == '-p' ]]; then
+    print="true"
+  else 
+    echo "$USAGE" >&2
+    exit 1
+  fi
 fi
 
 # Do your best to detect the distro
@@ -67,9 +74,7 @@ else
   distro="unknown"
 fi
 
-# Print results, unless we're being sourced from .bashrc
-# (N.B.: If it's sourced from another script, $0 won't be "bash".)
-if [[ $(basename $0) != 'bash' ]]; then
+if [[ $print ]]; then
   echo $distro
   echo $kernel
 fi
