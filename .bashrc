@@ -26,18 +26,29 @@ else
   bashrc_dir="$HOME/code/dotfiles"
 fi
 
-# Set distro based on known hostnames, or if unknown, use detect-distro.sh
-if [[ $host =~ (^zen$|^main$|^nsto$|yarr) ]]; then
-  distro="ubuntu"
-elif [[ $host =~ (^ndojo$|^nbs$) ]]; then
-  distro="freebsd"
-elif [[ $host =~ (brubeck|scofield) ]]; then
-  distro="debian"
-elif [[ $host == vbox ]]; then
-  distro="cygwin"
-else
-  source $bashrc_dir/detect-distro.sh
-fi
+# Set distro based on known hostnames
+case "$host" in
+  zen)
+    distro="ubuntu";;
+  main)
+    distro="ubuntu";;
+  nsto)
+    distro="ubuntu";;
+  yarr)
+    distro="ubuntu";;
+  ndojo)
+    distro="freebsd";;
+  nbs)
+    distro="freebsd";;
+  brubeck)
+    distro="debian";;
+  scofield)
+    distro="debian";;
+  vbox)
+    distro="cygwin";;
+  *)  # Unrecognized host? Run detection script.
+    source $bashrc_dir/detect-distro.sh
+esac
 
 # Get the kernel string if detect-distro.sh didn't.
 if [[ ! $kernel ]]; then
