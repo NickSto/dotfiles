@@ -6,7 +6,7 @@
 host=$(hostname -s)
 
 # supported hosts:
-#   zen main nsto yarr brubeck ndojo nbs lion
+#   zen main nsto yarr brubeck ndojo nbs lion cyberstar
 # partial support:
 #   vbox scofield
 
@@ -225,7 +225,7 @@ alias mountv="sudo mount -t vboxsf -o uid=1000,gid=1000,rw shared $HOME/shared"
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
 alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
 alias bitcoin="curl -s http://data.mtgox.com/api/2/BTCUSD/money/ticker_fast | grep -Eo '"'"last":\{"value":"[0-9.]+"'"' | grep -Eo '[0-9.]+'"
-if [[ $host =~ (^ndojo$|^nbs$) || $distro =~ bsd$ ]]; then
+if [[ $host =~ (^ndojo$|^nbs$|cyberstar) || $distro =~ bsd$ ]]; then
   alias updaterc="cd $bashrc_dir && git pull && cd -"
 else
   alias updaterc="git --work-tree=$bashrc_dir --git-dir=$bashrc_dir/.git pull"
