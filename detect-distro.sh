@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
-USAGE="Best-effort detection of the distro and kernel.
+print=""
+if [[ $# -gt 0 ]]; then
+  if [[ $1 == '-p' ]]; then
+    print="true"
+  else 
+    echo "Best-effort detection of the distro and kernel.
 
 Source this to set \$distro and \$kernel to the detected values:
     source $(basename $0)
@@ -8,14 +13,7 @@ Or you can execute it, and get have it print the values (one per line), with the
 -p option:
     \$ read distro kernel <<< \$("$(basename $0)" -p)
     \$ echo \$distro \$kernel
-    ubuntu linux"
-
-print=""
-if [[ $# -gt 0 ]]; then
-  if [[ $1 == '-p' ]]; then
-    print="true"
-  else 
-    echo "$USAGE" >&2
+    ubuntu linux" >&2
     exit 1
   fi
 fi
