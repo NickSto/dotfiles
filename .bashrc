@@ -184,7 +184,7 @@ fi
 if [[ $host == brubeck ]]; then
   alias cds='cd /scratch2/nick'
 elif [[ $host =~ ^nn[0-9] ]]; then
-  alias cds='cd /brubeck/scratch2/nick'
+  alias cds='cd /nfs/brubeck.bx.psu.edu/scratch2/nick'
 elif [[ $host == zen ]]; then
   alias cds='cd ~/school'
 fi
