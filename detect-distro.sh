@@ -56,7 +56,7 @@ if kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]'); then
     elif [[ -f /etc/SUSE-release ]]; then
       distro="suse"
     fi
-    # Last-ditch: check for files like /etc/*-release, /etc/*_release,
+    # Check for files like /etc/*-release, /etc/*_release,
     # /etc/*-version, or /etc/*_version, and derive it from the *
     if [[ ! $distro ]]; then
       files=$(ls /etc/*[-_]release 2>/dev/null) || files=$(ls /etc/*[-_]version 2>/dev/null)
@@ -65,11 +65,17 @@ if kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]'); then
         distro=$(echo "$files" | grep -Ev '/etc/(lsb|system)[-_]' | sed -E 's#/etc/([^-_]+).*#\1#' | head -n 1)
       fi
     fi
+    # Lastly, try /etc/lsb-release (not always helpful, even when present)
+    if [[ ! $distro ]]; then
+      if source /etc/lsb-release 2>/dev/null; then
+        distro="$DISTRIB_ID"
+      fi
+    fi
     # If even that doesn't work, just call it "linux"
     if [[ ! $distro ]]; then
       distro="linux"
     fi
-  # If the uname -s output is unrecognized, just use that
+  # If the uname -s output is unrecognized, just use it unmodified
   elif [[ $kernel ]]; then
     distro="$kernel"
   fi
