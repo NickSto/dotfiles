@@ -53,15 +53,21 @@ if kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]'); then
       distro="redhat"
     elif [[ -f /etc/slackware-version ]]; then
       distro="slackware"
+    elif [[ -f /etc/SUSE-release ]]; then
+      distro="suse"
     fi
-    # Last-ditch: check for any /etc/*-release and derive it from the *
+    # Last-ditch: check for files like /etc/*-release, /etc/*_release,
+    # /etc/*-version, or /etc/*_version, and derive it from the *
     if [[ ! $distro ]]; then
-      if ls /etc/*-release >/dev/null 2>/dev/null; then
-        distro=$(ls /etc/*-release 2>/dev/null | sed -E 's#/etc/([^-]+)-release#\1#' | head -n 1)
-      # If even that doesn't work, just call it "linux"
-      else
-        distro="linux"
+      files=$(ls /etc/*[-_]release 2>/dev/null) || files=$(ls /etc/*[-_]version 2>/dev/null)
+      if [[ $files ]]; then
+        # extract from first filename, excluding ones like lsb-release and system-release
+        distro=$(echo "$files" | grep -Ev '/etc/(lsb|system)[-_]' | sed -E 's#/etc/([^-_]+).*#\1#' | head -n 1)
       fi
+    fi
+    # If even that doesn't work, just call it "linux"
+    if [[ ! $distro ]]; then
+      distro="linux"
     fi
   # If the uname -s output is unrecognized, just use that
   elif [[ $kernel ]]; then
