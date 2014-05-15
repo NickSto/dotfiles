@@ -18,14 +18,17 @@ Or you can execute it, and get have it print the values (one per line), with the
   fi
 fi
 
+# filename prefixes to exclude when determining from files like /etc/*-release
+EXCLUDED='lsb|system'
+
 # Do your best to detect the distro
 # Uses info from http://www.novell.com/coolsolutions/feature/11251.html
 # and http://en.wikipedia.org/wiki/Uname
 
 # Try to get the kernel name from uname
 if kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]'); then
-  # Fuzzy-match some known uname -s outputs and assign standard names for
-  # non-linux kernels
+  # Fuzzy-match some known non-linux uname -s outputs and assign standard names
+  # for them.
   if [[ $kernel =~ freebsd ]]; then
     distro="freebsd"
   elif [[ $kernel =~ bsd$ ]]; then
@@ -40,21 +43,12 @@ if kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]'); then
     distro="solaris"
   elif [[ $kernel =~ haiku ]]; then
     distro="haiku"
-  # If it's a linux kernel, try to determine the type from files in /etc
+  # If it's a linux kernel, try to determine the distro from files in /etc
   elif [[ $kernel =~ linux ]]; then
     # Preferred method: /etc/os-release cross-distro standard
     if [[ -f /etc/os-release ]]; then
       source /etc/os-release
       distro="$ID"
-    # Check for some known distro-specific filenames
-    elif [[ -f /etc/debian_version ]]; then
-      distro="debian"
-    elif [[ -f /etc/redhat_version ]] || [[ -f /etc/redhat-release ]]; then
-      distro="redhat"
-    elif [[ -f /etc/slackware-version ]]; then
-      distro="slackware"
-    elif [[ -f /etc/SUSE-release ]]; then
-      distro="suse"
     fi
     # Check for files like /etc/*-release, /etc/*_release,
     # /etc/*-version, or /etc/*_version, and derive it from the *
@@ -62,7 +56,7 @@ if kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]'); then
       files=$(ls /etc/*[-_]release 2>/dev/null) || files=$(ls /etc/*[-_]version 2>/dev/null)
       if [[ $files ]]; then
         # extract from first filename, excluding ones like lsb-release and system-release
-        distro=$(echo "$files" | grep -Ev '/etc/(lsb|system)[-_]' | sed -E 's#/etc/([^-_]+).*#\1#' | head -n 1)
+        distro=$(echo "$files" | grep -Ev "/etc/($EXCLUDED)[-_]" | sed -E 's#/etc/([^-_]+).*#\1#' | head -n 1)
       fi
     fi
     # Lastly, try /etc/lsb-release (not always helpful, even when present)
