@@ -1,9 +1,12 @@
 #TODO: make all relevant functions work on stdin too
 #TODO: reduce number of regex =~ tests
 
+# make sure pwd is ~
+cd $HOME
+
 ##### Detect host #####
 
-host=$(hostname -s)
+host=$(hostname -s 2>/dev/null || hostname)
 
 # supported hosts:
 #   zen main nsto yarr brubeck ndojo nbs lion cyberstar
@@ -17,11 +20,17 @@ host=$(hostname -s)
 
 ##### Determine distro #####
 
+# Reliably get the actual parent dirname of a link (no readlink -f in BSD)
+function realdirname {
+  echo $(cd $(dirname $(readlink $1)) && pwd)
+}
+
 # Determine directory with .bashrc files
-if [[ -f $HOME/.bashrc ]]; then
-  bashrc_dir=$HOME/$(dirname $(readlink $HOME/.bashrc))
-elif [[ -f $HOME/.bash_profile ]]; then
-  bashrc_dir=$HOME/$(dirname $(readlink $HOME/.bash_profile))
+cd $HOME
+if [[ -f .bashrc ]]; then
+  bashrc_dir=$(realdirname .bashrc)
+elif [[ -f .bash_profile ]]; then
+  bashrc_dir=$(realdirname .bash_profile)
 else
   bashrc_dir="$HOME/code/dotfiles"
 fi
