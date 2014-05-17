@@ -1,8 +1,4 @@
 #TODO: make all relevant functions work on stdin too
-#TODO: reduce number of regex =~ tests
-
-# make sure pwd is ~
-cd $HOME
 
 ##### Detect host #####
 
@@ -34,6 +30,7 @@ elif [[ -f .bash_profile ]]; then
 else
   bashrc_dir="$HOME/code/dotfiles"
 fi
+cd -
 
 # Set distro based on known hostnames
 case "$host" in
@@ -166,7 +163,7 @@ shopt -s globstar 2>/dev/null || true
 
 ##### Aliases #####
 
-if [[ $distro =~ (ubuntu|cygwin|debian) ]]; then
+if [[ $distro == ubuntu || $distro == cygwin || $distro == debian ]]; then
   alias lsl='ls -lFhAb --color=auto --group-directories-first'
   alias lsld='ls -lFhAbd --color=auto --group-directories-first'
 else
@@ -181,15 +178,11 @@ alias trash='trash-put'
 alias targ='tar -zxvpf'
 alias tarb='tar -jxvpf'
 
+alias vib="vim $bashrc_dir/.bashrc"
 alias awkt="awk -F '\t' -v OFS='\t'"
 alias pingg='ping -c 1 google.com'
 alias curlip='curl -s icanhazip.com'
 geoip () { curl http://freegeoip.net/csv/$1; }
-if [[ $host =~ (^ndojo$|^nbs$) || $distro =~ bsd$ ]]; then
-  alias vib='vim ~/.bash_profile'
-else
-  alias vib='vim ~/.bashrc'
-fi
 if [[ $host == brubeck ]]; then
   alias cds='cd /scratch2/nick'
 elif [[ $host =~ ^nn[0-9] ]]; then
@@ -211,16 +204,16 @@ alias minelist="ssh vps 'screen -S minecraft -X stuff \"list
 \"; sleep 1; tail src/minecraft/server.log'"
 alias minemem='ssh vps "if pgrep -f java >/dev/null; then pgrep -f java | xargs ps -o %mem; fi"'
 
-if [[ $host =~ (^ndojo$|^nbs$) || $distro =~ (^osx$|bsd$) ]]; then
+if [[ $distro =~ (^osx$|bsd$) ]]; then
   alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tty,start,time,args'"
 else # doesn't work in cygwin, but no harm
   alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tname,start_time,time,args'"
 fi
-if [[ $host =~ (^ndojo$|^nbs$) ]]; then
+if [[ $host == ndojo || $host == nbs ]]; then
   alias errlog='less +G /home/logs/error_log'
 elif [[ $host == nsto ]]; then
   alias errlog='less +G /var/www/logs/error.log'
-elif [[ $distro =~ (ubuntu|debian) ]]; then
+elif [[ $distro == ubuntu || $distro == debian ]]; then
   alias errlog='less +G /var/log/syslog'
 fi
 if [[ $host == scofield ]]; then
@@ -234,7 +227,7 @@ alias mountv="sudo mount -t vboxsf -o uid=1000,gid=1000,rw shared $HOME/shared"
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
 alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
 alias bitcoin="curl -s http://data.mtgox.com/api/2/BTCUSD/money/ticker_fast | grep -Eo '"'"last":\{"value":"[0-9.]+"'"' | grep -Eo '[0-9.]+'"
-if [[ $host =~ (^ndojo$|^nbs$|cyberstar) || $distro =~ bsd$ ]]; then
+if [[ $host == cyberstar || $distro =~ bsd$ ]]; then
   alias updaterc="cd $bashrc_dir && git pull && cd -"
 else
   alias updaterc="git --work-tree=$bashrc_dir --git-dir=$bashrc_dir/.git pull"
@@ -376,7 +369,7 @@ getip () {
 }
 if ! which longurl >/dev/null 2>/dev/null; then
   # doesn't work on nfshost (FreeBSD) because it currently needs full regex
-  if [[ $distro =~ (ubuntu|debian) ]]; then
+  if [[ $distro == ubuntu || $distro == debian ]]; then
     longurl () {
       url="$1"
       while [ "$url" ]; do
@@ -533,7 +526,7 @@ trap 'timer_start' DEBUG
 
 ##### Bioinformatics #####
 
-if [[ $host =~ (^zen$|^main$) ]]; then
+if [[ $host == zen || $host == main ]]; then
   true #alias igv='java -Xmx4096M -jar ~/bin/igv.jar'
 elif [[ $host == nsto ]]; then
   alias igv='java -Xmx256M -jar ~/bin/igv.jar'
@@ -647,9 +640,9 @@ if [[ $remote ]]; then
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   # also check that stdout is attached to a real terminal with -t 1
   if [[ ! "$STY" && -t 1 ]]; then
-    if [[ $host =~ (^ndojo$|^nbs$) ]]; then
+    if [[ $host == ndojo || $host == nbs ]]; then
       true  # no screen there
-    elif [[ $host =~ (brubeck|scofield) ]]; then
+    elif [[ $host == brubeck || $host == scofield ]]; then
       exec ~/code/pagscr-me.sh -RR -S auto
     else
       exec screen -RR -S auto

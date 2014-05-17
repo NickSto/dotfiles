@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# best compilation of techniques and information so far:
+# https://unix.stackexchange.com/questions/92199/how-can-i-reliably-get-the-operating-systems-name
+# /etc/os-release adoption, as of August 2012:
+# Angstrom, ArchLinux, Debian, Fedora, Frugalware, Gentoo, OpenSUSE, Mageia
+# (according to http://www.linuxquestions.org/questions/slackware-14/any-chance-of-slackware-including-etc-os-release-4175423210/#post4760009)
 
 print=""
 if [[ $# -gt 0 ]]; then
