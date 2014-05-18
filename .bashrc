@@ -5,9 +5,7 @@
 host=$(hostname -s 2>/dev/null || hostname)
 
 # supported hosts:
-#   zen main nsto yarr brubeck ndojo nbs lion cyberstar
-# partial support:
-#   vbox scofield
+# zen main nsto yarr brubeck scofield ndojo nbs lion cyberstar
 
 # supported distros:
 #   ubuntu debian freebsd
@@ -30,7 +28,7 @@ elif [[ -f .bash_profile ]]; then
 else
   bashrc_dir="$HOME/code/dotfiles"
 fi
-cd -
+cd - >/dev/null
 
 # Set distro based on known hostnames
 case "$host" in
@@ -50,8 +48,6 @@ case "$host" in
     distro="debian";;
   scofield)
     distro="debian";;
-  vbox)
-    distro="cygwin";;
   *)  # Unrecognized host? Run detection script.
     source $bashrc_dir/detect-distro.sh
 esac
