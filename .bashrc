@@ -170,7 +170,6 @@ fi
 alias sll='sl' # choo choo
 alias mv="mv -i"
 alias cp="cp -i"
-alias trash='trash-put'
 alias targ='tar -zxvpf'
 alias tarb='tar -jxvpf'
 
@@ -178,7 +177,17 @@ alias vib="vim $bashrc_dir/.bashrc"
 alias awkt="awk -F '\t' -v OFS='\t'"
 alias pingg='ping -c 1 google.com'
 alias curlip='curl -s icanhazip.com'
-geoip () { curl http://freegeoip.net/csv/$1; }
+function geoip { curl http://freegeoip.net/csv/$1; }
+if which trash-put; then
+  alias trash='trash-put'
+else
+  function trash {
+    if [[ ! -d $HOME/.trash ]]; then
+      mkdir $HOME/.trash
+    fi
+    mv $@ $HOME/.trash
+  }
+fi
 if [[ $host == brubeck ]]; then
   alias cds='cd /scratch2/nick'
 elif [[ $host =~ ^nn[0-9] ]]; then
