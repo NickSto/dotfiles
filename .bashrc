@@ -178,7 +178,7 @@ alias awkt="awk -F '\t' -v OFS='\t'"
 alias pingg='ping -c 1 google.com'
 alias curlip='curl -s icanhazip.com'
 function geoip { curl http://freegeoip.net/csv/$1; }
-if which trash-put; then
+if which trash-put >/dev/null 2>/dev/null; then
   alias trash='trash-put'
 else
   function trash {
