@@ -240,7 +240,7 @@ fi
 if [[ $host == zen ]]; then
   alias logtail='ssh home "~/bin/logtail.sh 100" | less +G'
   logrep () {
-    ssh home "cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab && grep -r $@"
+    ssh home "cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab && grep -r $*"
   }
 elif [[ $host == main ]]; then
   alias logtail='~/bin/logtail.sh 100 | less +G'
@@ -304,10 +304,9 @@ vix () {
     touch $1; chmod +x $1; vim $1
   fi
 }
-calc () {
+function calc {
   if [ "$1" ]; then
-    pycode="from __future__ import division; from math import *; print $@"
-    python -c "$pycode" # this kludge is needed because of bash.
+    python -c "from __future__ import division; from math import *; print $*"
   else
     python -i -c "from __future__ import division; from math import *"
   fi
