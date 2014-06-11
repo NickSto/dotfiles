@@ -188,6 +188,13 @@ else
     mv $@ $HOME/.trash
   }
 fi
+if which longurl.py >/dev/null 2>/dev/null; then
+  alias longurl='longurl.py -fc'
+else
+  function longurl {
+    echo "$1"; curl -LIs "$1" | grep '^[Ll]ocation' | cut -d ' ' -f 2
+  }
+fi
 if [[ $host == brubeck ]]; then
   alias cds='cd /scratch2/nick'
 elif [[ $host =~ ^nn[0-9] ]]; then
@@ -371,25 +378,6 @@ getip () {
     last=$line
   done
 }
-if ! which longurl >/dev/null 2>/dev/null; then
-  # doesn't work on nfshost (FreeBSD) because it currently needs full regex
-  if [[ $distro == ubuntu || $distro == debian ]]; then
-    longurl () {
-      url="$1"
-      while [ "$url" ]; do
-        echo "$url"
-        echo -n "$url" | sed -r 's#^https?://([^/]+)/?.*$#\1#g' | xclip -sel clip
-        line=$(curl -sI "$url" | grep -P '^[Ll]ocation:\s' | head -n 1)
-        url=$(echo "$line" | sed -r 's#^[Ll]ocation:\s+(\S.*\S)\s*$#\1#g')
-      done
-    }
-  # so apparently curl has the -L option
-  else
-    longurl () {
-      echo "$1"; curl -LIs "$1" | grep '^[Ll]ocation' | cut -d ' ' -f 2
-    }
-  fi
-fi
 
 # What are the most common column widths?
 columns () {
@@ -566,6 +554,20 @@ mothur_report () {
   quality=$(echo "100*$quality/$total" | bc)
   dedup=$(echo "100*$dedup/$total" | bc)
   echo -e "100%\t$quality%\t$dedup%"
+}
+function dotplot {
+  if [[ $# -lt 3 ]]; then
+    echo "Usage: dotplot seq1.fa seq2.fa output.jpg" >&2 && return
+  fi
+  if [[ -e "$3.tmp.pdf" ]]; then
+    echo "Error: $3.tmp.pdf exists" >&2 && return
+  fi
+  if ! which dotter >/dev/null 2>/dev/null || ! which convert >/dev/null 2>/dev/null; then
+    echo 'Error: "dotter" and "convert" commands required.' >&2 && return
+  fi
+  dotter "$1" "$2" -e "$3.tmp.pdf"
+  convert -rotate 90 -density 400 -resize 50% "$3.tmp.pdf" "$3"
+  rm "$3.tmp.pdf"
 }
 # Get some quality stats on a BAM using samtools
 bamsummary () {
