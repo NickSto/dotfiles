@@ -14,6 +14,12 @@ host=$(hostname -s 2>/dev/null || hostname)
 
 ##### Determine distro #####
 
+# change effective home directory on scofield
+if [[ $host == scofield ]]; then
+  HOME=/galaxy/home/nick
+  cd $HOME
+fi
+
 # Reliably get the actual parent dirname of a link (no readlink -f in BSD)
 function realdirname {
   echo $(cd $(dirname $(readlink $1)) && pwd)
@@ -207,6 +213,7 @@ alias noheader='grep -v "^#"'
 alias kerb='kinit -l 90d nick@GALAXYPROJECT.ORG'
 alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
 alias rsynchome='rsync -e ssh -zaXAv --itemize-changes --delete /home/me/aa/ home:/home/me/aa/ && rsync -e ssh -zaXAv --itemize-changes --delete /home/me/annex/ home:/home/me/annex/'
+alias rsynclocal='rsync -e ssh -zaXAv --itemize-changes --delete /home/me/aa/ local:/home/me/aa/ && rsync -e ssh -zaXAv --itemize-changes --delete /home/me/annex/ local:/home/me/annex/'
 alias swapkeys="loadkeys-safe.sh && sudo loadkeys $HOME/aa/misc/computerthings/keymap-loadkeys.txt"
 
 alias minecraft="cd ~/src/minecraft && java -Xmx400M -Xincgc -jar $HOME/src/minecraft_server.jar nogui"
@@ -530,8 +537,10 @@ alias rdp='java -Xmx1g -jar ~/bin/MultiClassifier.jar'
 alias gatk="java -jar ~/bin/GenomeAnalysisTK.jar"
 #alias qsh='source $HOME/src/qiime_software/activate.sh'
 alias readsfa='grep -Ec "^>"'
-readsfq () {
-  echo "$(wc -l $1 |  cut -f 1 -d ' ')/4" | bc
+if ! which readsfq >/dev/null 2>/dev/null; then
+  function readsfq {
+    echo "$(wc -l $1 |  cut -f 1 -d ' ')/4" | bc
+  }
 }
 alias bcat="samtools view -h"
 gatc () {
@@ -614,12 +623,7 @@ fi
 pathadd /sbin
 pathadd /usr/sbin
 pathadd /usr/local/sbin
-
-# change effective home directory on scofield
-if [[ $host == scofield ]]; then
-  HOME=/galaxy/home/nick
-  cd $HOME
-fi
+pathadd $HOME/.local/bin
 
 # a more "sophisticated" method for determining if we're in a remote shell
 remote=""
