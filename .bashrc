@@ -299,6 +299,17 @@ if readlink -f / >/dev/null 2>/dev/null; then
     ln -s $(readlink -f $1) ~/bin/$(basename $1)
   }
 fi
+function gitswitch {
+  if [[ -f ~/.ssh/id_rsa-code ]]; then
+    mv ~/.ssh/id_rsa-code{,.pub} ~/.ssh/keys && \
+    mv ~/.ssh/keys/id_rsa-generic{,.pub} ~/.ssh && \
+    echo "Switched to NickSto"
+  elif [[ -f ~/.ssh/id_rsa-generic ]]; then
+    mv ~/.ssh/id_rsa-generic{,.pub} ~/.ssh/keys && \
+    mv ~/.ssh/keys/id_rsa-code{,.pub} ~/.ssh && \
+    echo "Switched to Qwerty0"
+  fi
+}
 # no more "cd ../../../.." (from http://serverfault.com/a/28649)
 up () { 
     local d="";
