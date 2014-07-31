@@ -552,7 +552,7 @@ if ! which readsfq >/dev/null 2>/dev/null; then
   function readsfq {
     echo "$(wc -l $1 |  cut -f 1 -d ' ')/4" | bc
   }
-}
+fi
 alias bcat="samtools view -h"
 gatc () {
   if [[ -n $1 ]]; then
