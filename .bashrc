@@ -178,6 +178,7 @@ alias mv="mv -i"
 alias cp="cp -i"
 alias targ='tar -zxvpf'
 alias tarb='tar -jxvpf'
+alias pseudo='sudo'
 
 alias vib="vim $bashrc_dir/.bashrc"
 alias awkt="awk -F '\t' -v OFS='\t'"
@@ -241,7 +242,7 @@ if [[ $host == scofield ]]; then
   aklog bx.psu.edu
 fi
 alias temp="sensors | extract Physical 'Core 1' | sed 's/(.*)//' | grep -P '\d+\.\d'"
-alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user $USER --config proxpn.ovpn'
+alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user $USER --config proxpn.ovpn && cd -'
 alias mountv="sudo mount -t vboxsf -o uid=1000,gid=1000,rw shared $HOME/shared"
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
 alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
@@ -346,9 +347,21 @@ if which lynx >/dev/null 2>/dev/null; then
   }
 fi
 if which lower.b >/dev/null 2>/dev/null; then
-  lc () { echo "$1" | lower.b; }
+  function lc {
+    if [[ $# -gt 0 ]]; then
+      echo "$@" | lower.b
+    else
+      lower.b
+    fi
+  }
 else
-  lc () { echo "$1" | tr '[:upper:]' '[:lower:]'; }
+  function lc {
+    if [[ $# -gt 0 ]]; then
+      echo "$@" | tr '[:upper:]' '[:lower:]'
+    else
+      tr '[:upper:]' '[:lower:]'
+    fi
+  }
 fi
 pg () {
     if pgrep -f $@ >/dev/null; then
