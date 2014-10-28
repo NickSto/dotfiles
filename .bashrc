@@ -165,6 +165,8 @@ shopt -s globstar 2>/dev/null || true
 
 ##### Aliases #####
 
+# Set directory for my special data files
+data_dir="$HOME/.local/share/nbsdata"
 if [[ $distro == ubuntu || $distro == cygwin || $distro == debian ]]; then
   alias lsl='ls -lFhAb --color=auto --group-directories-first'
   alias lsld='ls -lFhAbd --color=auto --group-directories-first'
@@ -179,12 +181,32 @@ alias cp="cp -i"
 alias targ='tar -zxvpf'
 alias tarb='tar -jxvpf'
 alias pseudo='sudo'
-
 alias vib="vim $bashrc_dir/.bashrc"
 alias awkt="awk -F '\t' -v OFS='\t'"
+
 alias pingg='ping -c 1 google.com'
 alias curlip='curl -s icanhazip.com'
 function geoip { curl http://freegeoip.net/csv/$1; }
+# Get the ASN of a public IP address (or your IP, if none given)
+function asn {
+  if [[ $# -gt 0 ]]; then
+    ip=$1
+  else
+    ip=$(curlip)
+  fi
+  asn=$(awk -F '\t' '$1 == "'$ip'" {print $2}' $data_dir/asn-cache.tsv | head -n 1)
+  if [[ ! $asn ]]; then
+    asn=$(curl -s http://ipinfo.io/$ip/org | grep -Eo '^AS[0-9]+')
+  fi
+  echo $asn
+}
+if which longurl.py >/dev/null 2>/dev/null; then
+  alias longurl='longurl.py -fc'
+else
+  function longurl {
+    echo "$1"; curl -LIs "$1" | grep '^[Ll]ocation' | cut -d ' ' -f 2
+  }
+fi
 if which trash-put >/dev/null 2>/dev/null; then
   alias trash='trash-put'
 else
@@ -193,13 +215,6 @@ else
       mkdir $HOME/.trash
     fi
     mv $@ $HOME/.trash
-  }
-fi
-if which longurl.py >/dev/null 2>/dev/null; then
-  alias longurl='longurl.py -fc'
-else
-  function longurl {
-    echo "$1"; curl -LIs "$1" | grep '^[Ll]ocation' | cut -d ' ' -f 2
   }
 fi
 if [[ $host == brubeck ]]; then
