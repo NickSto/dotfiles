@@ -28,9 +28,19 @@ function realdirname {
 # Determine directory with .bashrc files
 cd $HOME
 if [[ -f .bashrc ]]; then
-  bashrc_dir=$(realdirname .bashrc)
+  # Is it a link or real file?
+  if [[ -h .bashrc ]]; then
+    bashrc_dir=$(realdirname .bashrc)
+  else
+    bashrc_dir="$HOME"
+  fi
 elif [[ -f .bash_profile ]]; then
-  bashrc_dir=$(realdirname .bash_profile)
+  # Is it a link or real file?
+  if [[ -h .bash_profile ]]; then
+    bashrc_dir=$(realdirname .bash_profile)
+  else
+    bashrc_dir="$HOME"
+  fi
 else
   bashrc_dir="$HOME/code/dotfiles"
 fi
@@ -165,6 +175,8 @@ shopt -s globstar 2>/dev/null || true
 
 ##### Aliases #####
 
+# Set my default text editor
+export EDITOR=vim
 # Set directory for my special data files
 data_dir="$HOME/.local/share/nbsdata"
 if [[ $distro == ubuntu || $distro == cygwin || $distro == debian ]]; then
@@ -219,7 +231,7 @@ else
 fi
 if [[ $host == brubeck ]]; then
   alias cds='cd /scratch2/nick'
-elif [[ $host =~ ^nn[0-9] ]]; then
+elif [[ $host == scofield ]] || [[ $host =~ ^nn[0-9] ]]; then
   alias cds='cd /nfs/brubeck.bx.psu.edu/scratch2/nick'
 elif [[ $host == zen ]]; then
   alias cds='cd ~/school'
@@ -262,7 +274,9 @@ alias mountv="sudo mount -t vboxsf -o uid=1000,gid=1000,rw shared $HOME/shared"
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
 alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
 alias bitcoin="curl -s http://data.mtgox.com/api/2/BTCUSD/money/ticker_fast | grep -Eo '"'"last":\{"value":"[0-9.]+"'"' | grep -Eo '[0-9.]+'"
-if [[ $host == cyberstar || $distro =~ bsd$ ]]; then
+if ! which git >/dev/null 2>/dev/null; then
+  alias updaterc="wget 'https://raw.githubusercontent.com/NickSto/dotfiles/master/.bashrc' -O $bashrc_dir/.bashrc"
+elif [[ $host == cyberstar || $distro =~ bsd$ ]]; then
   alias updaterc="cd $bashrc_dir && git pull && cd -"
 else
   alias updaterc="git --work-tree=$bashrc_dir --git-dir=$bashrc_dir/.git pull"
