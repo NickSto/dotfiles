@@ -229,19 +229,37 @@ else
     mv $@ $HOME/.trash
   }
 fi
-if [[ $host == brubeck ]]; then
-  alias cds='cd /scratch2/nick'
-elif [[ $host == scofield ]] || [[ $host =~ ^nn[0-9] ]]; then
-  alias cds='cd /nfs/brubeck.bx.psu.edu/scratch2/nick'
-elif [[ $host == zen ]]; then
-  alias cds='cd ~/school'
-fi
+function cds {
+  if [[ $host == zen ]]; then
+    cd ~/school
+  fi
+  if [[ "$1" ]]; then
+    local n=$1
+  else
+    local n=2
+  fi
+  if [[ $n == 1 ]]; then
+    if [[ $host == brubeck ]]; then
+      cd /scratch/nick
+    elif [[ $host == scofield ]] || [[ $host =~ ^nn[0-9] ]]; then
+      cd /nfs/brubeck.bx.psu.edu/scratch1/nick
+    fi
+  elif [[ $n == 2 ]]; then
+    if [[ $host == brubeck ]]; then
+      cd /scratch2/nick
+    elif [[ $host == scofield ]] || [[ $host =~ ^nn[0-9] ]]; then
+      cd /nfs/brubeck.bx.psu.edu/scratch2/nick
+    fi
+  elif [[ $n -ge 3 ]]; then
+    cd /nfs/brubeck.bx.psu.edu/scratch$n/nick
+  fi
+}
 alias noheader='grep -v "^#"'
 #alias kerb='kinit -l 90d nick@BX.PSU.EDU'
 alias kerb='kinit -l 90d nick@GALAXYPROJECT.ORG'
 alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
-alias rsynchome='rsync -e ssh -zaXAv --itemize-changes --delete /home/me/aa/ home:/home/me/aa/ && rsync -e ssh -zaXAv --itemize-changes --delete /home/me/annex/ home:/home/me/annex/'
-alias rsynclocal='rsync -e ssh -zaXAv --itemize-changes --delete /home/me/aa/ local:/home/me/aa/ && rsync -e ssh -zaXAv --itemize-changes --delete /home/me/annex/ local:/home/me/annex/'
+alias rsynchome='rsync -e ssh -zaXAv --itemize-changes --delete $HOME/aa/ home:/home/$USER/aa/ && rsync -e ssh -zaXAv --itemize-changes --delete $HOME/annex/ home:/home/$USER/annex/ && rsync -e ssh -zaXAv --itemize-changes --delete $HOME/code/ home:/home/$USER/code/'
+alias rsynclocal='rsync -e ssh -zaXAv --itemize-changes --delete $HOME/aa/ local:/home/$USER/aa/ && rsync -e ssh -zaXAv --itemize-changes --delete $HOME/annex/ local:/home/$USER/annex/ && rsync -e ssh -zaXAv --itemize-changes --delete $HOME/code/ local:/home/$USER/code/'
 alias swapkeys="loadkeys-safe.sh && sudo loadkeys $HOME/aa/misc/computerthings/keymap-loadkeys.txt"
 
 alias minecraft="cd ~/src/minecraft && java -Xmx400M -Xincgc -jar $HOME/src/minecraft_server.jar nogui"
