@@ -519,8 +519,20 @@ wifissid () {
 wifiip () {
   getip | sed -nE 's/^wlan0:\s*([0-9:.]+)$/\1/pig'
 }
-bintoascii () {
-  for i in $( seq 0 8 ${#1} ); do echo -n $(python -c "print chr($((2#${1:$i:8})))"); done; echo
+function inttobin {
+  echo "obase=2;$1" | bc
+}
+function bintoint {
+  echo "ibase=2;obase=1010;$1" | bc
+}
+function asciitobin {
+  python -c "print bin(ord('$1'))[2:]"
+}
+function bintoascii {
+  for i in $(seq 0 8 ${#1}); do
+    echo -n $(python -c "print chr($((2#${1:$i:8})))")
+  done
+  echo
 }
 function wtf {
   local url="$1"
