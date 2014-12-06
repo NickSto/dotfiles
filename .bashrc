@@ -196,7 +196,9 @@ alias awkt="awk -F '\t' -v OFS='\t'"
 
 alias pingg='ping -c 1 google.com'
 alias curlip='curl -s icanhazip.com'
-function geoip { curl http://freegeoip.net/csv/$1; }
+function geoip {
+  curl http://freegeoip.net/csv/$1
+}
 # Get the ASN of a public IP address (or your IP, if none given)
 function asn {
   if [[ $# -gt 0 ]]; then
@@ -299,12 +301,12 @@ else
 fi
 if [[ $host == zen ]]; then
   alias logtail='ssh home "~/bin/logtail.sh 100" | less +G'
-  logrep () {
+  function logrep {
     ssh home "cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab && grep -r $*"
   }
 elif [[ $host == main ]]; then
   alias logtail='~/bin/logtail.sh 100 | less +G'
-  logrep () {
+  function logrep {
     cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab && grep -r $@
   }
 fi
@@ -321,7 +323,7 @@ function bak {
   cp -r "$path" "$path.bak"
 }
 # add to path **if it's not already there**
-pathadd () {
+function pathadd {
   if [[ ! -d "$1" ]]; then return; fi
   # handle empty PATH
   if [[ ! "$PATH" ]]; then export PATH="$1"; return; fi
@@ -331,7 +333,7 @@ pathadd () {
   PATH="$PATH:$1"
 }
 # subtract from path
-pathsub () {
+function pathsub {
   newpath=""
   for path in $(echo "$PATH" | tr ':' '\n'); do
     if [[ "$path" != "$1" ]]; then
@@ -348,7 +350,7 @@ pathsub () {
 # a quick shortcut to placing a script in the ~/bin dir
 # only if the system supports readlink -f (BSD doesn't)
 if readlink -f / >/dev/null 2>/dev/null; then
-  bin () {
+  function bin {
     ln -s $(readlink -f $1) ~/bin/$(basename $1)
   }
 fi
@@ -364,7 +366,7 @@ function gitswitch {
   fi
 }
 # no more "cd ../../../.." (from http://serverfault.com/a/28649)
-up () { 
+function up {
     local d="";
     for ((i=1 ; i <= $1 ; i++)); do
         d=$d/..;
@@ -375,7 +377,7 @@ up () {
     fi;
     cd $d
 }
-vix () {
+function vix {
   if [ -e $1 ]; then
     vim $1
   else
@@ -397,7 +399,7 @@ function wcc {
   fi
 }
 if which lynx >/dev/null 2>/dev/null; then
-  lgoog () {
+  function lgoog {
     local query=$(echo "$@" | sed -E 's/ /+/g')
     local output=$(lynx -dump "http://www.google.com/search?q=$query")
     local end=$(echo "$output" | grep -n '^References' | cut -f 1 -d ':')
@@ -421,12 +423,12 @@ else
     fi
   }
 fi
-pg () {
+function pg {
     if pgrep -f $@ >/dev/null; then
         pgrep -f $@ | xargs ps -o user,pid,stat,rss,%mem,pcpu,args --sort -pcpu,-rss;
     fi
 }
-parents () {
+function parents {
   if [[ "$1" ]]; then
     pid="$1"
   else
@@ -438,7 +440,7 @@ parents () {
   done
 }
 # readlink -f except it handles commands on the PATH too
-deref () {
+function deref {
   local file="$1"
   if [ ! -e "$file" ]; then
     file=$(which "$file" 2>/dev/null)
@@ -446,8 +448,10 @@ deref () {
   readlink -f "$file"
 }
 # this requires deref()!
-vil () { vi $(deref "$1"); }
-getip () {
+function vil {
+  vi $(deref "$1")
+}
+function getip {
   # IPv6 too! (Only the non-MAC address-based one.)
   last=""
   ifconfig | while read line; do
@@ -469,12 +473,12 @@ getip () {
 }
 
 # What are the most common column widths?
-columns () {
+function columns {
   echo " totals|columns"
   awkt '{print NF}' $1 | sort -g | uniq -c | sort -rg -k 1
 }
 # Get totals of a specified column
-sumcolumn () {
+function sumcolumn {
   if [ ! "$1" ] || [ ! "$2" ]; then
     echo 'USAGE: $ sumcolumn 3 file.csv'
     return
@@ -482,7 +486,7 @@ sumcolumn () {
   awk -F '\t' '{ tot+=$'"$1"' } END { print tot }' "$2"
 }
 # Get totals of all columns in stdin or in all filename arguments
-sumcolumns () {
+function sumcolumns {
   perl -we '
   my @tot; my $first = 1;
   while (<>) {
@@ -501,7 +505,7 @@ sumcolumns () {
   }
   print join("\t", @tot)."\n"'
 }
-showdups () {
+function showdups {
   cat "$1" | while read line; do
     notfirst=''
     grep -n "^$line$" "$1" | while read line; do
@@ -509,7 +513,7 @@ showdups () {
     done
   done
 }
-repeat () {
+function repeat {
   if [[ $# -lt 2 ]] || ! [[ "$2" =~ ^[0-9]+$ ]]; then
     echo "USAGE: repeat [string] [number of repeats]" 1>&2
     return
@@ -525,13 +529,13 @@ function oneline {
     echo "$@" | tr -d '\n'
   fi
 }
-wifimac () {
+function wifimac {
   iwconfig 2> /dev/null | sed -nE 's/^.*access point: ([a-zA-Z0-9:]+)\s*$/\1/pig'
 }
-wifissid () {
+function wifissid {
   iwconfig 2> /dev/null | sed -nE 's/^.*SSID:"(.*)"\s*$/\1/pig'
 }
-wifiip () {
+function wifiip {
   getip | sed -nE 's/^wlan0:\s*([0-9:.]+)$/\1/pig'
 }
 function inttobin {
@@ -641,7 +645,7 @@ if ! which readsfq >/dev/null 2>/dev/null; then
   }
 fi
 alias bcat="samtools view -h"
-gatc () {
+function gatc {
   if [[ $# -gt 0 ]]; then
     echo "$1" | sed -E 's/[^GATCNgatcn]//g';
   else
@@ -657,7 +661,7 @@ function revcomp {
     echo "$1" | tr 'ATGCatgc' 'TACGtacg' | rev
   fi
 }
-mothur_report () {
+function mothur_report {
   local total=$(readsfa "$1.fasta")
   local quality=$(readsfa "mothur-work/$1.trim.fasta")
   local dedup=$(readsfa "mothur-work/$1.trim.unique.fasta")
@@ -681,11 +685,13 @@ function dotplot {
   rm "$3.tmp.pdf"
 }
 # Get some quality stats on a BAM using samtools
-bamsummary () {
+function bamsummary {
   for bam in $@; do
     echo -e "    $bam:"
     local total=$(samtools view -c $bam)
-    pct () { python -c "print round(100.0 * $1/$total, 2)"; }
+    function pct {
+      python -c "print round(100.0 * $1/$total, 2)"
+    }
     echo -e "total reads:\t $total"
     local unmapped=$(samtools view -c -f 4 $bam)
     echo -e "unmapped reads:\t $unmapped\t"$(pct $unmapped)"%"
