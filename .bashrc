@@ -312,7 +312,14 @@ fi
 
 ##### Functions #####
 
-bak () { cp -r "$1" "$1.bak"; }
+function bak {
+  path="$1"
+  if [[ ! "$path" ]]; then
+    return 1
+  fi
+  path=$(echo "$path" | sed 's#/$##')
+  cp -r "$path" "$path.bak"
+}
 # add to path **if it's not already there**
 pathadd () {
   if [[ ! -d "$1" ]]; then return; fi
