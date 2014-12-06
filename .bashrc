@@ -1,5 +1,3 @@
-#TODO: make all relevant functions work on stdin too
-
 ##### Detect host #####
 
 host=$(hostname -s 2>/dev/null || hostname)
@@ -378,13 +376,19 @@ vix () {
   fi
 }
 function calc {
-  if [ "$1" ]; then
+  if [[ $# -gt 0 ]]; then
     python -c "from __future__ import division; from math import *; print $*"
   else
     python -i -c "from __future__ import division; from math import *"
   fi
 }
-wcc () { echo -n "$@" | wc -c; }
+function wcc {
+  if [[ $# == 0 ]]; then
+    wc -c
+  else
+    echo -n "$@" | wc -c
+  fi
+}
 if which lynx >/dev/null 2>/dev/null; then
   lgoog () {
     local query=$(echo "$@" | sed -E 's/ /+/g')
@@ -507,8 +511,12 @@ repeat () {
     echo -n "$1"; i=$((i+1))
   done
 }
-oneline () {
-  echo "$1" | tr -d '\n'
+function oneline {
+  if [[ $# == 0 ]]; then
+    tr -d '\n'
+  else
+    echo "$@" | tr -d '\n'
+  fi
 }
 wifimac () {
   iwconfig 2> /dev/null | sed -nE 's/^.*access point: ([a-zA-Z0-9:]+)\s*$/\1/pig'
@@ -627,7 +635,7 @@ if ! which readsfq >/dev/null 2>/dev/null; then
 fi
 alias bcat="samtools view -h"
 gatc () {
-  if [[ -n $1 ]]; then
+  if [[ $# -gt 0 ]]; then
     echo "$1" | sed -E 's/[^GATCNgatcn]//g';
   else
     while read data; do
@@ -635,8 +643,12 @@ gatc () {
     done;
   fi
 }
-revcomp () {
-  echo "$1" | tr 'ATGCatgc' 'TACGtacg' | rev
+function revcomp {
+  if [[ $# == 0 ]]; then
+    tr 'ATGCatgc' 'TACGtacg' | rev
+  else
+    echo "$1" | tr 'ATGCatgc' 'TACGtacg' | rev
+  fi
 }
 mothur_report () {
   local total=$(readsfa "$1.fasta")
