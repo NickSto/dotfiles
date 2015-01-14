@@ -257,12 +257,25 @@ function cds {
   fi
 }
 alias noheader='grep -v "^#"'
+alias swapkeys="loadkeys-safe.sh && sudo loadkeys $HOME/aa/misc/computerthings/keymap-loadkeys.txt"
 #alias kerb='kinit -l 90d nick@BX.PSU.EDU'
 alias kerb='kinit -l 90d nick@GALAXYPROJECT.ORG'
 alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
-alias rsynchome='rsync -e ssh -zaXAv --itemize-changes --delete $HOME/aa/ home:/home/$USER/aa/ && rsync -e ssh -zaXAv --itemize-changes --delete $HOME/annex/ home:/home/$USER/annex/ && rsync -e ssh -zaXAv --itemize-changes --delete $HOME/code/ home:/home/$USER/code/'
-alias rsynclocal='rsync -e ssh -zaXAv --itemize-changes --delete $HOME/aa/ local:/home/$USER/aa/ && rsync -e ssh -zaXAv --itemize-changes --delete $HOME/annex/ local:/home/$USER/annex/ && rsync -e ssh -zaXAv --itemize-changes --delete $HOME/code/ local:/home/$USER/code/'
-alias swapkeys="loadkeys-safe.sh && sudo loadkeys $HOME/aa/misc/computerthings/keymap-loadkeys.txt"
+function rsynchome {
+  # If we can find the host "main", then we're on the same LAN (we're at home).
+  if [[ $(dig +short main) ]]; then
+    dest='local'
+  else
+    dest='home'
+  fi
+  if [[ -d $HOME/aa ]] && [[ -d $HOME/annex ]] && [[ -d $HOME/code ]]; then
+    rsynca $HOME/aa/ $dest:/home/$USER/aa/ \
+      && rsynca $HOME/annex/ $dest:/home/$USER/annex/ \
+      && rsynca $HOME/code/ $dest:/home/$USER/code/
+  else
+    echo "Wrong set of directories exists. Is this the right machine?" >&2
+  fi
+}
 
 alias minecraft="cd ~/src/minecraft && java -Xmx400M -Xincgc -jar $HOME/src/minecraft_server.jar nogui"
 alias minelog='ssh vps "tail src/minecraft/server.log"'
