@@ -3,7 +3,7 @@
 host=$(hostname -s 2>/dev/null || hostname)
 
 # supported hosts:
-# zen main nsto yarr brubeck scofield ndojo nbs lion cyberstar
+# yoga main zen nsto yarr brubeck scofield ndojo nbs lion cyberstar
 
 # supported distros:
 #   ubuntu debian freebsd
@@ -46,9 +46,11 @@ cd - >/dev/null
 
 # Set distro based on known hostnames
 case "$host" in
-  zen)
+  yoga)
     distro="ubuntu";;
   main)
+    distro="ubuntu";;
+  zen)
     distro="ubuntu";;
   nsto)
     distro="ubuntu";;
@@ -230,7 +232,7 @@ else
   }
 fi
 function cds {
-  if [[ $host == zen ]]; then
+  if [[ $host == yoga ]]; then
     cd ~/school
   fi
   if [[ "$1" ]]; then
@@ -299,15 +301,15 @@ elif [[ $host == cyberstar || $distro =~ bsd$ ]]; then
 else
   alias updaterc="git --work-tree=$bashrc_dir --git-dir=$bashrc_dir/.git pull"
 fi
-if [[ $host == zen ]]; then
-  alias logtail='ssh home "~/bin/logtail.sh 100" | less +G'
-  function logrep {
-    ssh home "cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab && grep -r $*"
-  }
-elif [[ $host == main ]]; then
+if [[ $host == main ]]; then
   alias logtail='~/bin/logtail.sh 100 | less +G'
   function logrep {
     cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab && grep -r $@
+  }
+else
+  alias logtail='ssh home "~/bin/logtail.sh 100" | less +G'
+  function logrep {
+    ssh home "cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab && grep -r $*"
   }
 fi
 
@@ -627,7 +629,7 @@ trap 'timer_start' DEBUG
 
 ##### Bioinformatics #####
 
-if [[ $host == zen || $host == main ]]; then
+if [[ $host == yoga || $host == main ]]; then
   true #alias igv='java -Xmx4096M -jar ~/bin/igv.jar'
 elif [[ $host == nsto ]]; then
   alias igv='java -Xmx256M -jar ~/bin/igv.jar'
