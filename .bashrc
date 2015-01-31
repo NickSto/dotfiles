@@ -204,11 +204,11 @@ function geoip {
 # Get the ASN of a public IP address (or your IP, if none given)
 function asn {
   if [[ $# -gt 0 ]]; then
-    ip=$1
+    local ip=$1
   else
-    ip=$(curlip)
+    local ip=$(curlip)
   fi
-  asn=$(awk -F '\t' '$1 == "'$ip'" {print $2}' $data_dir/asn-cache.tsv | head -n 1)
+  local asn=$(awk -F '\t' '$1 == "'$ip'" {print $2}' $data_dir/asn-cache.tsv | head -n 1)
   if [[ ! $asn ]]; then
     asn=$(curl -s http://ipinfo.io/$ip/org | grep -Eo '^AS[0-9]+')
   fi
@@ -276,9 +276,9 @@ alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
 function rsynchome {
   # If we can find the host "main", then we're on the same LAN (we're at home).
   if [[ $(dig +short main) ]]; then
-    dest='local'
+    local dest='local'
   else
-    dest='home'
+    local dest='home'
   fi
   if [[ -d $HOME/aa ]] && [[ -d $HOME/annex ]] && [[ -d $HOME/code ]]; then
     rsynca $HOME/aa/ $dest:/home/$USER/aa/ \
@@ -355,7 +355,7 @@ fi
 ##### Functions #####
 
 function bak {
-  path="$1"
+  local path="$1"
   if [[ ! "$path" ]]; then
     return 1
   fi
@@ -367,6 +367,7 @@ function pathadd {
   if [[ ! -d "$1" ]]; then return; fi
   # handle empty PATH
   if [[ ! "$PATH" ]]; then export PATH="$1"; return; fi
+  local path=''
   for path in $(echo "$PATH" | tr ':' '\n'); do
     if [[ "$path" == "$1" ]]; then return; fi
   done
@@ -374,7 +375,8 @@ function pathadd {
 }
 # subtract from path
 function pathsub {
-  newpath=""
+  local newpath=""
+  local path=''
   for path in $(echo "$PATH" | tr ':' '\n'); do
     if [[ "$path" != "$1" ]]; then
       # handle empty path
@@ -470,9 +472,9 @@ function pg {
 }
 function parents {
   if [[ "$1" ]]; then
-    pid="$1"
+    local pid="$1"
   else
-    pid=$$
+    local pid=$$
   fi
   while [[ "$pid" -gt 0 ]]; do
     ps -o comm="" -p $pid
@@ -493,22 +495,22 @@ function vil {
 }
 function getip {
   # IPv6 too! (Only the non-MAC address-based one.)
-  last=""
+  local last=""
   ifconfig | while read line; do
     if [ ! "$last" ]; then
-      dev=$(echo "$line" | sed -r 's/^(\S+)\s+.*$/\1/g')
+      local dev=$(echo "$line" | sed -r 's/^(\S+)\s+.*$/\1/g')
     fi
     if [[ "$line" =~ 'inet addr' ]]; then
       echo -ne "$dev:\t"
       echo "$line" | sed -r 's/^\s*inet addr:\s*([0-9.]+)\s+.*$/\1/g'
     fi
     if [[ "$line" =~ 'inet6 addr' && "$line" =~ Scope:Global$ ]]; then
-      ip=$(echo "$line" | sed -r 's/^\s*inet6 addr:\s*([0-9a-f:]+)[^0-9a-f:].*$/\1/g')
+      local ip=$(echo "$line" | sed -r 's/^\s*inet6 addr:\s*([0-9a-f:]+)[^0-9a-f:].*$/\1/g')
       if [[ ! "$ip" =~ ff:fe.*:[^:]+$ ]]; then
         echo -e "$dev:\t$ip"
       fi
     fi
-    last=$line
+    local last=$line
   done
 }
 
@@ -547,7 +549,7 @@ function sumcolumns {
 }
 function showdups {
   cat "$1" | while read line; do
-    notfirst=''
+    local notfirst=''
     grep -n "^$line$" "$1" | while read line; do
       if [ "$notfirst" ]; then echo "$line"; else notfirst=1; fi
     done
@@ -558,8 +560,10 @@ function repeat {
     echo "USAGE: repeat [string] [number of repeats]" 1>&2
     return
   fi
-  i=0; while [ $i -lt $2 ]; do
-    echo -n "$1"; i=$((i+1))
+  local i=0
+  while [ $i -lt $2 ]; do
+    echo -n "$1"
+    i=$((i+1))
   done
 }
 function oneline {
@@ -652,8 +656,8 @@ function time_format {
   local seconds=$1
   local minutes=$(($seconds/60))
   local hours=$(($minutes/60))
-  local seconds=$(($seconds - $minutes*60))
-  local minutes=$(($minutes - $hours*60))
+  seconds=$(($seconds - $minutes*60))
+  minutes=$(($minutes - $hours*60))
   if [[ $minutes -lt 1 ]]; then
     echo $seconds's'
   elif [[ $hours -lt 1 ]]; then
@@ -774,7 +778,6 @@ pathadd /usr/local/sbin
 pathadd $HOME/.local/bin
 
 # a more "sophisticated" method for determining if we're in a remote shell
-remote=""
 # check if the system supports the right ps parameters and if parents is able to
 # climb the entire process hierarchy
 if ps -o comm="" -p 1 >/dev/null 2>/dev/null && [[ $(parents | tail -n 1) == "init" ]]; then
