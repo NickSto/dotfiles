@@ -258,8 +258,20 @@ function cds {
 }
 alias noheader='grep -v "^#"'
 alias swapkeys="loadkeys-safe.sh && sudo loadkeys $HOME/aa/misc/computerthings/keymap-loadkeys.txt"
-#alias kerb='kinit -l 90d nick@BX.PSU.EDU'
-alias kerb='kinit -l 90d nick@GALAXYPROJECT.ORG'
+function kerb {
+  local bx_realm="nick@BX.PSU.EDU"
+  local galaxy_realm="nick@GALAXYPROJECT.ORG"
+  local default_realm="$galaxy"
+  local realm="$1"
+  if [[ $# -le 0 ]]; then
+    realm="$default"
+  elif [[ $1 == bru ]]; then
+    realm="$bx_realm"
+  elif [[ $1 == sco ]]; then
+    realm="$galaxy_realm"
+  fi
+  kinit -l 90d "$realm"
+}
 alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
 function rsynchome {
   # If we can find the host "main", then we're on the same LAN (we're at home).
@@ -275,6 +287,13 @@ function rsynchome {
   else
     echo "Wrong set of directories exists. Is this the right machine?" >&2
   fi
+}
+function vnc {
+  local delay=8
+  (sleep $delay && vinagre localhost:0) &
+  echo "starting ssh tunnel and vnc server, then client in $delay seconds.."
+  echo "[Ctrl+C to exit]"
+  ssh -t -L 5900:localhost:5900 home 'x11vnc -localhost -display :0 -ncache 10 -nopw' >/dev/null
 }
 
 alias minecraft="cd ~/src/minecraft && java -Xmx400M -Xincgc -jar $HOME/src/minecraft_server.jar nogui"
@@ -301,6 +320,12 @@ if [[ $host == scofield ]]; then
   alias srunc='srun -C new'
   aklog bx.psu.edu
 fi
+# Search all encodings for strings, raise minimum length to 5 characters
+function stringsa {
+    strings -n 5 -e s $1
+    strings -n 5 -e b $1
+    strings -n 5 -e l $1
+}
 alias temp="sensors | grep -A 3 '^coretemp-isa-0000' | tail -n 1 | awk '{print \$3}' | sed -E -e 's/^\+//' -e 's/\.[0-9]+//'"
 alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user $USER --config proxpn.ovpn && cd -'
 alias mountv="sudo mount -t vboxsf -o uid=1000,gid=1000,rw shared $HOME/shared"
