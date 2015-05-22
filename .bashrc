@@ -631,18 +631,40 @@ function wtf {
     echo "possible error: the file is only $(du -sb "$filename")" >&2
   fi
 }
-# For PS1 prompt (thanks to https://stackoverflow.com/a/1862762/726773)
-function prompt_color {
+# For PS1 prompt
+# color red on last command failure
+function prompt_exit_color {
   if [[ $? == 0 ]]; then
     if [[ "$remote" ]]; then
-      pcol='0;30m' # black
+      pecol='0;30m' # black
     else
-      pcol='0;36m' # teal
+      pecol='0;36m' # teal
     fi
   else # if error
-    pcol='0;31m' # red
+    pecol='0;31m' # red
   fi
 }
+function prompt_git_color {
+  if git status >/dev/null 2>/dev/null; then
+    if git status | grep -E '^\s+modified:\s' >/dev/null 2>/dev/null; then
+      pgcol='0;33m'
+      return
+    fi
+  fi
+  pgcol='0;32m'
+}
+# prompt alert if git repo isn't on master branch
+function branch {
+  if git branch >/dev/null 2>/dev/null; then
+    local branch=$(git branch | sed -En 's/^\* (.+)$/\1/gp')
+    if [[ $branch != master ]]; then
+      ps1_branch="$branch "
+      return
+    fi
+  fi
+  ps1_branch=""
+}
+# timer from https://stackoverflow.com/a/1862762/726773
 timer_thres=10
 function timer_start {
   timer=${timer:-$SECONDS}
@@ -671,17 +693,6 @@ function time_format {
   fi
 }
 trap 'timer_start' DEBUG
-# Prompt alert if git repo isn't on master branch.
-function branch {
-  if git branch >/dev/null 2>/dev/null; then
-    local branch=$(git branch | sed -En 's/^\* (.+)$/\1/gp')
-    if [[ $branch != master ]]; then
-      ps1_branch="$branch "
-      return
-    fi
-  fi
-  ps1_branch=""
-}
 
 
 ##### Bioinformatics #####
@@ -810,12 +821,12 @@ else
   fi
 fi
 
-PROMPT_COMMAND='prompt_color;branch;timer_stop'
+PROMPT_COMMAND='prompt_exit_color;prompt_git_color;branch;timer_stop'
 ROOTPS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
 
 # if it's a remote shell, change $PS1 prompt format and enter a screen
 if [[ $remote ]]; then
-  export PS1='${ps1_timer_show}\e[${pcol}[\d]\e[m \u@\h: \w\n$ps1_branch${\$ '
+  export PS1='${ps1_timer_show}\e[${pecol}[\d]\e[m \u@\h: \w\n$ps1_branch${\$ '
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   # also check that stdout is attached to a real terminal with -t 1
   if [[ ! "$STY" && -t 1 ]]; then
@@ -828,5 +839,5 @@ if [[ $remote ]]; then
     fi
   fi
 else
-  export PS1='${ps1_timer_show}\e[${pcol}[\d]\e[m \e[0;32m\u@\h: \w\e[m\n$ps1_branch\$ '
+  export PS1='$ps1_timer_show\e[$pecol[\d]\e[m \e[0;32m\u@\h:\e[m \e[$pgcol\w\e[m\n$ps1_branch\$ '
 fi
