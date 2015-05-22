@@ -649,9 +649,9 @@ function timer_start {
 }
 function timer_stop {
   local seconds=$(($SECONDS - $timer))
-  timer_show=''
+  ps1_timer_show=''
   if [[ $seconds -ge $timer_thres ]]; then
-    timer_show="$(time_format $seconds) "
+    ps1_timer_show="$(time_format $seconds) "
   fi
   unset timer
 }
@@ -671,6 +671,17 @@ function time_format {
   fi
 }
 trap 'timer_start' DEBUG
+# Prompt alert if git repo isn't on master branch.
+function branch {
+  if git branch >/dev/null 2>/dev/null; then
+    local branch=$(git branch | sed -En 's/^\* (.+)$/\1/gp')
+    if [[ $branch != master ]]; then
+      ps1_branch="$branch "
+      return
+    fi
+  fi
+  ps1_branch=""
+}
 
 
 ##### Bioinformatics #####
@@ -799,12 +810,12 @@ else
   fi
 fi
 
-PROMPT_COMMAND='prompt_color;timer_stop'
+PROMPT_COMMAND='prompt_color;branch;timer_stop'
 ROOTPS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
 
 # if it's a remote shell, change $PS1 prompt format and enter a screen
 if [[ $remote ]]; then
-  export PS1='${timer_show}\e[${pcol}[\d]\e[m \u@\h: \w\n\$ '
+  export PS1='${ps1_timer_show}\e[${pcol}[\d]\e[m \u@\h: \w\n$ps1_branch${\$ '
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   # also check that stdout is attached to a real terminal with -t 1
   if [[ ! "$STY" && -t 1 ]]; then
@@ -817,5 +828,5 @@ if [[ $remote ]]; then
     fi
   fi
 else
-  export PS1='${timer_show}\e[${pcol}[\d]\e[m \e[0;32m\u@\h: \w\e[m\n\$ '
+  export PS1='${ps1_timer_show}\e[${pcol}[\d]\e[m \e[0;32m\u@\h: \w\e[m\n$ps1_branch\$ '
 fi
