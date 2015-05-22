@@ -12,6 +12,10 @@ host=$(hostname -s 2>/dev/null || hostname)
 
 ##### Determine distro #####
 
+# Avoid unexpectd $CDPATH effects
+# https://bosker.wordpress.com/2012/02/12/bash-scripters-beware-of-the-cdpath/
+unset CDPATH
+
 # change effective home directory on scofield
 if [[ $host == scofield ]]; then
   HOME=/galaxy/home/nick
@@ -771,6 +775,9 @@ else
 fi
 if [[ $host == lion ]]; then
   pathadd /opt/local/bin
+fi
+if [[ $host == zen ]] || [[ $host == yoga ]]; then
+  pathadd $HOME/bx/bin
 fi
 pathadd /sbin
 pathadd /usr/sbin
