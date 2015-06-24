@@ -411,6 +411,7 @@ function gitswitch {
     echo "Switched to Qwerty0"
   fi
 }
+alias gitlast='git log --oneline | head -n 1'
 # no more "cd ../../../.." (from http://serverfault.com/a/28649)
 function up {
     local d="";
