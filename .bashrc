@@ -827,7 +827,7 @@ ROOTPS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
 
 # if it's a remote shell, change $PS1 prompt format and enter a screen
 if [[ $remote ]]; then
-  export PS1='${ps1_timer_show}\e[${pecol}[\d]\e[m \u@\h: \w\n$ps1_branch${\$ '
+  export PS1='${ps1_timer_show}\e[${pecol}[\d]\e[m \u@\h: \w\n$ps1_branch\$ '
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   # also check that stdout is attached to a real terminal with -t 1
   if [[ ! "$STY" && -t 1 ]]; then
