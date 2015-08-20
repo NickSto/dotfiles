@@ -18,7 +18,7 @@ unset CDPATH
 
 # change effective home directory on scofield
 if [[ $host == scofield ]]; then
-  HOME=/galaxy/home/nick
+  export HOME=/galaxy/home/nick
   cd $HOME
 fi
 
@@ -320,9 +320,10 @@ elif [[ $distro == ubuntu || $distro == debian ]]; then
   alias errlog='less +G /var/log/syslog'
 fi
 if [[ $host == scofield ]]; then
+  aklog bx.psu.edu
   alias srunb='srun -C new --pty bash'
   alias srunc='srun -C new'
-  aklog bx.psu.edu
+  alias sinfoc='sinfo -p general -o "%11T %.5D %.15C %.15N"'
 fi
 # Search all encodings for strings, raise minimum length to 5 characters
 function stringsa {
@@ -331,7 +332,7 @@ function stringsa {
     strings -n 5 -e l $1
 }
 alias temp="sensors | grep -A 3 '^coretemp-isa-0000' | tail -n 1 | awk '{print \$3}' | sed -E -e 's/^\+//' -e 's/\.[0-9]+//'"
-alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user $USER --config proxpn.ovpn && cd -'
+alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user $USER --config proxpn.ovpn; cd -'
 alias mountv="sudo mount -t vboxsf -o uid=1000,gid=1000,rw shared $HOME/shared"
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
 alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
@@ -411,7 +412,7 @@ function gitswitch {
     echo "Switched to Qwerty0"
   fi
 }
-alias gitlast='git log --oneline | head -n 1'
+alias gitlast='git log --oneline -n 1'
 # no more "cd ../../../.." (from http://serverfault.com/a/28649)
 function up {
     local d="";
@@ -830,7 +831,7 @@ if [[ $remote ]]; then
   export PS1='${ps1_timer_show}\e[${pecol}[\d]\e[m \u@\h: \w\n$ps1_branch\$ '
   # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
   # also check that stdout is attached to a real terminal with -t 1
-  if [[ ! "$STY" && -t 1 ]]; then
+  if [[ ! "$STY" && -t 1 ]] && [[ $TERM != noscreen ]]; then
     if [[ $host == ndojo || $host == nbs ]]; then
       true  # no screen there
     elif [[ $host == brubeck || $host == scofield ]]; then
