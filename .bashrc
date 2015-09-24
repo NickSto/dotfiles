@@ -775,6 +775,8 @@ function bamsummary {
     echo -e "< MAPQ 20 reads: $q20\t"$(pct $q20)"%"
     local q30=$(echo $total-$(samtools view -c -q 30 $bam) | bc)
     echo -e "< MAPQ 30 reads: $q30\t"$(pct $q30)"%"
+    local suppl=$(samtools view -c -f 2048 $bam)
+    echo -e "suppl alignmnts: $suppl\t"$(pct $suppl)"%"
     local ambiguous=$(samtools view $bam | awk -F '\t' '$5 == 0' | grep -c -E $'\t''XA:Z:')
     echo -e "ambiguous:\t $ambiguous\t"$(pct $ambiguous)"%"
   done 
