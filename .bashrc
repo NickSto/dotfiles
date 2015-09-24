@@ -17,7 +17,7 @@ host=$(hostname -s 2>/dev/null || hostname)
 unset CDPATH
 
 # change effective home directory on scofield
-if [[ $host == scofield ]]; then
+if [[ $host == scofield ]] || [[ $host == brubeck ]]; then
   export HOME=/galaxy/home/nick
   cd $HOME
 fi
