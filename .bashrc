@@ -707,7 +707,7 @@ else
   alias igv='java -jar ~/bin/igv.jar'
 fi
 alias seqlen="bioawk -c fastx '{ print \$name, length(\$seq) }'"
-alias rdp='java -Xmx1g -jar ~/bin/MultiClassifier.jar'
+# alias rdp='java -Xmx1g -jar ~/bin/MultiClassifier.jar'
 alias gatk="java -jar ~/bin/GenomeAnalysisTK.jar"
 #alias qsh='source $HOME/src/qiime_software/activate.sh'
 alias readsfa='grep -Ec "^>"'
@@ -717,6 +717,14 @@ if ! which readsfq >/dev/null 2>/dev/null; then
   }
 fi
 alias bcat="samtools view -h"
+function align {
+  read ref fastq1 fastq2 <<< $@
+  local base=$(echo $fastq1 | sed -E -e 's/\.gz$//' -e 's/\.fa(sta)?$//' -e 's/\.f(ast)?q$//' -e 's/_[12]$//')
+  bwa mem $ref $fastq1 $fastq2 > $base.sam
+  samtools view -Sbu $base.sam | samtools sort - $base
+  samtools index $base.bam
+  echo "Final alignment is in: $base.bam"
+}
 function gatc {
   if [[ $# -gt 0 ]]; then
     echo "$1" | sed -E 's/[^GATCNgatcn]//g';
@@ -733,15 +741,15 @@ function revcomp {
     echo "$1" | tr 'ATGCatgc' 'TACGtacg' | rev
   fi
 }
-function mothur_report {
-  local total=$(readsfa "$1.fasta")
-  local quality=$(readsfa "mothur-work/$1.trim.fasta")
-  local dedup=$(readsfa "mothur-work/$1.trim.unique.fasta")
-  echo -e "$total\t$quality\t$dedup"
-  quality=$(echo "100*$quality/$total" | bc)
-  dedup=$(echo "100*$dedup/$total" | bc)
-  echo -e "100%\t$quality%\t$dedup%"
-}
+# function mothur_report {
+#   local total=$(readsfa "$1.fasta")
+#   local quality=$(readsfa "mothur-work/$1.trim.fasta")
+#   local dedup=$(readsfa "mothur-work/$1.trim.unique.fasta")
+#   echo -e "$total\t$quality\t$dedup"
+#   quality=$(echo "100*$quality/$total" | bc)
+#   dedup=$(echo "100*$dedup/$total" | bc)
+#   echo -e "100%\t$quality%\t$dedup%"
+# }
 function dotplot {
   if [[ $# -lt 3 ]]; then
     echo "Usage: dotplot seq1.fa seq2.fa output.jpg" >&2 && return
@@ -779,7 +787,7 @@ function bamsummary {
     echo -e "suppl alignmnts: $suppl\t"$(pct $suppl)"%"
     local ambiguous=$(samtools view $bam | awk -F '\t' '$5 == 0' | grep -c -E $'\t''XA:Z:')
     echo -e "ambiguous:\t $ambiguous\t"$(pct $ambiguous)"%"
-  done 
+  done
 }
 
 
