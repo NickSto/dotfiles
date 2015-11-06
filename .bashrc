@@ -454,6 +454,13 @@ if which lynx >/dev/null 2>/dev/null; then
     echo "$output" | head -n $((end-2))
   }
 fi
+function uc {
+  if [[ $# -gt 0 ]]; then
+    echo "$@" | tr '[:lower:]' '[:upper:]'
+  else
+    tr '[:lower:]' '[:upper:]'
+  fi
+}
 if which lower.b >/dev/null 2>/dev/null; then
   function lc {
     if [[ $# -gt 0 ]]; then
@@ -471,10 +478,19 @@ else
     fi
   }
 fi
+function tc {
+  python -c "import titlecase, sys
+if len(sys.argv) > 1:
+  line = ' '.join(sys.argv[1:])
+  print titlecase.titlecase(line)
+else:
+  for line in sys.stdin:
+    sys.stdout.write(titlecase.titlecase(line))" $@
+}
 function pg {
-    if pgrep -f $@ >/dev/null; then
-        pgrep -f $@ | xargs ps -o user,pid,stat,rss,%mem,pcpu,args --sort -pcpu,-rss;
-    fi
+  if pgrep -f $@ >/dev/null; then
+    pgrep -f $@ | xargs ps -o user,pid,stat,rss,%mem,pcpu,args --sort -pcpu,-rss;
+  fi
 }
 function parents {
   if [[ "$1" ]]; then
@@ -598,40 +614,14 @@ function asciitobin {
   python -c "print bin(ord('$1'))[2:]"
 }
 function bintoascii {
+  if [[ $# != 1 ]] || [[ $1 == '-h' ]]; then
+    echo 'Usage: bintoascii 011011010111010101100101011100100111010001100101' >&2
+    return 1
+  fi
   for i in $(seq 0 8 ${#1}); do
     echo -n $(python -c "print chr($((2#${1:$i:8})))")
   done
   echo
-}
-function wtf {
-  local url="$1"
-  if ! echo "$url" | grep -qE '^http://traffic.libsyn.com/wtfpod/_?WTF_-_EPISODE_[0-9]+.*\.mp3$'; then
-    echo "URL doesn't look right: $url" >&2; return
-  fi
-  local num=$(echo "${url:47}" | sed -E 's/^_?([0-9]+).*$/\1/')
-  if echo "${url:47}" | grep -qE '^_?[0-9]+_\w.*\.mp3'; then
-    local rawname=$(echo "${url:47}" | sed -E 's/^_?[0-9]+_(.*)\.mp3$/\1/g' | sed -E 's/_/ /g')
-    local name=$(python -c 'import sys, titlecase; print titlecase.titlecase(sys.argv[1])' "$rawname")
-    local filename="WTF $num - $name.mp3"
-  else
-    if [[ $# -ge 2 ]]; then
-      local name=" - $2"
-    fi
-    local filename="WTF $num$name.mp3"
-  fi
-  if [[ -n $COOKIE ]]; then
-    local cookie="$COOKIE"
-  else:
-    local cookie="ketjivcs8avqonscekku2jij75"
-  fi
-  if curl -L -b "libsyn-paywall=$cookie" "$url" > "$filename"; then
-    echo "saved to $filename"
-  else
-    echo "error downloading" >&2
-  fi
-  if [[ $(du -sb "$filename") -lt 524288 ]]; then
-    echo "possible error: the file is only $(du -sb "$filename")" >&2
-  fi
 }
 # For PS1 prompt
 # color red on last command failure
@@ -789,6 +779,16 @@ function bamsummary {
     echo -e "ambiguous:\t $ambiguous\t"$(pct $ambiguous)"%"
   done
 }
+if [[ $host == yoga ]] || [[ $host == zen ]]; then
+  alias sfree='ssh bru sinfo -h -p general -t idle -o %n'
+  alias scpus="ssh bru 'sinfo -h -p general -t idle,alloc -o "'"'"%n %C"'"'"' | tr ' /' '\t\t' | cut -f 1,3"
+  alias squeue='ssh bru squeue'
+  alias squeuep="ssh bru 'squeue -o "'"'"%.7i %Q %.8u %.8T %.10M %14R %j"'"'"' | sort -g -k 2"
+else
+  alias sfree='sinfo -h -p general -t idle -o %n'
+  alias scpus="sinfo -h -p general -t idle,alloc -o '%n %C' | tr ' /' '\t\t' | cut -f 1,3"
+  alias squeuep='squeue -o "%.7i %Q %.8u %.8T %.10M %14R %j" | sort -g -k 2'
+fi
 
 
 ##### Other #####
