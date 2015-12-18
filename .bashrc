@@ -192,8 +192,8 @@ else
   alias lsld='ls -lFhAbd'
 fi
 alias sll='sl' # choo choo
-alias mv="mv -i"
-alias cp="cp -i"
+alias mv='mv -i'
+alias cp='cp -i'
 alias targ='tar -zxvpf'
 alias tarb='tar -jxvpf'
 alias pseudo='sudo'
@@ -205,18 +205,53 @@ alias curlip='curl -s icanhazip.com'
 function geoip {
   curl http://freegeoip.net/csv/$1
 }
-# Get the ASN of a public IP address (or your IP, if none given)
+# Get the ASN of a public IP address (or your IP, if none given).
 function asn {
+  local AsnCache=$data_dir/asn-ip-cache.tsv
+  local CacheTimeout=86400  # 1 day
   if [[ $# -gt 0 ]]; then
+    if [[ $1 == '-h' ]]; then
+      echo "Usage: \$ asn [ip]
+Default: Your current IP address (will make request to icanhazip.com).
+Uses cache $AsnCache when possible
+instead of making request to ipinfo.io." >&2
+      return 1
+    fi
     local ip=$1
   else
-    local ip=$(curlip)
+    local ip=$(curl -s icanhazip.com)
   fi
-  local asn=$(awk -F '\t' '$1 == "'$ip'" {print $2}' $data_dir/asn-cache.tsv | head -n 1)
-  if [[ ! $asn ]]; then
+  if ! [[ -f $AsnCache ]]; then
+    local cache_dir=$(dirname $AsnCache)
+    if [[ -d $cache_dir ]]; then
+      touch $AsnCache
+    else
+      echo "Error: ASN cache directory \"$cache_dir\" missing!" >&2
+      return 1
+    fi
+  fi
+  now=$(date +%s)
+  local asn=$(awk -F '\t' '$1 == "'$ip'" && '$now'-$3 <= '$CacheTimeout' {print $2}' $AsnCache | head -n 1)
+  if [[ $asn ]]; then
+    echo "Cache hit for ip \"$ip\"" >&2
+    # Report ASN to user.
+    echo $asn
+  else
+    echo "Cache miss for ip \"$ip\". Using ipinfo.io.." >&2
     asn=$(curl -s http://ipinfo.io/$ip/org | grep -Eo '^AS[0-9]+')
+    if [[ $asn ]]; then
+      # Remove stale entries from cache (if any).
+      mv -f $AsnCache $AsnCache.bak
+      awk -F '\t' $now'-$3 <= '$CacheTimeout $AsnCache.bak > $AsnCache
+      # Contribute back to the cache.
+      echo -e "$ip\t$asn\t$now" >> $AsnCache
+      # Report ASN to user.
+      echo $asn
+    else
+      echo "Error: Failure retrieving ASN for IP \"$ip\" from ipinfo.io!" >&2
+      return 1
+    fi
   fi
-  echo $asn
 }
 if which longurl.py >/dev/null 2>/dev/null; then
   alias longurl='longurl.py -fc'
@@ -261,7 +296,13 @@ function cds {
   fi
 }
 alias noheader='grep -v "^#"'
+# Swap caps lock and esc.
 alias swapkeys="loadkeys-safe.sh && sudo loadkeys $HOME/aa/misc/computerthings/keymap-loadkeys.txt"
+# If an .xmodmap is present, source it to alter the keys however it says. Disable with noremap=1.
+# This is possibly obsoleted by the loadkeys method above.
+if [[ -f ~/.xmodmap ]] && [[ -z $noremap ]]; then
+  xmodmap ~/.xmodmap
+fi
 function kerb {
   local bx_realm="nick@BX.PSU.EDU"
   local galaxy_realm="nick@GALAXYPROJECT.ORG"
@@ -327,12 +368,11 @@ if [[ $host == scofield ]]; then
 fi
 # Search all encodings for strings, raise minimum length to 5 characters
 function stringsa {
-    strings -n 5 -e s $1
-    strings -n 5 -e b $1
-    strings -n 5 -e l $1
+  strings -n 5 -e s $1
+  strings -n 5 -e b $1
+  strings -n 5 -e l $1
 }
 alias temp="sensors | grep -A 3 '^coretemp-isa-0000' | tail -n 1 | awk '{print \$3}' | sed -E -e 's/^\+//' -e 's/\.[0-9]+//'"
-alias proxpn='cd ~/src/proxpn_mac/config && sudo openvpn --user $USER --config proxpn.ovpn; cd -'
 alias mountv="sudo mount -t vboxsf -o uid=1000,gid=1000,rw shared $HOME/shared"
 alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
 alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
@@ -359,6 +399,56 @@ fi
 
 ##### Functions #####
 
+function silence {
+  local Silence="$data_dir/SILENCE"
+  if [[ $# -ge 1 ]] && [[ $1 == '-h' ]]; then
+    echo "Usage: \$ silence [-u]
+Toggles silence file $Silence
+Prompts before unsilencing (unless -u is given). Returns 0 when silenced, 2 when unsilenced, and 1
+on error." >&2
+    return 1
+  fi
+  if [[ $# == 1 ]] && [[ $1 == '-u' ]] && ! [[ -f "$Silence" ]]; then
+    echo "Error: -u given, but silence file doesn't exist. You're already unsilenced!" >&2
+    return 1
+  fi
+  if [[ -f "$Silence" ]]; then
+    if [[ $# -ge 1 ]] && [[ $1 == '-u' ]]; then
+      rm -f "$Silence"
+      echo "Unsilenced!"
+      return 2
+    else
+      local response
+      read -p "You're currently silenced! Type \"louden\" to unsilence! " response
+      if [[ $response == 'louden' ]]; then
+        rm -f "$Silence"
+        echo "Unsilenced!"
+        return 2
+      else
+        echo "Aborting!"
+        return 1
+      fi
+    fi
+  else
+    touch "$Silence"
+    echo "Silenced!"
+  fi
+}
+function proxpn {
+  local ConfigDir=~/aa/misc/computerthings/proxpn-config
+  if ! [[ -f $ConfigDir/proxpn.ovpn ]]; then
+    echo "Error: $ConfigDir/proxpn.ovpn missing!" >&2
+    return 1
+  fi
+  silence  # Quiet network traffic that could be identifying.
+  [[ $? != 0 ]] && return 1
+  cd $ConfigDir
+  [[ $? != 0 ]] && return 1
+  pwd
+  sudo openvpn --user $USER --config proxpn.ovpn
+  cd -
+  silence -u
+}
 function bak {
   local path="$1"
   if [[ ! "$path" ]]; then
@@ -415,15 +505,15 @@ function gitswitch {
 alias gitlast='git log --oneline -n 1'
 # no more "cd ../../../.." (from http://serverfault.com/a/28649)
 function up {
-    local d="";
-    for ((i=1 ; i <= $1 ; i++)); do
-        d=$d/..;
-    done;
-    d=$(echo $d | sed 's#^/##');
-    if [ -z "$d" ]; then
-        d=..;
-    fi;
-    cd $d
+  local d="";
+  for ((i=1 ; i <= $1 ; i++)); do
+    d=$d/..;
+  done;
+  d=$(echo $d | sed 's#^/##');
+  if [ -z "$d" ]; then
+    d=..;
+  fi;
+  cd $d
 }
 function vix {
   if [ -e $1 ]; then
@@ -446,14 +536,58 @@ function wcc {
     echo -n "$@" | wc -c
   fi
 }
-if which lynx >/dev/null 2>/dev/null; then
-  function lgoog {
-    local query=$(echo "$@" | sed -E 's/ /+/g')
-    local output=$(lynx -dump "http://www.google.com/search?q=$query")
-    local end=$(echo "$output" | grep -n '^References' | cut -f 1 -d ':')
-    echo "$output" | head -n $((end-2))
-  }
-fi
+function lgoog {
+  if ! which lynx >/dev/null 2>/dev/null; then
+    echo 'Error: lynx not installed!' >&2
+    return 1
+  fi
+  local query=$(echo "$@" | sed -E 's/ /+/g')
+  local output=$(lynx -dump "http://www.google.com/search?q=$query")
+  local end=$(echo "$output" | grep -n '^References' | cut -f 1 -d ':')
+  echo "$output" | head -n $((end-2))
+}
+function youtube {
+  # Process args.
+  if [[ $# == 0 ]] || [[ $1 == '-h' ]]; then
+    echo 'Usage: $ youtube url [title [quality]]' >&2
+    return 1
+  fi
+  local url="$1"
+  if ! echo "$url" | grep -qE '[/.]youtube\.com'; then
+    fail 'Error: This is intended only for youtube.com.' >&2
+    return 1
+  fi
+  local title='%(title)s'
+  if [[ $# -ge 2 ]]; then
+    title="$2"
+    if [[ $2 == '-F' ]]; then
+      youtube-dl "$url" -F
+      return
+    fi
+  fi
+  local quality=
+  if [[ $# -ge 3 ]]; then
+    case "$3" in
+      360) quality='-f 18';;
+      640) quality='-f 18';;
+      # 480) quality='-f 135+250';;  # 80k audio, 480p video (test first)
+      720) quality='-f 22';;
+      1280) quality='-f 22';;
+      *) quality="-f $3";;
+    esac
+  fi
+  # First define the format and check the resulting filename.
+  local format="$title [src %(uploader)s, %(uploader_id)s] [posted %(upload_date)s] [id %(id)s].%(ext)s"
+  local filename=$(youtube-dl --get-filename "$url" -o "$format" $quality)
+  local uploader_id=$(echo "$filename" | sed -E 's/^.*\[src [^,]+, ([^]]+)\] \[posted.*$/\1/')
+  # Only use both uploader and uploader_id if the id is a channel id like "UCZ5C1HBPMEcCA1YGQmqj6Iw"
+  if ! echo "$uploader_id" | grep -qE '^UC[a-zA-Z0-9-]{22}$'; then
+    echo "uploader_id $uploader_id looks like a username, not a channel id. Omitting display name.." >&2
+    format="$title [src %(uploader_id)s] [posted %(upload_date)s] [id %(id)s].%(ext)s"
+  fi
+  # Do the acutal downloading.
+  youtube-dl --no-mtime "$url" -o "$format" $quality
+}
 function uc {
   if [[ $# -gt 0 ]]; then
     echo "$@" | tr '[:lower:]' '[:upper:]'
@@ -535,39 +669,47 @@ function getip {
     local last=$line
   done
 }
-
-# What are the most common column widths?
+# What are the most common number of columns?
 function columns {
   echo " totals|columns"
   awkt '{print NF}' $1 | sort -g | uniq -c | sort -rg -k 1
 }
-# Get totals of a specified column
+# Get totals of a specified column.
 function sumcolumn {
-  if [ ! "$1" ] || [ ! "$2" ]; then
-    echo 'USAGE: $ sumcolumn 3 file.csv'
-    return
+  local Usage='Usage: $ sumcolumn 3 file.tsv [file2.tsv [file3.tsv [..]]]
+       $ cat file.tsv | sumcolumn 2'
+  if [[ $# -lt 1 ]] || [[ $1 == '-h' ]]; then
+    echo "$Usage" >&2
+    return 1
   fi
-  awk -F '\t' '{ tot+=$'"$1"' } END { print tot }' "$2"
+  local col=$1
+  shift
+  if ! echo $col | grep -qE '^[0-9]+$'; then
+    echo "Error: column \"$col\" not an integer." >&2
+    echo "$Usage" >&2
+    return 1
+  fi
+  awk -F '\t' '{tot += $'$col'} END {print tot}' "$@"
 }
-# Get totals of all columns in stdin or in all filename arguments
+# Get totals of all columns in stdin or in all filename arguments.
 function sumcolumns {
-  perl -we '
-  my @tot; my $first = 1;
-  while (<>) {
-    next if (m/[a-z]/i); # skip lines with non-numerics
-    my @fields = split("\t");
-    if ($first) {
-      $first = 0;
-      for my $field (@fields) {
-        push(@tot, $field)
-      }
-    } else {
-      for ($i = 0; $i < @tot; $i++) {
-        $tot[$i] += $fields[$i]
-      }
+  if [[ $# == 1 ]] && [[ $1 == '-h' ]]; then
+    echo 'Usage: $ sumcolumns file.tsv [file2.tsv [file3.tsv [..]]]
+       $ cat file.tsv | sumcolumns' >&2
+    return 1
+  fi
+  awk -F '\t' -v OFS='\t' '
+  {
+    for (i = 1; i <= NF; i++) {
+      totals[i] += $i
     }
   }
-  print join("\t", @tot)."\n"'
+  END {
+    for (i = 1; totals[i] != ""; i++) {
+      printf("%d\t", totals[i])
+    }
+    print ""
+  }' "$@"
 }
 function showdups {
   cat "$1" | while read line; do
@@ -594,6 +736,18 @@ function oneline {
   else
     echo "$@" | tr -d '\n'
   fi
+}
+function digitize {
+  if [[ $# -eq 1 ]] && [[ $1 == '-h' ]]; then
+    echo "Use this when \"digitizing\" things (taking photos). This will record the timestamp and a title
+you enter, then print it in a tab-delimited format to be appended to the record.
+The timestamp is recorded at the start, then you enter the title." >&2
+    return 1
+  fi
+  local now=$(date +%s)
+  local title
+  read -p "Timestamp recorded. Enter the title: " title
+  echo -e "$now\t$title"
 }
 function wifimac {
   iwconfig 2> /dev/null | sed -nE 's/^.*access point: ([a-zA-Z0-9:]+)\s*$/\1/pig'
@@ -622,6 +776,18 @@ function bintoascii {
     echo -n $(python -c "print chr($((2#${1:$i:8})))")
   done
   echo
+}
+function title {
+  if [[ $# == 1 ]] && [[ $1 == '-h' ]]; then
+    echo 'Usage: $ title [New terminal title]
+Default: "Terminal"' >&2
+    return 1
+  fi
+  if [[ $# == 0 ]]; then
+    echo -ne "\033]2;Terminal\007"
+  else
+    echo -ne "\033]2;$@\007"
+  fi
 }
 # For PS1 prompt
 # color red on last command failure
@@ -659,6 +825,7 @@ function branch {
 # timer from https://stackoverflow.com/a/1862762/726773
 timer_thres=10
 function timer_start {
+  # $SECONDS is a shell built-in: the total number of seconds it's been running.
   timer=${timer:-$SECONDS}
 }
 function timer_stop {
@@ -708,12 +875,32 @@ if ! which readsfq >/dev/null 2>/dev/null; then
 fi
 alias bcat="samtools view -h"
 function align {
+  if [[ $# -lt 3 ]]; then
+    echo 'Usage: $ align ref.fa reads_1.fq reads_2.fq' >&2
+    return 1
+  fi
+  local ref fastq1 fastq2
   read ref fastq1 fastq2 <<< $@
   local base=$(echo $fastq1 | sed -E -e 's/\.gz$//' -e 's/\.fa(sta)?$//' -e 's/\.f(ast)?q$//' -e 's/_[12]$//')
   bwa mem $ref $fastq1 $fastq2 > $base.sam
   samtools view -Sbu $base.sam | samtools sort - $base
   samtools index $base.bam
   echo "Final alignment is in: $base.bam"
+}
+# Print random DNA.
+function dna {
+  perl -we '
+    if (@ARGV) {
+      $n = $ARGV[0];
+    } else {
+      $n = 200;
+    }
+    @chars = qw/A G T C/;
+    for (1..$n) {
+      print $chars[int(rand(4))];
+    }
+    print "\n";
+  ' $1
 }
 function gatc {
   if [[ $# -gt 0 ]]; then
@@ -731,15 +918,6 @@ function revcomp {
     echo "$1" | tr 'ATGCatgc' 'TACGtacg' | rev
   fi
 }
-# function mothur_report {
-#   local total=$(readsfa "$1.fasta")
-#   local quality=$(readsfa "mothur-work/$1.trim.fasta")
-#   local dedup=$(readsfa "mothur-work/$1.trim.unique.fasta")
-#   echo -e "$total\t$quality\t$dedup"
-#   quality=$(echo "100*$quality/$total" | bc)
-#   dedup=$(echo "100*$dedup/$total" | bc)
-#   echo -e "100%\t$quality%\t$dedup%"
-# }
 function dotplot {
   if [[ $# -lt 3 ]]; then
     echo "Usage: dotplot seq1.fa seq2.fa output.jpg" >&2 && return
@@ -752,7 +930,7 @@ function dotplot {
   fi
   dotter "$1" "$2" -e "$3.tmp.pdf"
   convert -rotate 90 -density 400 -resize 50% "$3.tmp.pdf" "$3"
-  rm "$3.tmp.pdf"
+  rm -f "$3.tmp.pdf"
 }
 # Get some quality stats on a BAM using samtools
 function bamsummary {
@@ -779,6 +957,38 @@ function bamsummary {
     echo -e "ambiguous:\t $ambiguous\t"$(pct $ambiguous)"%"
   done
 }
+function citegrep {
+  KeyDefault="doi"
+  LibraryDefault="$HOME/bx/communication/anton-papers-db.bib"
+  if [[ $# -lt 1 ]] || [[ $1 == '-h' ]]; then
+    echo "Usage: citegrep Cai:2015kc [key [library.bib]]
+Search a bibtex reference library for an identifier like \"Wan:2015ih\" or \"Schirmer:2015cy\".
+Default key: $KeyDefault
+Default library: $LibraryDefault" >&2
+    return 1
+  fi
+  id="$1"
+  key="$KeyDefault"
+  library="$LibraryDefault"
+  if [[ $# -ge 2 ]]; then
+    key="$2"
+  fi
+  if [[ $# -ge 3 ]]; then
+    library="$3"
+  fi
+  # If the python script is available, just use that (it's much better and more accurate).
+  if which text-to-refs.py >/dev/null 2>/dev/null; then
+    text-to-refs.py -i "$id" -k "$key" -l "$library"
+    return
+  fi
+  line=$(grep -En "^@[^{]+\{$id\," "$library" | cut -d : -f 1 | head -n 1)
+  if ! [[ $line ]]; then
+    echo "Error: Citation \"$id\" not found." >&2
+    return 1
+  fi
+  tail -n +$line "$library" | sed -En 's/^'$key'\s*=\s*\{+(.+)\}+[^}]*$/\1/p' | sed -E -e 's/\}+\s*$//' -e 's/^\s*\{+//' | head -n 1
+}
+# Slurm commands
 if [[ $host == yoga ]] || [[ $host == zen ]]; then
   alias sfree='ssh bru sinfo -h -p general -t idle -o %n'
   alias scpus="ssh bru 'sinfo -h -p general -t idle,alloc -o "'"'"%n %C"'"'"' | tr ' /' '\t\t' | cut -f 1,3"
@@ -788,6 +998,55 @@ else
   alias sfree='sinfo -h -p general -t idle -o %n'
   alias scpus="sinfo -h -p general -t idle,alloc -o '%n %C' | tr ' /' '\t\t' | cut -f 1,3"
   alias squeuep='squeue -o "%.7i %Q %.8u %.8T %.10M %14R %j" | sort -g -k 2'
+  function snice {
+    local SlurmUser=nick
+    if [[ $# -lt 1 ]] || [[ $1 == '-h' ]]; then
+      echo "Usage: snice priority_diff [user]
+Lower the priorities of all your jobs by priority_diff
+Default user: $SlurmUser." >&2
+      return 1
+    fi
+    local prio_diff=$1
+    local user=$SlurmUser
+    if [[ $# -ge 2 ]]; then
+      local user=$2
+    fi
+    squeue -h -u $user -t PD -o '%.7i %Q' | while read jobid prio; do
+      local new_prio=$((prio - prio_diff))
+      scontrol update jobid=$jobid Priority=$new_prio
+    done
+  }
+  function sdefer {
+    local SlurmUser=nick
+    if [[ $# -lt 1 ]] || [[ $1 == '-h' ]]; then
+      echo "Usage: sdefer priority_num [user]
+Moves all your pending jobs down in priority so that the highest priority queued job is priority_num
+below the lowest priority running job.
+Basically, let others start priority_num jobs before starting any more of yours.
+Default user is $SlurmUser." >&2
+      return 1
+    fi
+    local prio_num=$1
+    local user=$SlurmUser
+    if [[ $# -ge 2 ]]; then
+      local user=$2
+    fi
+    # Choose lower of 1) lowest priority currently running job and 2) highest priority queued job.
+    local running_prio=$(squeue -h -t R -o %Q | sort -g | head -n 1)
+    local queued_prio=$(squeue -h -t PD -o %Q | sort -g | tail -n 1)
+    if [[ $running_prio -lt $queued_prio ]]; then
+      local lowest_prio=$running_prio
+    else
+      local lowest_prio=$queued_prio
+    fi
+    local highest_queued_prio=$(squeue -h -u $user -t PD -o %Q | head -n 1)
+    local prio_diff=$((highest_queued_prio - lowest_prio + prio_num))
+    echo "Highest priority in your queue:               $highest_queued_prio"
+    echo "min(lowest running, highest queued) priority: $lowest_prio"
+    echo "Difference:                                   $((highest_queued_prio - lowest_prio))"
+    echo "Lowering all your queued jobs by:             $prio_diff"
+    snice $prio_diff $user
+  }
 fi
 
 
@@ -833,6 +1092,7 @@ else
   fi
 fi
 
+# $PROMPT_COMMAND is a shell built-in which is executed just before $PS1 is displayed.
 PROMPT_COMMAND='prompt_exit_color;prompt_git_color;branch;timer_stop'
 ROOTPS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
 
