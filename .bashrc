@@ -206,7 +206,7 @@ function geoip {
   curl http://freegeoip.net/csv/$1
 }
 # Get the ASN of a public IP address (or your IP, if none given).
-function asn {
+function getasn {
   local AsnCache=$data_dir/asn-ip-cache.tsv
   local CacheTimeout=86400  # 1 day
   if [[ $# -gt 0 ]]; then
@@ -650,25 +650,52 @@ function vil {
   vi $(deref "$1")
 }
 function getip {
-  # IPv6 too! (Only the non-MAC address-based one.)
-  local last=""
-  ifconfig | while read line; do
-    if [ ! "$last" ]; then
-      local dev=$(echo "$line" | sed -r 's/^(\S+)\s+.*$/\1/g')
+  if [[ $# -gt 0 ]]; then
+    echo "Usage: \$ getip
+Parse the ifconfig command to get your interface names, IP addresses, and MAC addresses.
+Prints one line per interface, tab-delimited:
+interface-name    MAC-address    IPv4-address    IPv6-address
+Does not work on OS X (totally different ifconfig output)." >&2
+    return 1
+  fi
+  local last=
+  while read line; do
+    # Are we at the start of a section? (Relies on there being blank lines between sections.)
+    if ! [[ $last ]]; then
+      # Print the data from the last section, if there was one.
+      if [[ $iface ]] && ([[ $ipv4 ]] || [[ $ipv6 ]]); then
+        echo -e "$iface\t$mac\t$ipv4\t$ipv6"
+      fi
+      # Get the interface name.
+      local iface=$(echo "$line" | grep -Eo '^\S+')
     fi
-    if [[ "$line" =~ 'inet addr' ]]; then
-      echo -ne "$dev:\t"
-      echo "$line" | sed -r 's/^\s*inet addr:\s*([0-9.]+)\s+.*$/\1/g'
+    # Get the MAC address.
+    local mac_field=$(echo "$line" | sed -En 's/^.*\sHWaddr:?\s*([0-9A-Fa-f:]{17}).*$/\1/p')
+    if [[ $mac_field ]]; then
+      local mac=$mac_field
     fi
-    if [[ "$line" =~ 'inet6 addr' && "$line" =~ Scope:Global$ ]]; then
-      local ip=$(echo "$line" | sed -r 's/^\s*inet6 addr:\s*([0-9a-f:]+)[^0-9a-f:].*$/\1/g')
-      if [[ ! "$ip" =~ ff:fe.*:[^:]+$ ]]; then
-        echo -e "$dev:\t$ip"
+    # Get the IPv4 address.
+    local ipv4_field=$(echo "$line" | sed -En 's/^\s*inet addr:?\s*([0-9.]{7,15})\s+.*$/\1/p')
+    if [[ $ipv4_field ]]; then
+      local ipv4=$ipv4_field
+    fi
+    # Get the IPv6 address (if any).
+    local ipv6_field=$(echo "$line" | sed -En 's/^\s*inet6 addr:\s*([0-9A-Fa-f:]+)[^0-9A-Fa-f:].*Scope:Global.*$/\1/p')
+    if [[ $ipv6_field ]]; then
+      # Check if this is the one that contains the MAC address:
+      # https://en.wikipedia.org/wiki/IPv6_address#Modified_EUI-64
+      local mac_normalized=$(echo "$mac" | tr -d : | tr '[:upper:]' '[:lower:]')
+      local eui64_normalized=${mac_normalized:0:6}fffe${mac_normalized:6:12}
+      local ipv6_normalized=$(echo "$ipv6_field" | tr -d : | tr '[:upper:]' '[:lower:]')
+      if [[ $ipv6_normalized != $eui64_normalized ]]; then
+        local ipv6=$ipv6_field
       fi
     fi
-    local last=$line
-  done
+    last="$line"
+  done < <(ifconfig)
+  echo -e "$iface\t$mac\t$ipv4\t$ipv6"
 }
+alias getmac='getip'
 # What are the most common number of columns?
 function columns {
   echo " totals|columns"
