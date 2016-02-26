@@ -696,6 +696,46 @@ Does not work on OS X (totally different ifconfig output)." >&2
   echo -e "$iface\t$mac\t$ipv4\t$ipv6"
 }
 alias getmac='getip'
+# Print a random, valid MAC address.
+function randmac() {
+  python -c "
+import random
+octets = []
+octet = random.randint(0, 63)*4 + 2
+octets.append('{:02x}'.format(octet))
+for i in range(5):
+  octet = random.randint(0, 255)
+  octets.append('{:02x}'.format(octet))
+print ':'.join(octets)"
+}
+function spoofmac() {
+  local Usage="Usage: \$ spoofmac [mac]
+Set your wifi MAC address to the given one, or a random one otherwise."
+  if [[ $# -gt 0 ]]; then
+    if [[ $1 == '-h' ]]; then
+      echo "$Usage" >&2
+      return 1
+    elif echo $1 | grep -qE '[0-9A-Fa-f:]{17}'; then
+      local mac=$1
+    else
+      echo "Error: Invalid MAC provided: \"$1\"." >&2
+      echo "$Usage" >&2
+      return 1
+    fi
+  else
+    local mac=$(randmac)
+  fi
+  local wifi_iface=$(getip | grep -Eo '^wl\S+' | head -n 1)
+  if ! [[ $wifi_iface ]]; then
+    echo "Error: Cannot find your wifi interface name. Maybe it's off right now?" >&2
+    return 1
+  fi
+  echo "Remember your current MAC address: "$(getip | awk '$1 == "'$wifi_iface'" {print $2}')
+  echo "Setting your MAC to $mac. You'll probably have to toggle your wifi after this."
+  sudo ip link set dev $wifi_iface down
+  sudo ip link set dev $wifi_iface address $mac
+  sudo ip link set dev $wifi_iface up
+}
 # What are the most common number of columns?
 function columns {
   echo " totals|columns"
