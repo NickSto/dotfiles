@@ -393,12 +393,14 @@ function proxpn {
     return 1
   fi
   silence  # Quiet network traffic that could be identifying.
+  sudo sysctl -w net.ipv6.conf.wlan0.disable_ipv6=1  # Avoid IPv6 leaks
   [[ $? != 0 ]] && return 1
   cd $ConfigDir
   [[ $? != 0 ]] && return 1
   pwd
   sudo openvpn --user $USER --config proxpn.ovpn
   cd -
+  sudo sysctl -w net.ipv6.conf.wlan0.disable_ipv6=0
   silence -u
 }
 function bak {
@@ -506,7 +508,7 @@ function youtube {
   fi
   local url="$1"
   if ! echo "$url" | grep -qE '[/.]youtube\.com'; then
-    fail 'Error: This is intended only for youtube.com.' >&2
+    echo "Error: Invalid url or domain is not youtube.com (in url \"$url\")." >&2
     return 1
   fi
   local title='%(title)s'
@@ -1119,9 +1121,9 @@ if [[ $remote ]]; then
   if [[ ! "$STY" && -t 1 ]] && [[ $TERM != noscreen ]]; then
     if [[ $host == ndojo || $host == nbs ]]; then
       true  # no screen there
-    elif [[ $host == brubeck || $host == scofield ]]; then
+    elif [[ $host == brubeck || $host == scofield ]] && [[ -x ~/code/pagscr-me.sh ]]; then
       exec ~/code/pagscr-me.sh -RR -S auto
-    else
+    elif which screen >/dev/null 2>/dev/null; then
       exec screen -RR -S auto
     fi
   fi
