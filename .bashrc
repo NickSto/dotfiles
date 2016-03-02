@@ -205,54 +205,6 @@ alias curlip='curl -s icanhazip.com'
 function geoip {
   curl http://freegeoip.net/csv/$1
 }
-# Get the ASN of a public IP address (or your IP, if none given).
-function getasn {
-  local AsnCache=$data_dir/asn-ip-cache.tsv
-  local CacheTimeout=86400  # 1 day
-  if [[ $# -gt 0 ]]; then
-    if [[ $1 == '-h' ]]; then
-      echo "Usage: \$ asn [ip]
-Default: Your current IP address (will make request to icanhazip.com).
-Uses cache $AsnCache when possible
-instead of making request to ipinfo.io." >&2
-      return 1
-    fi
-    local ip=$1
-  else
-    local ip=$(curl -s icanhazip.com)
-  fi
-  if ! [[ -f $AsnCache ]]; then
-    local cache_dir=$(dirname $AsnCache)
-    if [[ -d $cache_dir ]]; then
-      touch $AsnCache
-    else
-      echo "Error: ASN cache directory \"$cache_dir\" missing!" >&2
-      return 1
-    fi
-  fi
-  now=$(date +%s)
-  local asn=$(awk -F '\t' '$1 == "'$ip'" && '$now'-$3 <= '$CacheTimeout' {print $2}' $AsnCache | head -n 1)
-  if [[ $asn ]]; then
-    echo "Cache hit for ip \"$ip\"" >&2
-    # Report ASN to user.
-    echo $asn
-  else
-    echo "Cache miss for ip \"$ip\". Using ipinfo.io.." >&2
-    asn=$(curl -s http://ipinfo.io/$ip/org | grep -Eo '^AS[0-9]+')
-    if [[ $asn ]]; then
-      # Remove stale entries from cache (if any).
-      mv -f $AsnCache $AsnCache.bak
-      awk -F '\t' $now'-$3 <= '$CacheTimeout $AsnCache.bak > $AsnCache
-      # Contribute back to the cache.
-      echo -e "$ip\t$asn\t$now" >> $AsnCache
-      # Report ASN to user.
-      echo $asn
-    else
-      echo "Error: Failure retrieving ASN for IP \"$ip\" from ipinfo.io!" >&2
-      return 1
-    fi
-  fi
-}
 if which longurl.py >/dev/null 2>/dev/null; then
   alias longurl='longurl.py -fc'
 else
