@@ -610,42 +610,38 @@ interface-name    MAC-address    IPv4-address    IPv6-address
 Does not work on OS X (totally different ifconfig output)." >&2
     return 1
   fi
-  local last=
-  while read line; do
-    # Are we at the start of a section? (Relies on there being blank lines between sections.)
-    if ! [[ $last ]]; then
-      # Print the data from the last section, if there was one.
-      if [[ $iface ]] && ([[ $ipv4 ]] || [[ $ipv6 ]]); then
-        echo -e "$iface\t$mac\t$ipv4\t$ipv6"
-      fi
-      # Get the interface name.
-      local iface=$(echo "$line" | grep -Eo '^\S+')
-    fi
-    # Get the MAC address.
-    local mac_field=$(echo "$line" | sed -En 's/^.*\sHWaddr:?\s*([0-9A-Fa-f:]{17}).*$/\1/p')
-    if [[ $mac_field ]]; then
-      local mac=$mac_field
-    fi
-    # Get the IPv4 address.
-    local ipv4_field=$(echo "$line" | sed -En 's/^\s*inet addr:?\s*([0-9.]{7,15})\s+.*$/\1/p')
-    if [[ $ipv4_field ]]; then
-      local ipv4=$ipv4_field
-    fi
-    # Get the IPv6 address (if any).
-    local ipv6_field=$(echo "$line" | sed -En 's/^\s*inet6 addr:\s*([0-9A-Fa-f:]+)[^0-9A-Fa-f:].*Scope:Global.*$/\1/p')
-    if [[ $ipv6_field ]]; then
-      # Check if this is the one that contains the MAC address:
-      # https://en.wikipedia.org/wiki/IPv6_address#Modified_EUI-64
-      local mac_normalized=$(echo "$mac" | tr -d : | tr '[:upper:]' '[:lower:]')
-      local eui64_normalized=${mac_normalized:0:6}fffe${mac_normalized:6:12}
-      local ipv6_normalized=$(echo "$ipv6_field" | tr -d : | tr '[:upper:]' '[:lower:]')
-      if [[ $ipv6_normalized != $eui64_normalized ]]; then
-        local ipv6=$ipv6_field
-      fi
-    fi
-    last="$line"
-  done < <(ifconfig)
-  echo -e "$iface\t$mac\t$ipv4\t$ipv6"
+  ip addr | awk -v OFS='\t' '
+# Get the interface name.
+$1 ~ /^[0-9]:$/ && $2 ~ /:$/ {
+  # If we'\''re at the interface name line, we either just started or just finished the previous
+  # interface. If so, print the previous one.
+  if (iface && (ipv4 || ipv6)) {
+    print iface, mac, ipv4, ipv6
+  }
+  split($2, fields, ":")
+  iface=fields[1]
+}
+# Get the MAC address.
+$1 == "link/ether" {
+  mac = $2
+}
+# Get the IPv4 address.
+$1 == "inet" && $5 == "scope" && $6 == "global" {
+  split($2, fields, "/")
+  ipv4=fields[1]
+}
+# Get the IPv6 address.
+# "temporary" IPv6 addresses are the ones which aren'\''t derived from the MAC address:
+# https://en.wikipedia.org/wiki/IPv6_address#Modified_EUI-64
+$1 == "inet6" && $3 == "scope" && $4 == "global" && $5 == "temporary" {
+  split($2, fields, "/")
+  # Avoid private addresses: https://serverfault.com/questions/546606/what-are-the-ipv6-public-and-private-and-reserved-ranges/546619#546619
+  if (substr(fields[1], 1, 2) != "fd") {
+    ipv6=fields[1]
+  }
+}
+# Print the last interface.
+END {print iface, mac, ipv4, ipv6}'
 }
 alias getmac='getip'
 # Print a random, valid MAC address.
@@ -775,7 +771,7 @@ function wifissid {
   iwconfig 2> /dev/null | sed -nE 's/^.*SSID:"(.*)"\s*$/\1/pig'
 }
 function wifiip {
-  getip | sed -nE 's/^wlan0:\s*([0-9:.]+)$/\1/pig'
+  getip | awk 'substr($1, 1, 2) == "wl" {print $3}'
 }
 function inttobin {
   echo "obase=2;$1" | bc
