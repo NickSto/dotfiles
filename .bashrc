@@ -781,6 +781,12 @@ function inttobin {
 function bintoint {
   echo "ibase=2;obase=1010;$1" | bc
 }
+function inttohex {
+  echo "obase=16;$1" | bc
+}
+function hextoint {
+  echo "ibase=16;obase=A;$1" | bc
+}
 function asciitobin {
   python -c "print bin(ord('$1'))[2:]"
 }
