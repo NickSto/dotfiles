@@ -651,7 +651,7 @@ function randmac() {
   python -c "
 import random
 octets = []
-octet = random.randint(0, 63)*4 + 2
+octet = random.randint(0, 63)*4
 octets.append('{:02x}'.format(octet))
 for i in range(5):
   octet = random.randint(0, 255)
