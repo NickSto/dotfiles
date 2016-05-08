@@ -191,17 +191,21 @@ else
   alias lsl='ls -lFhAb'
   alias lsld='ls -lFhAbd'
 fi
-alias sll='sl' # choo choo
+alias sll=sl # choo choo
 alias mv='mv -i'
 alias cp='cp -i'
 alias targ='tar -zxvpf'
 alias tarb='tar -jxvpf'
-alias pseudo='sudo'
+alias pseudo=sudo
 alias vib="vim $bashrc_dir/.bashrc"
 alias awkt="awk -F '\t' -v OFS='\t'"
 
 alias pingg='ping -c 1 google.com'
 alias curlip='curl -s icanhazip.com'
+function cpu {
+  ps aux | awk 'NR > 1 {cpu+=$3; mem+=$4} END {printf("%0.2f\t%0.2f\n", cpu/100, mem/100)}'
+}
+alias mem=cpu
 function geoip {
   curl http://freegeoip.net/csv/$1
 }
@@ -213,7 +217,7 @@ else
   }
 fi
 if which trash-put >/dev/null 2>/dev/null; then
-  alias trash='trash-put'
+  alias trash=trash-put
 else
   function trash {
     if [[ ! -d $HOME/.trash ]]; then
@@ -535,7 +539,7 @@ function youtube {
   local filename=$(youtube-dl --get-filename "$url" -o "$format" $quality)
   local uploader_id=$(echo "$filename" | sed -E 's/^.*\[src [^,]+, ([^]]+)\] \[posted.*$/\1/')
   # Only use both uploader and uploader_id if the id is a channel id like "UCZ5C1HBPMEcCA1YGQmqj6Iw"
-  if ! echo "$uploader_id" | grep -qE '^UC[a-zA-Z0-9-]{22}$'; then
+  if ! echo "$uploader_id" | grep -qE '^UC[a-zA-Z0-9_-]{22}$'; then
     echo "uploader_id $uploader_id looks like a username, not a channel id. Omitting display name.." >&2
     format="$title [src %(uploader_id)s] [posted %(upload_date)s] [id %(id)s].%(ext)s"
   fi
@@ -637,7 +641,8 @@ $1 == "inet" && $5 == "scope" && $6 == "global" {
 # https://en.wikipedia.org/wiki/IPv6_address#Modified_EUI-64
 $1 == "inet6" && $3 == "scope" && $4 == "global" && $5 == "temporary" {
   split($2, fields, "/")
-  # Avoid private addresses: https://serverfault.com/questions/546606/what-are-the-ipv6-public-and-private-and-reserved-ranges/546619#546619
+  # Avoid private addresses:
+  # https://serverfault.com/questions/546606/what-are-the-ipv6-public-and-private-and-reserved-ranges/546619#546619
   if (substr(fields[1], 1, 2) != "fd") {
     ipv6=fields[1]
   }
@@ -645,7 +650,7 @@ $1 == "inet6" && $3 == "scope" && $4 == "global" && $5 == "temporary" {
 # Print the last interface.
 END {print iface, mac, ipv4, ipv6}'
 }
-alias getmac='getip'
+alias getmac=getip
 # Print a random, valid MAC address.
 function randmac() {
   python -c "
@@ -785,7 +790,9 @@ function inttohex {
   echo "obase=16;$1" | bc
 }
 function hextoint {
-  echo "ibase=16;obase=A;$1" | bc
+  # Input numbers in bc have to be in uppercase.
+  in=$(echo $1 | tr [:lower:] [:upper:])
+  echo "ibase=16;obase=A;$in" | bc
 }
 function asciitobin {
   python -c "print bin(ord('$1'))[2:]"
@@ -811,6 +818,54 @@ Default: "Terminal"' >&2
   else
     echo -ne "\033]2;$@\007"
   fi
+}
+# Convert a number of seconds into a human-readable time string.
+# Example output: "1 year 33 days 2:43:06"
+function human_time {
+  local sec_total=$1
+  local sec=$((sec_total % 60))
+  local min_total=$((sec_total/60))
+  local min=$((min_total % 60))
+  local hr_total=$((min_total/60))
+  local hr=$((hr_total % 24))
+  local days_total=$((hr_total/24))
+  local days=$((days_total % 365))
+  local years_total=$((days_total/365))
+  if [[ $days == 1 ]]; then
+    local days_str='1 day '
+  else
+    local days_str="$days days "
+  fi
+  if [[ $years_total == 1 ]]; then
+    local years_str='1 year '
+  else
+    local years_str="$years_total years "
+  fi
+  local hr_str="$hr:"
+  local min_str="$min:"
+  local sec_str=$sec
+  if [[ $min -lt 10 ]] && [[ $min_total -ge 60 ]]; then
+    min_str="0$min:"
+  fi
+  if [[ $sec -lt 10 ]] && [[ $sec_total -ge 60 ]]; then
+    sec_str="0$sec"
+  fi
+  if [[ $years_total == 0 ]]; then
+    years_str=''
+    if [[ $days == 0 ]]; then
+      days_str=''
+      if [[ $hr == 0 ]]; then
+        hr_str=''
+        if [[ $min == 0 ]]; then
+          min_str=''
+          if [[ $sec == 0 ]]; then
+            sec_str='0'
+          fi
+        fi
+      fi
+    fi
+  fi
+  echo "$years_str$days_str$hr_str$min_str$sec_str"
 }
 # For PS1 prompt
 # color red on last command failure
@@ -957,28 +1012,28 @@ function dotplot {
 }
 # Get some quality stats on a BAM using samtools
 function bamsummary {
+  function _pct {
+    python -c "print 100.0*$1/$2"
+  }
+  function _print_stat {
+    local len=$((${#2}+1))
+    printf "%-30s%6.2f%% % ${len}d\n" "$1:" $(_pct $3 $2) $3
+  }
   for bam in $@; do
-    echo -e "    $bam:"
+    echo -e "\t$bam:"
     local total=$(samtools view -c $bam)
-    function pct {
-      python -c "print round(100.0 * $1/$total, 2)"
-    }
-    echo -e "total reads:\t $total"
-    local unmapped=$(samtools view -c -f 4 $bam)
-    echo -e "unmapped reads:\t $unmapped\t"$(pct $unmapped)"%"
-    local improper_pair=$(samtools view -c -F 2 $bam)
-    echo -e "not proper pair: $improper_pair\t"$(pct $improper_pair)"%"
-    local q0=$(echo $total-$(samtools view -c -q 1 $bam) | bc)
-    echo -e "MAPQ 0 reads:\t $q0\t"$(pct $q0)"%"
-    local q20=$(echo $total-$(samtools view -c -q 20 $bam) | bc)
-    echo -e "< MAPQ 20 reads: $q20\t"$(pct $q20)"%"
-    local q30=$(echo $total-$(samtools view -c -q 30 $bam) | bc)
-    echo -e "< MAPQ 30 reads: $q30\t"$(pct $q30)"%"
-    local suppl=$(samtools view -c -f 2048 $bam)
-    echo -e "suppl alignmnts: $suppl\t"$(pct $suppl)"%"
-    local ambiguous=$(samtools view $bam | awk -F '\t' '$5 == 0' | grep -c -E $'\t''XA:Z:')
-    echo -e "ambiguous:\t $ambiguous\t"$(pct $ambiguous)"%"
+    printf "%-39s%d\n" "total alignments:" $total
+    _print_stat "unmapped reads  (-f 4)" $total $(samtools view -c -f 4 $bam)
+    _print_stat "not proper pair (-F 2)" $total $(samtools view -c -F 2 $bam)
+    _print_stat "  MAPQ 0 alignments" $total  $(echo $total-$(samtools view -c -q 1 $bam) | bc)
+    _print_stat "< MAPQ 20 alignments" $total $(echo $total-$(samtools view -c -q 20 $bam) | bc)
+    _print_stat "< MAPQ 30 alignments" $total $(echo $total-$(samtools view -c -q 30 $bam) | bc)
+    _print_stat "2ndary alignments   (-f 256)"  $total $(samtools view -c -f 256 $bam)
+    _print_stat "chimeric alignments (-f 2048)" $total $(samtools view -c -f 2048 $bam)
+    _print_stat "ambiguous alignments" $total $(samtools view $bam | awk -F '\t' '$5 == 0' | grep -c -E $'\t''XA:Z:')
   done
+  unset -f _pct
+  unset -f _print_stat
 }
 function citegrep {
   KeyDefault="doi"
