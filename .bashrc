@@ -316,12 +316,6 @@ elif [[ $host == nsto ]]; then
 elif [[ $distro == ubuntu || $distro == debian ]]; then
   alias errlog='less +G /var/log/syslog'
 fi
-if [[ $host == scofield ]]; then
-  aklog bx.psu.edu
-  alias srunb='srun -C new --pty bash'
-  alias srunc='srun -C new'
-  alias sinfoc='sinfo -p general -o "%11T %.5D %.15C %.15N"'
-fi
 # Search all encodings for strings, raise minimum length to 5 characters
 function stringsa {
   strings -n 5 -e s $1
@@ -390,6 +384,35 @@ on error." >&2
     echo "Silenced!"
   fi
 }
+if [[ $host == yoga ]]; then
+  # Log my current number of tabs to a file, for self-monitoring.
+  # On my laptop, screw the tabs command for now. Never used it.
+  function tabs {
+    local LogFile=~/aa/misc/computerthings/logs/tabs.tsv
+    if [[ $# == 0 ]] || [[ $1 == '-h' ]]; then
+      echo "Usage: \$ tabs main_tabs [all_tabs]
+Log your current number of tabs, plus a timestamp, to $LogFile
+Format is tab-delimited: unix timestamp, number of tabs in main window,
+number of tabs in all windows, human-readable timestamp." >&2
+      return 1
+    fi
+    if ! [[ -d $(dirname $LogFile) ]]; then
+      echo "Error: Missing directory $(dirname $LogFile)" >&2
+      return 1
+    fi
+    local timestamp=$(date +%s)
+    local time_human=$(date -d @$timestamp)
+    local main_tabs=$1
+    local all_tabs=.
+    if [[ $# -gt 1 ]]; then
+      all_tabs=$2
+    fi
+    if [[ $main_tabs -gt 100 ]]; then
+      echo "Dang, that's a lot of tabs."
+    fi
+    echo -e "$timestamp\t$main_tabs\t$all_tabs\t$time_human" >> $LogFile
+  }
+fi
 function proxpn {
   local ConfigDir=~/aa/misc/computerthings/proxpn-config
   if ! [[ -f $ConfigDir/proxpn.ovpn ]]; then
@@ -759,18 +782,6 @@ function oneline {
     echo "$@" | tr -d '\n'
   fi
 }
-function digitize {
-  if [[ $# -eq 1 ]] && [[ $1 == '-h' ]]; then
-    echo "Use this when \"digitizing\" things (taking photos). This will record the timestamp and a title
-you enter, then print it in a tab-delimited format to be appended to the record.
-The timestamp is recorded at the start, then you enter the title." >&2
-    return 1
-  fi
-  local now=$(date +%s)
-  local title
-  read -p "Timestamp recorded. Enter the title: " title
-  echo -e "$now\t$title"
-}
 function wifimac {
   iwconfig 2> /dev/null | sed -nE 's/^.*access point: ([a-zA-Z0-9:]+)\s*$/\1/pig'
 }
@@ -1066,13 +1077,17 @@ Default library: $LibraryDefault" >&2
   fi
   tail -n +$line "$library" | sed -En 's/^'$key'\s*=\s*\{+(.+)\}+[^}]*$/\1/p' | sed -E -e 's/\}+\s*$//' -e 's/^\s*\{+//' | head -n 1
 }
+if [[ $host == scofield ]]; then
+  aklog bx.psu.edu
+fi
 # Slurm commands
 if [[ $host == yoga ]] || [[ $host == zen ]]; then
   alias sfree='ssh bru sinfo -h -p general -t idle -o %n'
   alias scpus="ssh bru 'sinfo -h -p general -t idle,alloc -o "'"'"%n %C"'"'"' | tr ' /' '\t\t' | cut -f 1,3"
   alias squeue='ssh bru squeue'
   alias squeuep="ssh bru 'squeue -o "'"'"%.7i %Q %.8u %.8T %.10M %14R %j"'"'"' | sort -g -k 2"
-else
+elif [[ $host == brubeck ]] || [[ $host == scofield ]]; then
+  alias sinfoc='sinfo -p general -o "%11T %.5D %.15C %.15N"'
   alias sfree='sinfo -h -p general -t idle -o %n'
   alias scpus="sinfo -h -p general -t idle,alloc -o '%n %C' | tr ' /' '\t\t' | cut -f 1,3"
   alias squeuep='squeue -o "%.7i %Q %.8u %.8T %.10M %14R %j" | sort -g -k 2'
