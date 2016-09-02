@@ -1083,14 +1083,25 @@ fi
 # Slurm commands
 if [[ $host == yoga ]] || [[ $host == zen ]]; then
   alias sfree='ssh bru sinfo -h -p general -t idle -o %n'
-  alias scpus="ssh bru 'sinfo -h -p general -t idle,alloc -o "'"'"%n %C"'"'"' | tr ' /' '\t\t' | cut -f 1,3"
+  alias scpus="ssh bru 'sinfo -h -p general -t idle,alloc -o "'"'"%n %C"'"'"' | tr ' /' '\t\t' | cut -f 1,3 | sort -k 1.3g"
   alias squeue='ssh bru squeue'
   alias squeuep="ssh bru 'squeue -o "'"'"%.7i %Q %.8u %.8T %.10M %14R %j"'"'"' | sort -g -k 2"
 elif [[ $host == brubeck ]] || [[ $host == scofield ]]; then
   alias sinfoc='sinfo -p general -o "%11T %.5D %.15C %.15N"'
   alias sfree='sinfo -h -p general -t idle -o %n'
-  alias scpus="sinfo -h -p general -t idle,alloc -o '%n %C' | tr ' /' '\t\t' | cut -f 1,3"
+  alias scpus="sinfo -h -p general -t idle,alloc -o '%n %C' | tr ' /' '\t\t' | cut -f 1,3 | sort -k 1.3g"
   alias squeuep='squeue -o "%.7i %Q %.8u %.8T %.10M %14R %j" | sort -g -k 2'
+  function sgetnode {
+    node_arg='-C new'
+    max_cpus=0
+    while read node cpus; do
+      if [[ $cpus -gt $max_cpus ]]; then
+        max_cpus=$cpus
+        node_arg="-w $node"
+      fi
+    done < <(sinfo -h -p general -t idle,alloc -o '%n %C' | tr ' /' '\t\t' | cut -f 1,3)
+    echo "$node_arg"
+  }
   function snice {
     local SlurmUser=nick
     if [[ $# -lt 1 ]] || [[ $1 == '-h' ]]; then
