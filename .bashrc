@@ -965,13 +965,13 @@ fi
 alias bcat="samtools view -h"
 function align {
   if [[ $# -lt 3 ]]; then
-    echo 'Usage: $ align ref.fa reads_1.fq reads_2.fq' >&2
+    echo 'Usage: $ align ref.fa reads_1.fq reads_2.fq [--other --bwa --options]' 1>&2
     return 1
   fi
-  local ref fastq1 fastq2
-  read ref fastq1 fastq2 <<< $@
+  local ref fastq1 fastq2 opts
+  read ref fastq1 fastq2 opts <<< $@
   local base=$(echo $fastq1 | sed -E -e 's/\.gz$//' -e 's/\.fa(sta)?$//' -e 's/\.f(ast)?q$//' -e 's/_[12]$//')
-  bwa mem $ref $fastq1 $fastq2 > $base.sam
+  bwa mem -M -t 32 $opts $ref $fastq1 $fastq2 > $base.sam
   samtools view -Sbu $base.sam | samtools sort - $base
   samtools index $base.bam
   echo "Final alignment is in: $base.bam"
