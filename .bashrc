@@ -413,6 +413,26 @@ number of tabs in all windows, human-readable timestamp." >&2
     echo -e "$timestamp\t$main_tabs\t$all_tabs\t$time_human" >> $LogFile
   }
 fi
+function logip {
+  local LogFile=~/aa/misc/computerthings/logs/ips.tsv
+  if [[ $1 == '-h' ]]; then
+    echo "Usage: \$ logip
+Log your current public IP address to $LogFile.
+Uses icanhazip.com to get your IP address." >&2
+    return 1
+  fi
+  if [[ -e "$data_dir/SILENCE" ]]; then
+    echo "Error: SILENCE file exists ($data_dir/SILENCE). Exiting." >&2
+    return 1
+  fi
+  local ip=$(curl -s icanhazip.com)
+  if [[ $ip ]]; then
+    echo $ip >> $LogFile
+    echo echo $ip '>>' $LogFile
+  else
+    echo "Error: Failed getting IP address." >&2
+  fi
+}
 function proxpn {
   local ConfigDir=~/aa/misc/computerthings/proxpn-config
   if ! [[ -f $ConfigDir/proxpn.ovpn ]]; then
