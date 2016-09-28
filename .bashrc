@@ -416,13 +416,14 @@ fi
 function logip {
   local LogFile=~/aa/misc/computerthings/logs/ips.tsv
   if [[ $1 == '-h' ]]; then
-    echo "Usage: \$ logip
+    echo "Usage: \$ logip [-f]
 Log your current public IP address to $LogFile.
-Uses icanhazip.com to get your IP address." >&2
+Uses icanhazip.com to get your IP address.
+Add -f to force logging even when SILENCE is in effect." >&2
     return 1
   fi
-  if [[ -e "$data_dir/SILENCE" ]]; then
-    echo "Error: SILENCE file exists ($data_dir/SILENCE). Exiting." >&2
+  if [[ $1 != '-f' ]] && [[ -e "$data_dir/SILENCE" ]]; then
+    echo "Error: SILENCE file exists ($data_dir/SILENCE). Add -f to override." >&2
     return 1
   fi
   local ip=$(curl -s icanhazip.com)
@@ -984,14 +985,19 @@ if ! which readsfq >/dev/null 2>/dev/null; then
 fi
 alias bcat="samtools view -h"
 function align {
+  local opts_default='-M -t 32'
   if [[ $# -lt 3 ]]; then
-    echo 'Usage: $ align ref.fa reads_1.fq reads_2.fq [--other --bwa --options]' 1>&2
+    echo "Usage: \$ align ref.fa reads_1.fq reads_2.fq [--other --bwa --options]
+If you provide your own options, yours will replace the defaults ($opts_default)." 1>&2
     return 1
   fi
   local ref fastq1 fastq2 opts
   read ref fastq1 fastq2 opts <<< $@
+  if ! [[ $opts ]]; then
+    opts="$opts_default"
+  fi
   local base=$(echo $fastq1 | sed -E -e 's/\.gz$//' -e 's/\.fa(sta)?$//' -e 's/\.f(ast)?q$//' -e 's/_[12]$//')
-  bwa mem -M -t 32 $opts $ref $fastq1 $fastq2 > $base.sam
+  bwa mem $opts $ref $fastq1 $fastq2 > $base.sam
   samtools view -Sbu $base.sam | samtools sort - $base
   samtools index $base.bam
   echo "Final alignment is in: $base.bam"
