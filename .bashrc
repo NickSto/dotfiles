@@ -441,14 +441,19 @@ function proxpn {
     return 1
   fi
   silence  # Quiet network traffic that could be identifying.
-  sudo sysctl -w net.ipv6.conf.wlan0.disable_ipv6=1  # Avoid IPv6 leaks
+  local interface=$(getinterface)
+  # Avoid IPv6 leaks
+  if ! sudo sysctl -w net.ipv6.conf.$interface.disable_ipv6=1; then
+    echo "Error turning off ipv6. Is this the correct interface name? \"$interface\"" >&2
+    return 1
+  fi
   [[ $? != 0 ]] && return 1
   cd $ConfigDir
   [[ $? != 0 ]] && return 1
   pwd
   sudo openvpn --user $USER --config proxpn.ovpn
   cd -
-  sudo sysctl -w net.ipv6.conf.wlan0.disable_ipv6=0
+  sudo sysctl -w net.ipv6.conf.$interface.disable_ipv6=0
   silence -u
 }
 function bak {
@@ -695,6 +700,14 @@ $1 == "inet6" && $3 == "scope" && $4 == "global" && $5 == "temporary" {
 END {print iface, mac, ipv4, ipv6}'
 }
 alias getmac=getip
+function getinterface {
+  if [[ $# -gt 0 ]]; then
+    echo "Usagae: \$ getinterface
+Print the name of the interface on the default route (like \"wlan0\" or \"wlp58s0\")" >&2
+    return 1
+  fi
+  getip | awk '{print $1}'
+}
 # Print a random, valid MAC address.
 function randmac() {
   python -c "
