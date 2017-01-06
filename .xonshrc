@@ -1,0 +1,132 @@
+import os
+import time
+import shutil
+
+$bashrc_dir = $HOME + '/code/bash/dotfiles'
+
+# Aliases
+aliases['lsl']  = 'ls -lFhAb  --color=auto --group-directories-first'
+aliases['lsld'] = 'ls -lFhAbd --color=auto --group-directories-first'
+aliases['awkt'] = "awk -F '\t' -v OFS='\t'"
+aliases['mv'] = 'mv -i'
+aliases['cp'] = 'cp -i'
+aliases['gitlast'] = 'git log --oneline -n 1'
+
+# Functions
+def _wcc(args, stdin=None):
+  if len(args) > 0:
+    echo -n @(args[0]) | wc -c
+  elif stdin is None:
+    wc -c
+  else:
+    #TODO: Find a way to allow piping into wcc and have wc actually do the counting.
+    chars=0
+    for line in stdin:
+      chars += len(line)
+    print(chars)
+aliases['wcc'] = _wcc
+# readlink -f except it handles commands on the PATH too. Or, which, except it follows all links.
+def _deref(args):
+  name = args[0]
+  if not os.path.exists(name):
+    name = $(which @(name) 2> /dev/null)
+  readlink -f @(name)
+aliases['deref'] = _deref
+# trash shortcut
+if $(which trash-put 2> /dev/null):
+  aliases['trash'] = 'trash-put'
+else:
+  def _trash(args):
+    trash_dir = $HOME+'/.trash'
+    if not os.path.isdir(trash_dir):
+      if os.path.exists(trash_dir):
+        return
+      os.mkdir(trash_dir)
+    for path in args:
+      shutil.move(path, trash_dir)
+  aliases['trash'] = _trash
+# longurl.py shortcut
+if $(which longurl.py > /dev/null 2> /dev/null):
+  aliases['longurl'] = 'longurl.py -bc'
+else:
+  def _longurl():
+    url=$(xclip -out -sel clip)
+    print(url)
+    curl -LIs @(url) | grep '^[Ll]ocation' | cut -d ' ' -f 2
+  aliases['longurl'] = _longurl
+# Walk up the process tree, finding the ancestor processes of the specified one.
+# Or, if no PID is given, find the parents of this process.
+def _parents(args):
+  if len(args) == 0:
+    pid = os.getpid()
+  else:
+    try:
+      pid = int(args[0])
+    except ValueError:
+      return
+  while pid > 0:
+    ps -o comm= -p @(pid)
+    pid = int($(ps -o ppid= -p @(pid)))
+aliases['parents'] = _parents
+
+# Bioinformatics
+aliases['seqlen'] = "bioawk -c fastx '{ print \$name, length(\$seq) }'"
+# Get some quality stats on a BAM using samtools.
+def _bamsummary(args):
+  for bam in args:
+    print('\t'+bam+':')
+    total = int($(samtools view -c @(bam)))
+    digits = str(len(str(total)))
+    format_str = '{:30s}{:6.2f}%  {:'+digits+'d}'
+    def print_stat(label, reads):
+      print(format_str.format(label+':', reads*100/total, reads))
+    print(('{:39s}{:d}').format('total alignments:', total))
+    print_stat('unmapped reads  (-f 4)', int($(samtools view -c -f 4 @(bam))))
+    print_stat('not proper pair (-F 2)', int($(samtools view -c -F 2 @(bam))))
+    print_stat('  MAPQ 0  alignments', total-int($(samtools view -c -q 1  @(bam))))
+    print_stat('< MAPQ 20 alignments', total-int($(samtools view -c -q 20 @(bam))))
+    print_stat('< MAPQ 30 alignments', total-int($(samtools view -c -q 30 @(bam))))
+    print_stat('2ndary   alignments (-f 256)',  int($(samtools view -c -f 256  @(bam))))
+    print_stat('chimeric alignments (-f 2048)', int($(samtools view -c -f 2048 @(bam))))
+    print_stat('ambiguous alignments', int($(samtools view @(bam) | awk -F '\t' '$5 == 0' | grep -Ec '\tXA:Z:')))
+aliases['bamsummary'] = _bamsummary
+
+# Customize prompt.
+def _prompt_date():
+  return time.strftime("%a %b %d")
+def _prompt_ret_code_color():
+  if len(__xonsh_history__.rtns) == 0 or __xonsh_history__.rtns[-1] == 0:
+    if remote:
+      return '{NO_COLOR}'
+    else:
+      return '{CYAN}'
+  else:
+    return '{RED}'
+$PROMPT_FIELDS['date'] = _prompt_date
+$PROMPT_FIELDS['ret_code_color'] = _prompt_ret_code_color
+$PROMPT = '{env_name:{} }{ret_code_color}[{date}] {GREEN}{user}@{hostname} {cwd}{NO_COLOR}\n>>> '
+
+# A more "sophisticated" method for determining if we're in a remote shell.
+# Check if the system supports the right ps parameters and if parents is able to climb the entire
+# process hierarchy
+def _is_remote():
+  working_parents = False
+  if $(ps -o comm= -p 1 > /dev/null 2> /dev/null):
+    init = $(parents | tail -n 1).strip()
+    if init == 'init' or init == 'systemd' or init == 'upstart':
+      working_parents = true
+  if working_parents:
+    for process in $(parents).splitlines():
+      if process == 'sshd' or process == 'slurmstepd':
+        return True
+  else:
+    if 'SSH_CLIENT' in ${...} or 'SSH_TTY' in ${...}:
+      return True
+  return False
+remote = _is_remote()
+
+# If remote, set prompt to black and white.
+if remote:
+  $PROMPT = '{env_name:{} }{ret_code_color}[{date}]{NO_COLOR} {user}@{hostname} {cwd}\n>>> '
+
+$TITLE = 'xonsh'
