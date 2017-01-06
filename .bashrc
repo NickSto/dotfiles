@@ -208,10 +208,12 @@ function geoip {
   curl http://freegeoip.net/csv/$1
 }
 if which longurl.py >/dev/null 2>/dev/null; then
-  alias longurl='longurl.py -fc'
+  alias longurl='longurl.py -bc'
 else
   function longurl {
-    echo "$1"; curl -LIs "$1" | grep '^[Ll]ocation' | cut -d ' ' -f 2
+    url=$(xclip -out -sel clip)
+    echo "$url"
+    curl -LIs "$url" | grep '^[Ll]ocation' | cut -d ' ' -f 2
   }
 fi
 if which trash-put >/dev/null 2>/dev/null; then
