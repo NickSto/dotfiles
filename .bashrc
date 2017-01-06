@@ -1238,6 +1238,7 @@ fi
 # $PROMPT_COMMAND is a shell built-in which is executed just before $PS1 is displayed.
 PROMPT_COMMAND='prompt_exit_color;prompt_git_color;branch;timer_stop'
 ROOTPS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
+title $host
 
 # if it's a remote shell, change $PS1 prompt format and enter a screen
 if [[ $remote ]]; then
