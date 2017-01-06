@@ -3,7 +3,7 @@
 host=$(hostname -s 2>/dev/null || hostname)
 
 # supported hosts:
-# yoga main zen nsto yarr brubeck scofield ndojo nbs lion cyberstar
+# ruby main nsto yarr brubeck scofield ndojo nbs lion cyberstar
 
 # supported distros:
 #   ubuntu debian freebsd
@@ -50,11 +50,9 @@ cd - >/dev/null
 
 # Set distro based on known hostnames
 case "$host" in
-  yoga)
+  ruby)
     distro="ubuntu";;
   main)
-    distro="ubuntu";;
-  zen)
     distro="ubuntu";;
   nsto)
     distro="ubuntu";;
@@ -227,9 +225,6 @@ else
   }
 fi
 function cds {
-  if [[ $host == yoga ]]; then
-    cd ~/school
-  fi
   if [[ "$1" ]]; then
     local n=$1
   else
@@ -384,7 +379,7 @@ on error." >&2
     echo "Silenced!"
   fi
 }
-if [[ $host == yoga ]]; then
+if [[ $host == ruby ]]; then
   # Log my current number of tabs to a file, for self-monitoring.
   # On my laptop, screw the tabs command for now. Never used it.
   function tabs {
@@ -979,7 +974,7 @@ trap 'timer_start' DEBUG
 
 ##### Bioinformatics #####
 
-if [[ $host == yoga || $host == main ]]; then
+if [[ $host == ruby || $host == main ]]; then
   true #alias igv='java -Xmx4096M -jar ~/bin/igv.jar'
 elif [[ $host == nsto ]]; then
   alias igv='java -Xmx256M -jar ~/bin/igv.jar'
@@ -1123,7 +1118,7 @@ fi
 # it's accessible from inside the container.
 alias dockdir='docker run -v $(pwd):/dir/'
 # Slurm commands
-if [[ $host == yoga ]] || [[ $host == zen ]]; then
+if [[ $host == ruby ]]; then
   alias sfree='ssh bru sinfo -h -p general -t idle -o %n'
   alias scpus="ssh bru 'sinfo -h -p general -t idle,alloc -o "'"'"%n %C"'"'"' | tr ' /' '\t\t' | cut -f 1,3 | sort -k 1.3g"
   alias squeue='ssh bru squeue'
@@ -1215,7 +1210,7 @@ fi
 if [[ $host == lion ]]; then
   pathadd /opt/local/bin
 fi
-if [[ $host == zen ]] || [[ $host == yoga ]]; then
+if [[ $host == ruby ]]; then
   pathadd $HOME/bx/bin
 fi
 pathadd /sbin
