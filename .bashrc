@@ -86,12 +86,6 @@ if [[ $distro == ubuntu ]]; then
   # ~/.bashrc: executed by bash(1) for non-login shells.
   # examples: /usr/share/doc/bash/examples/startup-files (in package bash-doc)
 
-  # If not running interactively, don't do anything
-  case $- in
-      *i*) ;;
-        *) return;;
-  esac
-
   # make less more friendly for non-text input files, see lesspipe(1)
   [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
@@ -297,8 +291,7 @@ function vnc {
 alias minecraft="cd ~/src/minecraft && java -Xmx400M -Xincgc -jar $HOME/src/minecraft_server.jar nogui"
 alias minelog='ssh vps "tail src/minecraft/server.log"'
 alias mineme='ssh vps "cat src/minecraft/server.log" | grep -i nick | tail'
-alias minelist="ssh vps 'screen -S minecraft -X stuff \"list
-\"; sleep 1; tail src/minecraft/server.log'"
+alias minelist="ssh vps 'screen -S minecraft -X stuff \"list\"; sleep 1; tail src/minecraft/server.log'"
 alias minemem='ssh vps "if pgrep -f java >/dev/null; then pgrep -f java | xargs ps -o %mem; fi"'
 
 if [[ $distro =~ (^osx$|bsd$) ]]; then
