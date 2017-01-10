@@ -4,6 +4,7 @@ import sys
 import time
 import shutil
 import socket
+import random
 import subprocess
 
 # Detect host.
@@ -84,7 +85,6 @@ def _parents(args):
 aliases['parents'] = _parents
 # Print a random, valid MAC address.
 def _randmac(args):
-  import random
   octets = []
   octet = random.randint(0, 63)*4
   octets.append('{:02x}'.format(octet))
@@ -175,6 +175,28 @@ def _bamsummary(args):
     print_stat('chimeric alignments (-f 2048)', int($(samtools view -c -f 2048 @(bam))))
     print_stat('ambiguous alignments', int($(samtools view @(bam) | awk -F '\t' '$5 == 0' | grep -Ec '\tXA:Z:')))
 aliases['bamsummary'] = _bamsummary
+def _dna(args):
+  LINE_LENGTH = 100
+  length = 200
+  if args:
+    if args[0] == '-h':
+      sys.stderr.write('Usage: $ dna [nbases]\nDefault number of bases: {}\n'.format(length))
+      return 1
+    try:
+      length = int(args[0])
+    except ValueError:
+      sys.stderr.write('Error: Argument must be an integer number of bases (saw "{}" instead).\n'
+                       .format(args[0]))
+      return 1
+  bases = []
+  for i in range(length):
+    bases.append(random.choice('ACGT'))
+    if i % LINE_LENGTH == LINE_LENGTH - 1:
+      print(''.join(bases))
+      bases = []
+  if bases:
+    print(''.join(bases))
+aliases['dna'] = _dna
 
 
 ##### Customize the prompt #####
