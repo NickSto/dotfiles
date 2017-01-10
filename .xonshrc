@@ -6,9 +6,17 @@ import shutil
 import socket
 import subprocess
 
-$bashrc_dir = $HOME + '/code/bash/dotfiles'
+# Detect host.
+host = socket.gethostname()
 
-# Aliases
+if host == 'ruby' or host == 'main':
+  $bashrc_dir = $HOME + '/code/bash/dotfiles'
+else:
+  $bashrc_dir = $HOME + '/code/dotfiles'
+
+
+##### Aliases #####
+
 aliases['lsl']  = 'ls -lFhAb  --color=auto --group-directories-first'
 aliases['lsld'] = 'ls -lFhAbd --color=auto --group-directories-first'
 aliases['awkt'] = "awk -F '\t' -v OFS='\t'"
@@ -16,7 +24,9 @@ aliases['mv'] = 'mv -i'
 aliases['cp'] = 'cp -i'
 aliases['gitlast'] = 'git log --oneline -n 1'
 
-# Functions
+
+##### Functions #####
+
 def _wcc(args, stdin=None):
   if len(args) > 0:
     echo -n @(args[0]) | wc -c
@@ -37,7 +47,7 @@ def _deref(args):
   readlink -f @(name)
 aliases['deref'] = _deref
 # trash shortcut
-if $(which trash-put 2> /dev/null):
+if !(which trash-put > /dev/null 2> /dev/null):
   aliases['trash'] = 'trash-put'
 else:
   def _trash(args):
@@ -50,7 +60,7 @@ else:
       shutil.move(path, trash_dir)
   aliases['trash'] = _trash
 # longurl.py shortcut
-if $(which longurl.py > /dev/null 2> /dev/null):
+if !(which longurl.py > /dev/null 2> /dev/null):
   aliases['longurl'] = 'longurl.py -bc'
 else:
   def _longurl():
@@ -86,9 +96,9 @@ aliases['randmac'] = lambda: print(_randmac(()))
 # Format output of mount command to be easier to read.
 def _mountf(args):
   print('Device                    Mount Point               Type')
-  mount_proc = subprocess.Popen(['mount'], stdout=subprocess.PIPE)
-  for line in mount_proc.stdout:
-    fields = str(line, 'utf-8').split()
+  output = subprocess.check_output(['mount'])
+  for line in str(output, 'utf-8').splitlines():
+    fields = line.split()
     if len(fields) >= 5 and fields[1] == 'on' and fields[3] == 'type':
       print('{0:<25s} {2:<25s} {4:<25s}'.format(*fields))
 aliases['mountf'] = _mountf
@@ -142,7 +152,9 @@ def _youtube(args):
   youtube-dl --no-mtime @(url) -o @(format) @(quality_args)
 aliases['youtube'] = _youtube
 
-# Bioinformatics
+
+##### Bioinformatics #####
+
 aliases['seqlen'] = "bioawk -c fastx '{ print \$name, length(\$seq) }'"
 # Get some quality stats on a BAM using samtools.
 def _bamsummary(args):
