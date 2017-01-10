@@ -63,6 +63,7 @@ aliases['gitlast'] = ['git', 'log', '--oneline', '-n', '1']
 
 ##### Functions #####
 
+# Count characters in a string.
 def _wcc(args, stdin=None):
   if len(args) > 0:
     echo -n @(args[0]) | wc -c
@@ -104,6 +105,7 @@ else:
     print(url)
     curl -LIs @(url) | grep '^[Ll]ocation' | cut -d ' ' -f 2
   aliases['longurl'] = _longurl
+# cd to the scratch directories.
 def _cds(args):
   if args:
     n = int(args[0])
@@ -137,6 +139,19 @@ def _parents(args):
     ps -o comm= -p @(pid)
     pid = int($(ps -o ppid= -p @(pid)))
 aliases['parents'] = _parents
+# Get the CPU temperature.
+def _temp(args):
+  line_num = 0
+  core_line_num = None
+  for line in $(sensors 2> /dev/null).splitlines():
+    line_num += 1
+    if line.startswith('coretemp-isa-000'):
+      core_line_num = line_num
+    elif core_line_num and line_num == core_line_num + 3:
+      match = re.search(r'^[^:]+:\s+\+?(-?\d{1,3})(\.\d+)?°C', line)
+      if match:
+        print(match.group(1)+'°C')
+aliases['temp'] = _temp
 # Print a random, valid MAC address.
 def _randmac(args):
   octets = []
@@ -155,6 +170,7 @@ def _mountf(args):
     if len(fields) >= 5 and fields[1] == 'on' and fields[3] == 'type':
       print('{0:<25s} {2:<25s} {4:<25s}'.format(*fields))
 aliases['mountf'] = _mountf
+# Titlecase a string.
 def _tc(args, stdin=None):
   import titlecase
   if len(args) > 1:
@@ -237,6 +253,7 @@ def _bamsummary(args):
     print_stat('chimeric alignments (-f 2048)', int($(samtools view -c -f 2048 @(bam))))
     print_stat('ambiguous alignments', int($(samtools view @(bam) | awk -F '\t' '$5 == 0' | grep -Ec '\tXA:Z:')))
 aliases['bamsummary'] = _bamsummary
+# Print a random string of DNA.
 def _dna(args):
   LINE_LENGTH = 100
   length = 200
