@@ -192,11 +192,12 @@ def _gather_git_info():
   This is all in one function so we only run the git command once (could take a while in large
   repos)."""
   try:
-    output = subprocess.check_output(['git', 'status', '--short', '--branch'])
+    output = subprocess.check_output(['git', 'status', '--short', '--branch'], stderr=subprocess.DEVNULL)
   except (subprocess.CalledProcessError, FileNotFoundError):
     # Not a git repo or git not installed.
     _git_info['modified'] = None
     _git_info['branch'] = None
+    return
   _git_info['branch'] = ''
   _git_info['modified'] = False
   first_line = True
