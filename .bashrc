@@ -314,7 +314,14 @@ function stringsa {
 }
 alias temp="sensors | grep -A 3 '^coretemp-isa-0000' | tail -n 1 | awk '{print \$3}' | sed -E -e 's/^\+//' -e 's/\.[0-9]+//'"
 alias mountv="sudo mount -t vboxsf -o uid=1000,gid=1000,rw shared $HOME/shared"
-alias mountf='mount | perl -we '"'"'printf("%-25s %-25s %-25s\n","Device","Mount Point","Type"); for (<>) { if (m/^(.*) on (.*) type (.*) \(/) { printf("%-25s %-25s %-25s\n", $1, $2, $3); } }'"'"''
+function mountf {
+  mount | python -c "import sys
+print 'Device                    Mount Point               Type'
+for line in sys.stdin:
+  fields = line.split()
+  if len(fields) >= 5 and fields[1] == 'on' and fields[3] == 'type':
+    print('{0:<25s} {2:<25s} {4:<25s}'.format(*fields))"
+}
 alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
 alias bitcoin="curl -s http://data.mtgox.com/api/2/BTCUSD/money/ticker_fast | grep -Eo '"'"last":\{"value":"[0-9.]+"'"' | grep -Eo '[0-9.]+'"
 if ! which git >/dev/null 2>/dev/null; then
@@ -1006,18 +1013,25 @@ If you provide your own options, yours will replace the defaults ($opts_default)
 }
 # Print random DNA.
 function dna {
-  perl -we '
-    if (@ARGV) {
-      $n = $ARGV[0];
-    } else {
-      $n = 200;
-    }
-    @chars = qw/A G T C/;
-    for (1..$n) {
-      print $chars[int(rand(4))];
-    }
-    print "\n";
-  ' $1
+  length=200
+  if [[ $# -gt 0 ]]; then
+    if [[ $1 == '-h' ]]; then
+      echo 'Usage: $ dna [nbases]
+Default number of bases: '$length >&2
+      return 1
+    fi
+    length=$1
+  fi
+  python -c "import random
+LINE_LENGTH = 100
+bases = []
+for i in range($length):
+  bases.append(random.choice('ACGT'))
+  if i % LINE_LENGTH == LINE_LENGTH - 1:
+    print(''.join(bases))
+    bases = []
+if bases:
+  print(''.join(bases))"
 }
 function gatc {
   if [[ $# -gt 0 ]]; then
