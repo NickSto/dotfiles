@@ -914,25 +914,25 @@ function prompt_exit_color {
     pecol='0;31m' # red
   fi
 }
-function prompt_git_color {
-  if git status >/dev/null 2>/dev/null; then
-    if git status | grep -E '^\s+modified:\s' >/dev/null 2>/dev/null; then
-      pgcol='0;33m'
-      return
-    fi
+# Gather info on the git repo, if we're in one.
+# This is all in one function so we only run the git command once
+# (could take a while in large repos).
+function prompt_git_info {
+  pgcol='0;32m' # cyan
+  ps1_branch=
+  local info=$(git status --short --branch 2>/dev/null)
+  if ! [[ "$info" ]]; then
+    return
   fi
-  pgcol='0;32m'
-}
-# prompt alert if git repo isn't on master branch
-function branch {
-  if git branch >/dev/null 2>/dev/null; then
-    local branch=$(git branch | sed -En 's/^\* (.+)$/\1/gp')
-    if [[ $branch != master ]]; then
-      ps1_branch="$branch "
-      return
-    fi
+  # Color the prompt differently if there are modified, tracked files.
+  if echo "$info" | grep -qE '^ M'; then
+    pgcol='0;33m' # yellow
   fi
-  ps1_branch=""
+  # Show the branch if we're not on "master".
+  local branch=$(echo "$info" | head -n 1 | sed -E -e 's/^## //' -e 's/^(.+)\.\.\..*$/\1/')
+  if [[ $branch != master ]]; then
+    ps1_branch="$branch "
+  fi
 }
 # timer from https://stackoverflow.com/a/1862762/726773
 timer_thres=10
@@ -1228,7 +1228,7 @@ else
 fi
 
 # $PROMPT_COMMAND is a shell built-in which is executed just before $PS1 is displayed.
-PROMPT_COMMAND='prompt_exit_color;prompt_git_color;branch;timer_stop'
+PROMPT_COMMAND='prompt_exit_color;prompt_git_info;timer_stop'
 ROOTPS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
 title $host
 
