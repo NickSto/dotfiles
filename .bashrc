@@ -567,7 +567,7 @@ function youtube {
     case "$3" in
       360) quality='-f 18';;
       640) quality='-f 18';;
-      # 480) quality='-f 135+250';;  # 80k audio, 480p video (test first)
+      480) quality='-f 135+250';;  # 80k audio, 480p video
       720) quality='-f 22';;
       1280) quality='-f 22';;
       *) quality="-f $3";;
@@ -575,14 +575,13 @@ function youtube {
   fi
   # First define the format and check the resulting filename.
   local format="$title [src %(uploader)s, %(uploader_id)s] [posted %(upload_date)s] [id %(id)s].%(ext)s"
-  local filename=$(youtube-dl --get-filename "$url" -o "$format" $quality)
-  local uploader_id=$(echo "$filename" | sed -E 's/^.*\[src [^,]+, ([^]]+)\] \[posted.*$/\1/')
+  local uploader_id=$(youtube-dl --get-filename "$url" -o '%(uploader_id)s' $quality)
   # Only use both uploader and uploader_id if the id is a channel id like "UCZ5C1HBPMEcCA1YGQmqj6Iw"
   if ! echo "$uploader_id" | grep -qE '^UC[a-zA-Z0-9_-]{22}$'; then
-    echo "uploader_id $uploader_id looks like a username, not a channel id. Omitting display name.." >&2
+    echo "uploader_id $uploader_id looks like a username, not a channel id. Omitting channel id.." >&2
     format="$title [src %(uploader_id)s] [posted %(upload_date)s] [id %(id)s].%(ext)s"
   fi
-  # Do the acutal downloading.
+  # Do the actual downloading.
   youtube-dl --no-mtime "$url" -o "$format" $quality
 }
 function uc {
