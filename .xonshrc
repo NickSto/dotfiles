@@ -18,12 +18,12 @@ else:
 
 ##### Aliases #####
 
-aliases['lsl']  = 'ls -lFhAb  --color=auto --group-directories-first'
-aliases['lsld'] = 'ls -lFhAbd --color=auto --group-directories-first'
-aliases['awkt'] = "awk -F '\t' -v OFS='\t'"
-aliases['mv'] = 'mv -i'
-aliases['cp'] = 'cp -i'
-aliases['gitlast'] = 'git log --oneline -n 1'
+aliases['lsl']  = ['ls', '-lFhAb',  '--color=auto', '--group-directories-first']
+aliases['lsld'] = ['ls', '-lFhAbd', '--color=auto', '--group-directories-first']
+aliases['awkt'] = ['awk', '-F', '\t', '-v', "OFS='\t'"]
+aliases['mv'] = ['mv', '-i']
+aliases['cp'] = ['cp', '-i']
+aliases['gitlast'] = ['git', 'log', '--oneline', '-n', '1']
 
 
 ##### Functions #####
@@ -163,7 +163,7 @@ aliases['youtube'] = _youtube
 
 ##### Bioinformatics #####
 
-aliases['seqlen'] = "bioawk -c fastx '{ print \$name, length(\$seq) }'"
+aliases['seqlen'] = ['bioawk', '-c', 'fastx', '{print $name, length($seq)}']
 # Get some quality stats on a BAM using samtools.
 def _bamsummary(args):
   for bam in args:
