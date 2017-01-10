@@ -54,6 +54,10 @@ aliases['lsld'] = ['ls', '-lFhAbd', '--color=auto', '--group-directories-first']
 aliases['awkt'] = ['awk', '-F', '\t', '-v', "OFS='\t'"]
 aliases['mv'] = ['mv', '-i']
 aliases['cp'] = ['cp', '-i']
+aliases['targ'] = ['tar', '-zxvpf']
+aliases['tarb'] = ['tar', '-jxvpf']
+aliases['pingg'] = ['ping', '-c', '1', 'google.com']
+aliases['curlip'] = ['curl', '-s', 'icanhazip.com']
 aliases['gitlast'] = ['git', 'log', '--oneline', '-n', '1']
 
 
@@ -100,6 +104,25 @@ else:
     print(url)
     curl -LIs @(url) | grep '^[Ll]ocation' | cut -d ' ' -f 2
   aliases['longurl'] = _longurl
+def _cds(args):
+  if args:
+    n = int(args[0])
+  else:
+    n = 2
+  if n == 1:
+    if host == 'brubeck':
+      cd /scratch/nick
+    elif host == 'scofield' or re.search(r'^nn[0-9]{1,2}$', host):
+      cd /nfs/brubeck.bx.psu.edu/scratch1/nick
+  elif n == 2:
+    if host == 'brubeck':
+      cd /scratch2/nick
+    elif host == 'scofield' or re.search(r'^nn[0-9]{1,2}$', host):
+      cd /nfs/brubeck.bx.psu.edu/scratch2/nick
+  elif n >= 3:
+    path = '/nfs/brubeck.bx.psu.edu/scratch{}/nick'.format(n)
+    cd @(path)
+aliases['cds'] = _cds
 # Walk up the process tree, finding the ancestor processes of the specified one.
 # Or, if no PID is given, find the parents of this process.
 def _parents(args):
