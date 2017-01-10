@@ -10,10 +10,41 @@ import subprocess
 # Detect host.
 host = socket.gethostname()
 
-if host == 'ruby' or host == 'main':
-  $bashrc_dir = $HOME + '/code/bash/dotfiles'
+# Find the directory containing the dotfiles.
+if os.path.isfile($HOME+'/.bashrc'):
+  $bashrc_dir = os.path.dirname(os.path.realpath($HOME+'/.bashrc'))
+elif os.path.isfile($HOME+'/.bash_profile'):
+  $bashrc_dir = os.path.dirname(os.path.realpath($HOME+'/.bash_profile'))
 else:
-  $bashrc_dir = $HOME + '/code/dotfiles'
+  $bashrc_dir = $HOME+'/code/dotfiles'
+
+# Set directory for my special data files
+$data_dir = $HOME+'/.local/share/nbsdata'
+
+# Detect distro and kernel.
+def _detect_distro():
+  lines = $(bash $bashrc_dir/detect-distro.sh -p).splitlines()
+  if len(lines) != 2:
+    return 'unknown', 'unknown'
+  else:
+    return lines
+# Try to get distro based on known hostnames.
+if host == 'ruby' or host == 'main' or host == 'nsto' or host == 'yarr':
+  distro='ubuntu'
+elif host == 'nbs' or host == 'ndojo':
+  distro = 'freebsd'
+elif host == 'brubeck' or host == 'scofield':
+  distro = 'debian'
+else:
+  # Unrecognized host? Run detection script.
+  distro, kernel = _detect_distro()
+# If we haven't already, get the kernel directly from the kernel -s command.
+try:
+  kernel
+except NameError:
+  kernel = $(uname -s 2> /dev/null).rstrip('\r\n').lower()
+$distro = distro
+$kernel = kernel
 
 
 ##### Aliases #####
