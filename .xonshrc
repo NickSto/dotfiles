@@ -176,20 +176,83 @@ def _bamsummary(args):
     print_stat('ambiguous alignments', int($(samtools view @(bam) | awk -F '\t' '$5 == 0' | grep -Ec '\tXA:Z:')))
 aliases['bamsummary'] = _bamsummary
 
-# Customize prompt.
-def _prompt_date():
-  return time.strftime("%a %b %d")
-def _prompt_ret_code_color():
-  if len(__xonsh_history__.rtns) == 0 or __xonsh_history__.rtns[-1] == 0:
+
+##### Customize the prompt #####
+
+# First, some functions to gather info that'll determine how the prompt looks.
+def _set_ret_code():
+  if len(__xonsh_history__.rtns) == 0:
+    # New shell; there is no previous command.
+    $RET_CODE = 0
+  else:
+    $RET_CODE = __xonsh_history__.rtns[-1]
+_git_info = {'modified':None, 'branch':None}
+def _gather_git_info():
+  """Gather info on the git repo, if we're in one.
+  This is all in one function so we only run the git command once (could take a while in large
+  repos)."""
+  try:
+    output = subprocess.check_output(['git', 'status', '--short', '--branch'])
+  except (subprocess.CalledProcessError, FileNotFoundError):
+    # Not a git repo or git not installed.
+    _git_info['modified'] = None
+    _git_info['branch'] = None
+  _git_info['branch'] = ''
+  _git_info['modified'] = False
+  first_line = True
+  for line in str(output, 'utf-8').splitlines():
+    if first_line:
+      if line.startswith('## '):
+        _git_info['branch'] = line[3:].split('...')[0]
+        first_line = False
+    elif line.startswith(' M'):
+      _git_info['modified'] = True
+      break
+# Determine colors and other strings to put in the prompt.
+def _prompt_date_color():
+  if $RET_CODE == 0:
     if remote:
       return '{NO_COLOR}'
     else:
       return '{CYAN}'
   else:
     return '{RED}'
+def _prompt_host_color():
+  if remote:
+    return '{NO_COLOR}'
+  else:
+    return '{GREEN}'
+def _prompt_path_color():
+  if remote:
+    return '{NO_COLOR}'
+  elif _git_info['modified']:
+    return '{YELLOW}'
+  else:
+    return '{GREEN}'
+def _prompt_branch():
+  branch = _git_info['branch']
+  if branch is None or branch == 'master':
+    return ''
+  else:
+    return branch+' '
+def _prompt_date():
+  return time.strftime("%a %b %d")
+# Execute date-gathering functions that need to be run before prompt strings can be determined.
+def _prompt_gather_data():
+  _set_ret_code()
+  _gather_git_info()
+$PROMPT_FIELDS['gather_data'] = _prompt_gather_data
 $PROMPT_FIELDS['date'] = _prompt_date
-$PROMPT_FIELDS['ret_code_color'] = _prompt_ret_code_color
-$PROMPT = '{env_name:{} }{ret_code_color}[{date}] {GREEN}{user}@{hostname} {cwd}{NO_COLOR}\n>>> '
+$PROMPT_FIELDS['date_color'] = _prompt_date_color
+$PROMPT_FIELDS['host_color'] = _prompt_host_color
+$PROMPT_FIELDS['path_color'] = _prompt_path_color
+$PROMPT_FIELDS['branch'] = _prompt_branch
+$PROMPT = ('{gather_data}{env_name:{} }{date_color}[{date}]{NO_COLOR} '
+           '{host_color}{user}@{hostname}:{NO_COLOR} '
+           '{path_color}{cwd}{NO_COLOR}\n{branch}>>> ')
+
+
+##### Other #####
 
 # A more "sophisticated" method for determining if we're in a remote shell.
 # Check if the system supports the right ps parameters and if parents is able to climb the entire
@@ -210,8 +273,9 @@ def _is_remote():
   return False
 remote = _is_remote()
 
-# If remote, set prompt to black and white.
+# Set window title.
 if remote:
-  $PROMPT = '{env_name:{} }{ret_code_color}[{date}]{NO_COLOR} {user}@{hostname} {cwd}\n>>> '
-
-$TITLE = 'xonsh'
+  # If we're on a remote server, put the server's name in the title.
+  $TITLE = host
+else:
+  $TITLE = 'xonsh'
