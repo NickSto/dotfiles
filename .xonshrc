@@ -96,12 +96,20 @@ aliases['randmac'] = lambda: print(_randmac(()))
 # Format output of mount command to be easier to read.
 def _mountf(args):
   print('Device                    Mount Point               Type')
-  output = subprocess.check_output(['mount'])
-  for line in str(output, 'utf-8').splitlines():
+  for line in $(mount).splitlines():
     fields = line.split()
     if len(fields) >= 5 and fields[1] == 'on' and fields[3] == 'type':
       print('{0:<25s} {2:<25s} {4:<25s}'.format(*fields))
 aliases['mountf'] = _mountf
+def _tc(args, stdin=None):
+  import titlecase
+  if len(args) > 1:
+    line = ' '.join(args)
+    print(titlecase.titlecase(line.lower()))
+  else:
+    for line in stdin:
+      sys.stdout.write(titlecase.titlecase(line.lower()))
+aliases['tc'] = _tc
 # Automatically configure some options for youtube-dl
 def _youtube(args):
   if len(args) == 0 or args[0] == '-h':
