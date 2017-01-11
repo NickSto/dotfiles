@@ -310,7 +310,28 @@ def _gather_git_info():
     elif line.startswith(' M'):
       _git_info['modified'] = True
       break
+def time_format(seconds):
+  """Format a number of seconds into a readable time."""
+  minutes = seconds//60
+  hours = minutes//60
+  seconds = seconds - minutes*60
+  minutes = minutes - hours*60
+  if minutes < 1:
+    return '{}s'.format(seconds)
+  elif hours < 1:
+    return '{}m{}s'.format(minutes, seconds)
+  else:
+    return '{}h{}m'.format(hours, minutes)
 # Determine colors and other strings to put in the prompt.
+def _prompt_elapsed():
+  """How long did the last command take to execute?"""
+  tss = __xonsh_history__.tss
+  if len(tss):
+    elapsed = tss[-1][1] - tss[-1][0]
+  else:
+    return
+  if elapsed > 10:
+    return time_format(int(elapsed))+' '
 def _prompt_date_color():
   if $RET_CODE == 0:
     if remote:
@@ -344,12 +365,13 @@ def _prompt_gather_data():
   _set_ret_code()
   _gather_git_info()
 $PROMPT_FIELDS['gather_data'] = _prompt_gather_data
+$PROMPT_FIELDS['elapsed'] = _prompt_elapsed
 $PROMPT_FIELDS['date'] = _prompt_date
 $PROMPT_FIELDS['date_color'] = _prompt_date_color
 $PROMPT_FIELDS['host_color'] = _prompt_host_color
 $PROMPT_FIELDS['path_color'] = _prompt_path_color
 $PROMPT_FIELDS['branch'] = _prompt_branch
-$PROMPT = ('{gather_data}{env_name:{} }{date_color}[{date}]{NO_COLOR} '
+$PROMPT = ('{gather_data}{env_name:{} }{elapsed}{date_color}[{date}]{NO_COLOR} '
            '{host_color}{user}@{hostname}:{NO_COLOR} '
            '{path_color}{cwd}{NO_COLOR}\n{branch}>>> ')
 
