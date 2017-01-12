@@ -7,6 +7,9 @@ import socket
 import random
 import subprocess
 
+# Prevent the I/O error on startup.
+$XONSH_PROC_FREQUENCY = 0.00002
+
 # Detect host.
 host = socket.gethostname()
 
