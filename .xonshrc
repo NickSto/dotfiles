@@ -67,6 +67,21 @@ aliases['rsynca'] = ['rsync', '-e', 'ssh', '--delete', '--itemize-changes', '-za
 
 ##### Functions #####
 
+# Update the dotfiles.
+if !(which git > /dev/null 2> /dev/null):
+  if True or host == 'cyberstar' or distro.endswith('bsd'):
+    def _updaterc(args):
+      old_dir = os.getcwd()
+      os.chdir($bashrc_dir)
+      !(git pull)
+      os.chdir(old_dir)
+  else:
+    _updaterc = ['git', '--work-tree='+$bashrc_dir, '--git-dir='+$bashrc_dir+'/.git', 'pull']
+else:
+  def _updaterc(args):
+    $[wget https://raw.githubusercontent.com/NickSto/dotfiles/master/.bashrc -O $bashrc_dir/.bashrc]
+    $[wget https://raw.githubusercontent.com/NickSto/dotfiles/master/.xonshrc -O $bashrc_dir/.xonshrc]
+aliases['updaterc'] = _updaterc
 # Count characters in a string.
 def _wcc(args, stdin=None):
   if len(args) > 0:
