@@ -59,6 +59,7 @@ aliases['tarb'] = ['tar', '-jxvpf']
 aliases['pingg'] = ['ping', '-c', '1', 'google.com']
 aliases['curlip'] = ['curl', '-s', 'icanhazip.com']
 aliases['gitlast'] = ['git', 'log', '--oneline', '-n', '1']
+aliases['rsynca'] = ['rsync', '-e', 'ssh', '--delete', '--itemize-changes', '-zaXAv']
 
 
 ##### Functions #####
@@ -180,6 +181,18 @@ def _tc(args, stdin=None):
     for line in stdin:
       sys.stdout.write(titlecase.titlecase(line.lower()))
 aliases['tc'] = _tc
+# Get Kerberos credentials for work servers.
+def _kerb(args):
+  bx_realm = 'nick@BX.PSU.EDU'
+  galaxy_realm = 'nick@GALAXYPROJECT.ORG'
+  if len(args) == 0:
+    realm = galaxy_realm
+  elif args[0].startswith('bru'):
+    realm = bx_realm
+  elif args[0].startswith('sco'):
+    realm = galaxy_realm
+  kinit -l 90d @(realm)
+aliases['kerb'] = _kerb
 # Automatically configure some options for youtube-dl
 def _youtube(args):
   if len(args) == 0 or args[0] == '-h':
