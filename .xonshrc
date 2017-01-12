@@ -349,7 +349,7 @@ def _prompt_path_color():
   if remote:
     return '{NO_COLOR}'
   elif _git_info['modified']:
-    return '{YELLOW}'
+    return '{#AA0}'
   else:
     return '{GREEN}'
 def _prompt_branch():
