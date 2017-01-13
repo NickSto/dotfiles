@@ -388,6 +388,31 @@ def _prompt_path_color():
     return '{#AA0}'
   else:
     return '{GREEN}'
+_PROMPT_PATH_ALIASES = {$HOME:'~',
+  '/nfs/thumper.galaxyproject.org/home/nick':'~',
+  '/home/me/annex/Work/PSU/Nekrutenko':'~/bx',
+  '/media/me/74dfe461-fcfc-4f51-abb6-7b9d9366f1c6/backuphide':'~/backuphide',
+  '/media/me/74dfe461-fcfc-4f51-abb6-7b9d9366f1c6/Youtube':'~/Videos/Youtube'}
+def _prompt_path():
+  """Return the path, but abbreviate things like the $HOME and common links."""
+  #TODO: Watch the history for cd commands to know whether I've said "cd ~/Videos/Youtube" or I've
+  #      actually explicitly requested "cd /media/me/74dfe461-fcfc-4f51-abb6-7b9d9366f1c6/Youtube"
+  raw_path = os.getcwd()
+  path_start = raw_path
+  path_end = None
+  while path_start != os.sep:
+    if path_start in _PROMPT_PATH_ALIASES:
+      translation = _PROMPT_PATH_ALIASES[path_start]
+      if path_end is None:
+        return translation
+      else:
+        return os.path.join(translation, path_end)
+    if path_end is None:
+      path_end = os.path.basename(path_start)
+    else:
+      path_end = os.path.join(os.path.basename(path_start), path_end)
+    path_start = os.path.dirname(path_start)
+  return raw_path
 def _prompt_branch():
   branch = _git_info['branch']
   if branch is None or branch == 'master':
@@ -406,10 +431,11 @@ $PROMPT_FIELDS['date'] = _prompt_date
 $PROMPT_FIELDS['date_color'] = _prompt_date_color
 $PROMPT_FIELDS['host_color'] = _prompt_host_color
 $PROMPT_FIELDS['path_color'] = _prompt_path_color
+$PROMPT_FIELDS['path'] = _prompt_path
 $PROMPT_FIELDS['branch'] = _prompt_branch
 $PROMPT = ('{gather_data}{env_name:{} }{elapsed}{date_color}[{date}]{NO_COLOR} '
            '{host_color}{user}@{hostname}:{NO_COLOR} '
-           '{path_color}{cwd}{NO_COLOR}\n{branch}>>> ')
+           '{path_color}{path}{NO_COLOR}\n{branch}>>> ')
 
 
 ##### Other #####
