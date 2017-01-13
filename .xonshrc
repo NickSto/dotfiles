@@ -67,6 +67,11 @@ aliases['rsynca'] = ['rsync', '-e', 'ssh', '--delete', '--itemize-changes', '-za
 
 ##### Functions #####
 
+# We don't need calc in xonsh, but in case I type it out of habit:
+def _calc(args):
+  if args:
+    print(eval(' '.join(args)))
+aliases['calc'] = _calc
 # Update the dotfiles.
 if !(which git > /dev/null 2> /dev/null):
   if True or host == 'cyberstar' or distro.endswith('bsd'):
