@@ -381,6 +381,25 @@ on error." >&2
     echo "Silenced!"
   fi
 }
+if which tmpcmd.sh >/dev/null 2>/dev/null; then
+  function crashpause {
+    if [[ $# -ge 1 ]]; then
+      local timeout="$1"
+    else
+      local timeout=2h
+    fi
+    sudo tmpcmd.sh -t $timeout 'service crashplan stop' 'service crashplan start'
+  }
+  if which dnsadd.sh >/dev/null 2>/dev/null; then
+    function dnsadd {
+      if [[ $# -lt 1 ]]; then
+        echo "Usage: \$ dnsadd [domain.com]" >&2
+        return 1
+      fi
+      sudo tmpcmd.sh -t 2h "dnsadd.sh add $1" "dnsadd.sh rm $1"
+    }
+  fi
+fi
 if [[ $host == ruby ]]; then
   # Log my current number of tabs to a file, for self-monitoring.
   # On my laptop, screw the tabs command for now. Never used it.
@@ -430,28 +449,6 @@ Add -f to force logging even when SILENCE is in effect." >&2
   else
     echo "Error: Failed getting IP address." >&2
   fi
-}
-function proxpn {
-  local ConfigDir=~/aa/misc/computerthings/proxpn-config
-  if ! [[ -f $ConfigDir/proxpn.ovpn ]]; then
-    echo "Error: $ConfigDir/proxpn.ovpn missing!" >&2
-    return 1
-  fi
-  silence  # Quiet network traffic that could be identifying.
-  local interface=$(getinterface)
-  # Avoid IPv6 leaks
-  if ! sudo sysctl -w net.ipv6.conf.$interface.disable_ipv6=1; then
-    echo "Error turning off ipv6. Is this the correct interface name? \"$interface\"" >&2
-    return 1
-  fi
-  [[ $? != 0 ]] && return 1
-  cd $ConfigDir
-  [[ $? != 0 ]] && return 1
-  pwd
-  sudo openvpn --user $USER --config proxpn.ovpn
-  cd -
-  sudo sysctl -w net.ipv6.conf.$interface.disable_ipv6=0
-  silence -u
 }
 function bak {
   local path="$1"
@@ -698,7 +695,7 @@ END {print iface, mac, ipv4, ipv6}'
 alias getmac=getip
 function getinterface {
   if [[ $# -gt 0 ]]; then
-    echo "Usagae: \$ getinterface
+    echo "Usage: \$ getinterface
 Print the name of the interface on the default route (like \"wlan0\" or \"wlp58s0\")" >&2
     return 1
   fi
