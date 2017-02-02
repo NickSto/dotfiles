@@ -904,75 +904,6 @@ function human_time {
   fi
   echo "$years_str$days_str$hr_str$min_str$sec_str"
 }
-# For PS1 prompt
-# color red on last command failure
-function prompt_exit_color {
-  if [[ $? == 0 ]]; then
-    if [[ "$remote" ]]; then
-      pecol='0;30m' # black
-    else
-      pecol='0;36m' # teal
-    fi
-  else # if error
-    pecol='0;31m' # red
-  fi
-}
-# Set the window title, if needed.
-function prompt_set_title {
-  if [[ $(history 1 | awk '{print $2}') == ssh ]]; then
-    title $host
-  fi
-}
-# Gather info on the git repo, if we're in one.
-# This is all in one function so we only run the git command once
-# (could take a while in large repos).
-function prompt_git_info {
-  pgcol='0;32m' # cyan
-  ps1_branch=
-  local info=$(git status --short --branch 2>/dev/null)
-  if ! [[ "$info" ]]; then
-    return
-  fi
-  # Color the prompt differently if there are modified, tracked files.
-  if echo "$info" | grep -qE '^ M'; then
-    pgcol='0;33m' # yellow
-  fi
-  # Show the branch if we're not on "master".
-  local branch=$(echo "$info" | head -n 1 | sed -E -e 's/^## //' -e 's/^(.+)\.\.\..*$/\1/')
-  if [[ $branch != master ]]; then
-    ps1_branch="$branch "
-  fi
-}
-# timer from https://stackoverflow.com/a/1862762/726773
-timer_thres=10
-function timer_start {
-  # $SECONDS is a shell built-in: the total number of seconds it's been running.
-  timer=${timer:-$SECONDS}
-}
-function timer_stop {
-  local seconds=$(($SECONDS - $timer))
-  ps1_timer_show=''
-  if [[ $seconds -ge $timer_thres ]]; then
-    ps1_timer_show="$(time_format $seconds) "
-  fi
-  unset timer
-}
-# format a number of seconds into a readable time
-function time_format {
-  local seconds=$1
-  local minutes=$(($seconds/60))
-  local hours=$(($minutes/60))
-  seconds=$(($seconds - $minutes*60))
-  minutes=$(($minutes - $hours*60))
-  if [[ $minutes -lt 1 ]]; then
-    echo $seconds's'
-  elif [[ $hours -lt 1 ]]; then
-    echo $minutes'm'$seconds's'
-  else
-    echo $hours'h'$minutes'm'
-  fi
-}
-trap 'timer_start' DEBUG
 
 
 ##### Bioinformatics #####
@@ -1201,6 +1132,80 @@ Default user is $SlurmUser." >&2
 fi
 
 
+##### PS1 prompt #####
+
+# color red on last command failure
+function prompt_exit_color {
+  if [[ $? == 0 ]]; then
+    if [[ "$remote" ]]; then
+      pecol='0;30m' # black
+    else
+      pecol='0;36m' # teal
+    fi
+  else # if error
+    pecol='0;31m' # red
+  fi
+}
+# Set the window title, if needed.
+function prompt_set_title {
+  if [[ $(history 1 | awk '{print $2}') == ssh ]]; then
+    title $host
+  fi
+}
+# Gather info on the git repo, if we're in one.
+# This is all in one function so we only run the git command once
+# (could take a while in large repos).
+function prompt_git_info {
+  pgcol='0;32m' # cyan
+  ps1_branch=
+  local info=$(git status --short --branch 2>/dev/null)
+  if ! [[ "$info" ]]; then
+    return
+  fi
+  # Color the prompt differently if there are modified, tracked files.
+  if echo "$info" | grep -qE '^ M'; then
+    pgcol='0;33m' # yellow
+  fi
+  # Show the branch if we're not on "master".
+  local branch=$(echo "$info" | head -n 1 | sed -E -e 's/^## //' -e 's/^(.+)\.\.\..*$/\1/')
+  if [[ $branch != master ]]; then
+    ps1_branch="$branch "
+  fi
+}
+# timer from https://stackoverflow.com/a/1862762/726773
+timer_thres=10
+function timer_start {
+  # $SECONDS is a shell built-in: the total number of seconds it's been running.
+  timer=${timer:-$SECONDS}
+}
+function timer_stop {
+  local seconds=$(($SECONDS - $timer))
+  ps1_timer_show=''
+  if [[ $seconds -ge $timer_thres ]]; then
+    ps1_timer_show="$(time_format $seconds) "
+  fi
+  unset timer
+}
+# format a number of seconds into a readable time
+function time_format {
+  local seconds=$1
+  local minutes=$(($seconds/60))
+  local hours=$(($minutes/60))
+  seconds=$(($seconds - $minutes*60))
+  minutes=$(($minutes - $hours*60))
+  if [[ $minutes -lt 1 ]]; then
+    echo $seconds's'
+  elif [[ $hours -lt 1 ]]; then
+    echo $minutes'm'$seconds's'
+  else
+    echo $hours'h'$minutes'm'
+  fi
+}
+trap 'timer_start' DEBUG
+# $PROMPT_COMMAND is a shell built-in which is executed just before $PS1 is displayed.
+PROMPT_COMMAND='prompt_set_title;prompt_exit_color;prompt_git_info;timer_stop'
+
+
 ##### Other #####
 
 # Stuff I don't want to post publicly on Github. Still should be universal, not
@@ -1243,8 +1248,6 @@ else
   fi
 fi
 
-# $PROMPT_COMMAND is a shell built-in which is executed just before $PS1 is displayed.
-PROMPT_COMMAND='prompt_set_title;prompt_exit_color;prompt_git_info;timer_stop'
 ROOTPS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
 title $host
 
