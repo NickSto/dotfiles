@@ -16,12 +16,6 @@ host=$(hostname -s 2>/dev/null || hostname)
 # https://bosker.wordpress.com/2012/02/12/bash-scripters-beware-of-the-cdpath/
 unset CDPATH
 
-# change effective home directory on scofield
-if [[ $host == scofield ]] || [[ $host == brubeck ]]; then
-  export HOME=/galaxy/home/nick
-  cd $HOME
-fi
-
 # Reliably get the actual parent dirname of a link (no readlink -f in BSD)
 function realdirname {
   echo $(cd $(dirname $(readlink $1)) && pwd)
@@ -1211,7 +1205,7 @@ fi
 
 # add correct bin directory to PATH
 if [[ $host == scofield ]]; then
-  pathadd /galaxy/home/nick/bin
+  pathadd /galaxy/home/$USER/bin
 elif [[ $host =~ ^nn[0-9] ]]; then
   true  # inherited from scofield
 else
@@ -1248,12 +1242,13 @@ PROMPT_COMMAND='prompt_exit_color;prompt_git_info;timer_stop'
 ROOTPS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
 title $host
 
-# if it's a remote shell, change $PS1 prompt format and enter a screen
+# If it's a remote shell, change $PS1 prompt format and enter a screen.
 if [[ $remote ]]; then
   export PS1='${ps1_timer_show}\e[${pecol}[\d]\e[m \u@\h: \w\n$ps1_branch\$ '
-  # if not already in a screen, enter one (IMPORTANT to avoid infinite loops)
-  # also check that stdout is attached to a real terminal with -t 1
-  if [[ ! "$STY" && -t 1 ]] && [[ $TERM != noscreen ]]; then
+  # If not already in a screen, enter one (IMPORTANT to avoid infinite loops).
+  # Also check that stdout is attached to a real terminal with -t 1, and that the user hasn't
+  # requested not to enter a screen.
+  if [[ ! "$STY" && -t 1 ]] && [[ $TERM != noscreen ]] && ! [[ -f ~/NOSCREEN ]]; then
     if [[ $host == ndojo || $host == nbs ]]; then
       true  # no screen there
     elif [[ $host == brubeck || $host == scofield ]] && [[ -x ~/code/pagscr-me.sh ]]; then
