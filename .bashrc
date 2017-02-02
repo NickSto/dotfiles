@@ -917,6 +917,12 @@ function prompt_exit_color {
     pecol='0;31m' # red
   fi
 }
+# Set the window title, if needed.
+function prompt_set_title {
+  if [[ $(history 1 | awk '{print $2}') == ssh ]]; then
+    title $host
+  fi
+}
 # Gather info on the git repo, if we're in one.
 # This is all in one function so we only run the git command once
 # (could take a while in large repos).
@@ -1238,7 +1244,7 @@ else
 fi
 
 # $PROMPT_COMMAND is a shell built-in which is executed just before $PS1 is displayed.
-PROMPT_COMMAND='prompt_exit_color;prompt_git_info;timer_stop'
+PROMPT_COMMAND='prompt_set_title;prompt_exit_color;prompt_git_info;timer_stop'
 ROOTPS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
 title $host
 
