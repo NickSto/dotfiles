@@ -384,7 +384,12 @@ on error." >&2
 if which tmpcmd.sh >/dev/null 2>/dev/null; then
   function crashpause {
     if [[ $# -ge 1 ]]; then
-      local timeout="$1"
+      if [[ $1 == '-h' ]]; then
+        echo "Usage: \$ crashpause [time]" >&2
+        return 1
+      else
+        local timeout="$1"
+      fi
     else
       local timeout=2h
     fi
@@ -852,7 +857,7 @@ Default: "Terminal"' >&2
     return 1
   fi
   if [[ $# == 0 ]]; then
-    echo -ne "\033]2;Terminal\007"
+    echo -ne "\033]2;$host\007"
   else
     echo -ne "\033]2;$@\007"
   fi
