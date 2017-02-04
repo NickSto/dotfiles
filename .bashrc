@@ -648,6 +648,30 @@ function deref {
 function vil {
   vi $(deref "$1")
 }
+function venv {
+  if [[ $# -ge 1 ]] && [[ $1 == '-h' ]]; then
+    echo "Usage: \$ venv
+Looks for a .venv directory in the current directory or its parents, and activates the first one it
+finds." >&2
+    return 1
+  fi
+  local dir=$(pwd)
+  while ! [[ -d $dir/.venv ]] && [[ $dir != / ]]; do
+    dir=$(dirname $dir)
+  done
+  if [[ $dir == / ]]; then
+    echo "No .venv directory found." >&2
+    return 1
+  else
+    echo "Activating virtualenv in $dir/.venv" >&2
+  fi
+  if [[ -f $dir/.venv/bin/activate ]]; then
+    source $dir/.venv/bin/activate
+  else
+    echo "Error: no .venv/bin/activate file found." >&2
+    return 1
+  fi
+}
 function getip {
   if [[ $# -gt 0 ]]; then
     echo "Usage: \$ getip
@@ -1249,7 +1273,9 @@ else
 fi
 
 ROOTPS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
-title $host
+if [[ $- == *i* ]]; then
+  title $host
+fi
 
 # If it's a remote shell, change $PS1 prompt format and enter a screen.
 if [[ $remote ]]; then
