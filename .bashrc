@@ -549,12 +549,18 @@ function lgoog {
 function youtube {
   # Process args.
   if [[ $# == 0 ]] || [[ $1 == '-h' ]]; then
-    echo 'Usage: $ youtube url [title [quality]]' >&2
+    echo 'Usage: $ youtube url [title [quality]]
+Supports youtube.com and facebook.com.' >&2
     return 1
   fi
   local url="$1"
-  if ! echo "$url" | grep -qE '[/.]youtube\.com'; then
-    echo "Error: Invalid url or domain is not youtube.com (in url \"$url\")." >&2
+  local site=
+  if echo "$url" | grep -qE '^((https?://)?www\.)?youtube\.com'; then
+    site='youtube'
+  elif echo "$url" | grep -qE '^((https?://)?www\.)?facebook\.com'; then
+    site='facebook'
+  else
+    echo "Error: Invalid url or domain is not youtube.com or facebook.com (in url \"$url\")." >&2
     return 1
   fi
   local title='%(title)s'
@@ -576,16 +582,29 @@ function youtube {
       *) quality="-f $3";;
     esac
   fi
-  # First define the format and check the resulting filename.
-  local format="$title [src %(uploader)s, %(uploader_id)s] [posted %(upload_date)s] [id %(id)s].%(ext)s"
-  local uploader_id=$(youtube-dl --get-filename "$url" -o '%(uploader_id)s' $quality)
-  # Only use both uploader and uploader_id if the id is a channel id like "UCZ5C1HBPMEcCA1YGQmqj6Iw"
-  if ! echo "$uploader_id" | grep -qE '^UC[a-zA-Z0-9_-]{22}$'; then
-    echo "uploader_id $uploader_id looks like a username, not a channel id. Omitting channel id.." >&2
-    format="$title [src %(uploader_id)s] [posted %(upload_date)s] [id %(id)s].%(ext)s"
+  local format=
+  if [[ $site == 'facebook' ]]; then
+    local url_escaped=$(echo "$url" | sed -E -e 's#^((https?://)?www\.)?##' -e 's#^(facebook\.com/[^?]+).*$#\1#' -e 's#/$##')
+    if which pct >/dev/null 2>/dev/null; then
+      url_escaped=$(pct encode "$url_escaped")
+      url_escaped=$(echo "$url_escaped" | sed -E 's#%#%%#g')
+    else
+      url_escaped=$(echo "$url_escaped" | sed -E 's#/#%%2F#g')
+    fi
+    format="$title [src $url_escaped] [posted %(upload_date)s].%(ext)s"
+    youtube-dl --no-mtime "$url" -o "$format"
+  elif [[ $site == 'youtube' ]]; then
+    # First define the format and check the resulting filename.
+    local format="$title [src %(uploader)s, %(uploader_id)s] [posted %(upload_date)s] [id %(id)s].%(ext)s"
+    local uploader_id=$(youtube-dl --get-filename "$url" -o '%(uploader_id)s' $quality)
+    # Only use both uploader and uploader_id if the id is a channel id like "UCZ5C1HBPMEcCA1YGQmqj6Iw"
+    if ! echo "$uploader_id" | grep -qE '^UC[a-zA-Z0-9_-]{22}$'; then
+      echo "uploader_id $uploader_id looks like a username, not a channel id. Omitting channel id.." >&2
+      format="$title [src %(uploader_id)s] [posted %(upload_date)s] [id %(id)s].%(ext)s"
+    fi
+    # Do the actual downloading.
+    youtube-dl --no-mtime "$url" -o "$format" $quality
   fi
-  # Do the actual downloading.
-  youtube-dl --no-mtime "$url" -o "$format" $quality
 }
 function uc {
   if [[ $# -gt 0 ]]; then
@@ -1273,6 +1292,7 @@ else
 fi
 
 ROOTPS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
+# Retitle window only if it's an interactive session. Otherwise, this can cause scp to hang.
 if [[ $- == *i* ]]; then
   title $host
 fi
