@@ -910,6 +910,8 @@ Default: "Terminal"' >&2
     echo -ne "\033]2;$@\007"
   fi
 }
+# I keep typing this for some reason.
+alias tilte=title
 # Convert a number of seconds into a human-readable time string.
 # Example output: "1 year 33 days 2:43:06"
 function human_time {
@@ -1202,7 +1204,8 @@ function prompt_exit_color {
 }
 # Set the window title, if needed.
 function prompt_set_title {
-  if [[ $(history 1 | awk '{print $2}') == ssh ]]; then
+  local last_cmd=$(history 1 | awk '{print $2}')
+  if [[ $last_cmd == ssh ]] || [[ $last_cmd == ipython ]]; then
     title $host
   fi
 }
@@ -1257,7 +1260,7 @@ function time_format {
 }
 trap 'timer_start' DEBUG
 # $PROMPT_COMMAND is a shell built-in which is executed just before $PS1 is displayed.
-PROMPT_COMMAND='prompt_set_title;prompt_exit_color;prompt_git_info;timer_stop'
+PROMPT_COMMAND='prompt_exit_color;prompt_set_title;prompt_git_info;timer_stop'
 
 
 ##### Other #####
@@ -1304,7 +1307,7 @@ fi
 
 ROOTPS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
 # Retitle window only if it's an interactive session. Otherwise, this can cause scp to hang.
-if [[ $- == *i* ]]; then
+if [[ $- == *i* ]] && [[ $host != brubeck ]]; then
   title $host
 fi
 
