@@ -502,7 +502,18 @@ function gitswitch {
     echo "Switched to Qwerty0"
   fi
 }
-alias gitlast='git log --oneline -n 1'
+function gitlast {
+  local commits=1
+  if [[ $# -ge 1 ]]; then
+    if [[ $1 == '-h' ]]; then
+      echo 'Usage: $ gitlast [num_commits]' >&2
+      return 1
+    else
+      commits=$1
+    fi
+  fi
+  git log --oneline -n $commits
+}
 # no more "cd ../../../.." (from http://serverfault.com/a/28649)
 function up {
   local d="";
