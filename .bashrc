@@ -912,10 +912,11 @@ Default: "Terminal"' >&2
     return 1
   fi
   if [[ $# == 0 ]]; then
-    echo -ne "\033]2;$host\007"
+    TITLE="$host"
   else
-    echo -ne "\033]2;$@\007"
+    TITLE="$@"
   fi
+  echo -ne "\033]2;$TITLE\007"
 }
 # I keep typing this for some reason.
 alias tilte=title
@@ -1211,9 +1212,16 @@ function prompt_exit_color {
 }
 # Set the window title, if needed.
 function prompt_set_title {
-  local last_cmd=$(history 1 | awk '{print $2}')
-  if [[ $last_cmd == ssh ]] || [[ $last_cmd == ipython ]]; then
-    title $host
+  if ! [[ $TITLE ]]; then
+    return
+  fi
+  local last_cmdline=$(history 1)
+  local last_cmd=$(printf "$last_cmdline" | awk '{print $2}')
+  if [[ $last_cmd == ssh ]] || [[ ${last_cmd:0:7} == ipython ]]; then
+    title "$TITLE"
+  elif [[ ${last_cmd:0:6} == python ]] &&
+       [[ $(printf "$last_cmdline" | awk '{print $3,$4}') == "manage.py shell" ]]; then
+    title "$TITLE"
   fi
 }
 # Gather info on the git repo, if we're in one.
