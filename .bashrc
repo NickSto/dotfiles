@@ -537,9 +537,9 @@ function vix {
 }
 function calc {
   if [[ $# -gt 0 ]]; then
-    python -c "from __future__ import division; from math import *; print $*"
+    python3 -c "from __future__ import division; from math import *; print($*)"
   else
-    python -i -c "from __future__ import division; from math import *"
+    python3 -i -c "from __future__ import division; from math import *"
   fi
 }
 function wcc {
