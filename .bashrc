@@ -491,6 +491,8 @@ if readlink -f / >/dev/null 2>/dev/null; then
     ln -s $(readlink -f $1) ~/bin/$(basename $1)
   }
 fi
+alias gitgraph='git log --oneline --abbrev-commit --all --graph --decorate --color'
+alias gig='nohup giggle >/dev/null 2>/dev/null &'
 function gitswitch {
   if [[ -f ~/.ssh/id_rsa-code ]]; then
     mv ~/.ssh/id_rsa-code{,.pub} ~/.ssh/keys && \
