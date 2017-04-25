@@ -756,6 +756,11 @@ Print the name of the interface on the default route (like \"wlan0\" or \"wlp58s
   fi
   getip | awk '{print $1}'
 }
+function iprange {
+  if which ipwraplib.py >/dev/null 2>/dev/null; then
+    ipwraplib.py mask_ip $@ | tr -d "(',')" | tr ' ' '\n'
+  fi
+}
 # Print a random, valid MAC address.
 function randmac() {
   python -c "
