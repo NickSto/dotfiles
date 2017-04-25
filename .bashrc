@@ -1296,6 +1296,10 @@ pathadd /sbin
 pathadd /usr/sbin
 pathadd /usr/local/sbin
 pathadd $HOME/.local/bin
+# Add the Conda root environment bin directory last, so other versions are preferred.
+if [[ -d $HOME/src/miniconda3/bin ]]; then
+  pathadd $HOME/src/miniconda3/bin
+fi
 
 # a more "sophisticated" method for determining if we're in a remote shell
 # check if the system supports the right ps parameters and if parents is able to
