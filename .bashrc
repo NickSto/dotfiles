@@ -609,7 +609,7 @@ Supports youtube.com and facebook.com.' >&2
   elif [[ $site == 'youtube' ]]; then
     # First define the format and check the resulting filename.
     local format="$title [src %(uploader)s, %(uploader_id)s] [posted %(upload_date)s] [id %(id)s].%(ext)s"
-    local uploader_id=$(youtube-dl --get-filename "$url" -o '%(uploader_id)s' $quality)
+    local uploader_id=$(youtube-dl --get-filename -o '%(uploader_id)s' "$url")
     # Only use both uploader and uploader_id if the id is a channel id like "UCZ5C1HBPMEcCA1YGQmqj6Iw"
     if ! echo "$uploader_id" | grep -qE '^UC[a-zA-Z0-9_-]{22}$'; then
       echo "uploader_id $uploader_id looks like a username, not a channel id. Omitting channel id.." >&2
