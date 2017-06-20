@@ -566,6 +566,9 @@ function youtube {
 Supports youtube.com and facebook.com.' >&2
     return 1
   fi
+  #TODO: Instagram:
+  #      youtube-dl 'https://www.instagram.com/p/4fvpqXMKGn/'
+  #      -o "Dogs [src %(uploader)s, instagram.com%%2F%(uploader_id)s] [posted 20150628] [id %(id)s].%(ext)s"
   local url="$1"
   local site=
   if echo "$url" | grep -qE '^((https?://)?www\.)?youtube\.com'; then
@@ -1216,11 +1219,11 @@ function prompt_set_title {
     return
   fi
   local last_cmdline=$(history 1)
-  local last_cmd=$(printf "$last_cmdline" | awk '{print $2}')
+  local last_cmd=$(printf "%s" "$last_cmdline" | awk '{print $2}')
   if [[ $last_cmd == ssh ]] || [[ ${last_cmd:0:7} == ipython ]]; then
     title "$TITLE"
   elif [[ ${last_cmd:0:6} == python ]] &&
-       [[ $(printf "$last_cmdline" | awk '{print $3,$4}') == "manage.py shell" ]]; then
+       [[ $(printf "%s" "$last_cmdline" | awk '{print $3,$4}') == "manage.py shell" ]]; then
     title "$TITLE"
   fi
 }
