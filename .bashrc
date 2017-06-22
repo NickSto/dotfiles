@@ -69,6 +69,18 @@ if [[ ! $kernel ]]; then
   kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')
 fi
 
+# If we're in Tails, set $HOME to the USB drive with this bashrc on it.
+if [[ $distro == tails ]]; then
+  if [[ $host == localhost.localdomain ]]; then
+    host=tails
+  fi
+  usb_drive=$(df $bashrc_dir | awk 'END {print $6}')
+  if [[ $usb_drive ]]; then
+    export HOME=$usb_drive
+    cd $HOME
+  fi
+fi
+
 
 
 #################### System default stuff ####################
