@@ -95,9 +95,6 @@ if [[ $distro == ubuntu ]]; then
   # make less more friendly for non-text input files, see lesspipe(1)
   [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
-  # "alert" Sends notify-send notification with exit status of last command
-  alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
-
   # enable programmable completion features (you don't need to enable
   # this if it's already enabled in /etc/bash.bashrc and /etc/profile
   # sources /etc/bash.bashrc).
@@ -142,7 +139,6 @@ elif [[ $host == brubeck ]]; then
 
 fi
 
-
 # enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
@@ -150,11 +146,6 @@ if [ -x /usr/bin/dircolors ]; then
     alias fgrep='fgrep --color=auto'
     alias egrep='egrep --color=auto'
 fi
-
-# some more ls aliases
-alias ll='ls -alF'
-alias la='ls -A'
-alias l='ls -CF'
 
 
 
@@ -182,13 +173,15 @@ export EDITOR=vim
 # Set directory for my special data files
 data_dir="$HOME/.local/share/nbsdata"
 if [[ $distro == ubuntu || $distro == cygwin || $distro == debian ]]; then
-  alias lsl='ls -lFhAb --color=auto --group-directories-first'
-  alias lsld='ls -lFhAbd --color=auto --group-directories-first'
+  alias ll='ls -lFhAb --color=auto --group-directories-first'
+  alias lld='ls -lFhAbd --color=auto --group-directories-first'
 else
   # long options don't work on nfshost (freebsd) or OS X
-  alias lsl='ls -lFhAb'
-  alias lsld='ls -lFhAbd'
+  alias ll='ls -lFhAb'
+  alias lld='ls -lFhAbd'
 fi
+alias lsl=ll
+alias lsld=lld
 alias sll=sl # choo choo
 alias mv='mv -i'
 alias cp='cp -i'
