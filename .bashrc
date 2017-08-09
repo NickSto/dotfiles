@@ -1340,7 +1340,7 @@ fi
 
 ROOTPS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
 # Retitle window only if it's an interactive session. Otherwise, this can cause scp to hang.
-if [[ $- == *i* ]] && [[ $host != brubeck ]]; then
+if [[ $- == *i* ]] && [[ $host != uniport ]]; then
   title $host
 fi
 
@@ -1351,8 +1351,8 @@ if [[ $remote ]]; then
   # Also check that stdout is attached to a real terminal with -t 1, and that the user hasn't
   # requested not to enter a screen.
   if [[ ! "$STY" && -t 1 ]] && [[ $LC_NO_SCREEN != true ]] && ! [[ -f ~/NOSCREEN ]]; then
-    if [[ $host == ndojo || $host == nbs ]]; then
-      true  # no screen there
+    if [[ $host == uniport ]] || [[ $host == ndojo ]] || [[ $host == nbs ]]; then
+      true  # screen unavailable or undesired
     elif [[ $host == brubeck || $host == scofield ]] && [[ -x ~/code/pagscr-me.sh ]]; then
       exec ~/code/pagscr-me.sh -RR -S auto
     elif which screen >/dev/null 2>/dev/null; then
