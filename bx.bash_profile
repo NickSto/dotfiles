@@ -5,7 +5,7 @@ fi
 
 # Allow me to remotely turn off auto-screen even if I have trouble setting $TERM.
 if [[ -f ~/NOSCREEN ]]; then
-  TERM=noscreen
+  LC_NO_SCREEN=true
 fi
 
 if [[ -d /galaxy/home/$USER ]]; then

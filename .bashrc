@@ -1350,7 +1350,7 @@ if [[ $remote ]]; then
   # If not already in a screen, enter one (IMPORTANT to avoid infinite loops).
   # Also check that stdout is attached to a real terminal with -t 1, and that the user hasn't
   # requested not to enter a screen.
-  if [[ ! "$STY" && -t 1 ]] && [[ $TERM != noscreen ]] && ! [[ -f ~/NOSCREEN ]]; then
+  if [[ ! "$STY" && -t 1 ]] && [[ $LC_NO_SCREEN != true ]] && ! [[ -f ~/NOSCREEN ]]; then
     if [[ $host == ndojo || $host == nbs ]]; then
       true  # no screen there
     elif [[ $host == brubeck || $host == scofield ]] && [[ -x ~/code/pagscr-me.sh ]]; then
