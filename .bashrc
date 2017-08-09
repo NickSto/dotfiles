@@ -170,6 +170,8 @@ shopt -s globstar 2>/dev/null || true
 
 # Set my default text editor
 export EDITOR=vim
+# Set a default bx destination server
+export LC_BX_DEST=bru
 # Set directory for my special data files
 data_dir="$HOME/.local/share/nbsdata"
 if [[ $distro == ubuntu || $distro == cygwin || $distro == debian ]]; then
@@ -252,13 +254,17 @@ fi
 function kerb {
   local bx_realm="nick@BX.PSU.EDU"
   local galaxy_realm="nick@GALAXYPROJECT.ORG"
-  local default_realm="$galaxy"
+  local default_realm="$bx_realm"
   local realm="$1"
   if [[ $# -le 0 ]]; then
     realm="$default"
-  elif [[ $1 == bru ]]; then
+  elif [[ $1 == bx ]]; then
+    ream="$bx_realm"
+  elif [[ ${1:0:3} == bru ]]; then
     realm="$bx_realm"
-  elif [[ $1 == sco ]]; then
+  elif [[ ${1:0:3} == sco ]]; then
+    realm="$galaxy_realm"
+  elif [[ ${1:0:3} == gal ]]; then
     realm="$galaxy_realm"
   fi
   kinit -l 90d "$realm"
