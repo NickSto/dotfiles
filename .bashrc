@@ -199,6 +199,20 @@ function cpu {
   ps aux | awk 'NR > 1 {cpu+=$3; mem+=$4} END {printf("%0.2f\t%0.2f\n", cpu/100, mem/100)}'
 }
 alias mem=cpu
+function chrome {
+  local mem=$(awk '$1 == "MemTotal:" && $3 == "kB" {print $2*1024}' /proc/meminfo)
+  if ! [[ $mem ]]; then
+    echo 'Error getting total memory.' >&2
+    return 1
+  fi
+  local cores=$(grep -c 'core id' /proc/cpuinfo)
+  if [[ $cores == 0 ]]; then
+    echo 'Error getting number of cores.' >&2
+    return 1
+  fi
+  ps aux | awk '$11 ~ /\/opt\/google\/chrome\// {cpu+=$3; mem+=$4} \
+    END {printf("Chrome is using %.1f%% CPU, %.2fGB RAM\n", cpu/'$cores', '$mem'*mem/100/1024/1024/1024)}'
+}
 function geoip {
   curl http://freegeoip.net/csv/$1
 }
