@@ -1292,12 +1292,20 @@ trap 'timer_start' DEBUG
 PROMPT_COMMAND='prompt_exit_color;prompt_set_title;prompt_git_info;timer_stop'
 
 
-##### Other #####
+##### Things to execute directly on session start #####
 
 # Stuff I don't want to post publicly on Github. Still should be universal, not
 # machine-specific.
 if [ -f ~/.bashrc_private ]; then
   source ~/.bashrc_private
+fi
+
+# Run the cluster-monitoring script on login, if it isn't already running
+# (cron jobs don't have the permissions).
+if [[ $host == brubeck ]] && which smonitor-cp.sh >/dev/null 2>/dev/null && \
+    ! [[ $(ps aux | awk '$1 == "'$USER'" && $12 ~ /smonitor-cp\.sh$/') ]]; then
+  nohup smonitor-cp.sh $HOME/cron/public_html/ /afs/bx.psu.edu/user/n/nick/public_html/ \
+    >/dev/null 2>/dev/null &
 fi
 
 # add correct bin directory to PATH
