@@ -541,6 +541,23 @@ function gitlast {
   fi
   git log --oneline -n $commits
 }
+function gitdiff {
+  diff_num=1
+  if [[ $# -ge 1 ]]; then
+    if [[ $1 == '-h' ]]; then
+      echo 'Usage: $ gitdiff [diff_num]
+Show a diff for the last commit (between it and the previous).
+Or, give a number for which diff before it to show (e.g. "2" gives the diff
+between the 3rd and 2nd to last commits).' >&2
+      return 1
+    else
+      diff_num=$1
+    fi
+  fi
+  local commit1 commit2
+  read commit2 commit1 <<< $(git log -n $((diff_num+1)) --pretty=format:%h | tail -n 2)
+  git diff $commit1 $commit2
+}
 # no more "cd ../../../.." (from http://serverfault.com/a/28649)
 function up {
   local d="";
