@@ -872,6 +872,7 @@ function sumcolumns {
   }' "$@"
 }
 function showdups {
+  local line
   cat "$1" | while read line; do
     local notfirst=''
     grep -n "^$line$" "$1" | while read line; do
@@ -1062,6 +1063,7 @@ function gatc {
   if [[ $# -gt 0 ]]; then
     echo "$1" | sed -E 's/[^GATCNgatcn]//g';
   else
+    local data
     while read data; do
       echo "$data" | sed -E 's/[^GATCNgatcn]//g';
     done;
@@ -1164,6 +1166,7 @@ elif [[ $host == brubeck ]] || [[ $host == scofield ]]; then
   function sgetnode {
     node_arg='-C new'
     max_cpus=0
+    local node cpus
     while read node cpus; do
       if [[ $cpus -gt $max_cpus ]]; then
         max_cpus=$cpus
@@ -1185,6 +1188,7 @@ Default user: $SlurmUser." >&2
     if [[ $# -ge 2 ]]; then
       local user=$2
     fi
+    local jobid prio
     squeue -h -u $user -t PD -o '%.7i %Q' | while read jobid prio; do
       local new_prio=$((prio - prio_diff))
       scontrol update jobid=$jobid Priority=$new_prio
