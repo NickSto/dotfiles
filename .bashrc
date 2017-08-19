@@ -259,7 +259,7 @@ function cds {
 }
 alias noheader='grep -v "^#"'
 # Swap caps lock and esc.
-alias swapkeys="loadkeys-safe.sh && sudo loadkeys $HOME/aa/misc/computerthings/keymap-loadkeys.txt"
+alias swapkeys="loadkeys-safe.sh && sudo loadkeys $HOME/aa/computer/keymap-loadkeys.txt"
 # If an .xmodmap is present, source it to alter the keys however it says. Disable with noremap=1.
 # This is possibly obsoleted by the loadkeys method above.
 if [[ -f ~/.xmodmap ]] && [[ -z $noremap ]]; then
@@ -428,7 +428,7 @@ if [[ $host == ruby ]]; then
   # Log my current number of tabs to a file, for self-monitoring.
   # On my laptop, screw the tabs command for now. Never used it.
   function tabs {
-    local LogFile=~/aa/misc/computerthings/logs/tabs.tsv
+    local LogFile=~/aa/computer/logs/tabs.tsv
     if [[ $# == 0 ]] || [[ $1 == '-h' ]]; then
       echo "Usage: \$ tabs main_tabs [all_tabs]
 Log your current number of tabs, plus a timestamp, to $LogFile
@@ -454,7 +454,7 @@ number of tabs in all windows, human-readable timestamp." >&2
   }
 fi
 function logip {
-  local LogFile=~/aa/misc/computerthings/logs/ips.tsv
+  local LogFile=~/aa/computer/logs/ips.tsv
   if [[ $1 == '-h' ]]; then
     echo "Usage: \$ logip [-f]
 Log your current public IP address to $LogFile.
