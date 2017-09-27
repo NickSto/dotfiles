@@ -605,7 +605,9 @@ function youtube {
   # Process args.
   if [[ $# == 0 ]] || [[ $1 == '-h' ]]; then
     echo 'Usage: $ youtube url [title [quality]]
-Supports youtube.com and facebook.com.' >&2
+Supports youtube.com and facebook.com.
+If quality is "mp3", convert to mp3 using ffmpeg, then delete the video. The mp3 file will be named
+$title.mp3.' >&2
     return 1
   fi
   #TODO: Instagram:
@@ -629,6 +631,7 @@ Supports youtube.com and facebook.com.' >&2
       return
     fi
   fi
+  local convert_to=
   local quality=
   if [[ $# -ge 3 ]]; then
     case "$3" in
@@ -637,6 +640,7 @@ Supports youtube.com and facebook.com.' >&2
       480) quality='-f 135+250';;  # 80k audio, 480p video
       720) quality='-f 22';;
       1280) quality='-f 22';;
+      mp3) convert_to=mp3;;
       *) quality="-f $3";;
     esac
   fi
@@ -660,8 +664,18 @@ Supports youtube.com and facebook.com.' >&2
       echo "uploader_id $uploader_id looks like a username, not a channel id. Omitting channel id.." >&2
       format="$title [src %(uploader_id)s] [posted %(upload_date)s] [id %(id)s].%(ext)s"
     fi
+    if [[ $convert_to ]]; then
+      format="$title.$RANDOM"
+    fi
     # Do the actual downloading.
     youtube-dl --no-mtime "$url" -o "$format" $quality
+    if [[ $convert_to ]]; then
+      local vid_file=$(ls "$format".*)
+      if [[ $convert_to == mp3 ]] && which ffmpeg >/dev/null 2>/dev/null; then
+        ffmpeg -i "$vid_file" -aq 5 "$title.mp3"
+      fi
+      rm "$vid_file"
+    fi
   fi
 }
 function uc {
