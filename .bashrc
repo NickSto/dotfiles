@@ -3,7 +3,7 @@
 host=$(hostname -s 2>/dev/null || hostname)
 
 # supported hosts:
-# ruby main nsto yarr brubeck scofield ndojo nbs lion cyberstar
+# ruby main nsto2 yarr brubeck scofield ndojo nbs lion cyberstar
 
 # supported distros:
 #   ubuntu debian freebsd
@@ -48,7 +48,7 @@ case "$host" in
     distro="ubuntu";;
   main)
     distro="ubuntu";;
-  nsto)
+  nsto2)
     distro="ubuntu";;
   yarr)
     distro="ubuntu";;
@@ -79,6 +79,11 @@ if [[ $distro == tails ]]; then
     export HOME=$usb_drive
     cd $HOME
   fi
+fi
+
+# If we're in the webserver, cd to the webroot.
+if [[ $host == nsto2 ]]; then
+  cd /var/www/nstoler.com
 fi
 
 
@@ -320,7 +325,7 @@ else # doesn't work in cygwin, but no harm
 fi
 if [[ $host == ndojo || $host == nbs ]]; then
   alias errlog='less +G /home/logs/error_log'
-elif [[ $host == nsto ]]; then
+elif [[ $host == nsto2 ]]; then
   alias errlog='less +G /var/www/logs/error.log'
 elif [[ $distro == ubuntu || $distro == debian ]]; then
   alias errlog='less +G /var/log/syslog'
@@ -957,7 +962,7 @@ function human_time {
 
 if [[ $host == ruby || $host == main ]]; then
   true #alias igv='java -Xmx4096M -jar ~/bin/igv.jar'
-elif [[ $host == nsto ]]; then
+elif [[ $host == nsto2 ]]; then
   alias igv='java -Xmx256M -jar ~/bin/igv.jar'
 else
   alias igv='java -jar ~/bin/igv.jar'
