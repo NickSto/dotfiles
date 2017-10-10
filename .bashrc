@@ -1221,7 +1221,7 @@ function prompt_set_title {
 function prompt_git_info {
   pgcol='0;32m' # cyan
   ps1_branch=
-  local info=$(git status --short --branch 2>/dev/null)
+  local info=$(git status --porcelain --branch 2>/dev/null)
   if ! [[ "$info" ]]; then
     return
   fi
