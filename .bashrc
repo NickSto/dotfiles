@@ -3,12 +3,18 @@
 host=$(hostname -s 2>/dev/null || hostname)
 
 # supported hosts:
-# ruby main nsto2 yarr brubeck scofield ndojo nbs lion cyberstar
+# ruby main nsto2 ndojo nbs yarr brubeck scofield nn[0-9]+ uniport lion cyberstar
 
 # supported distros:
 #   ubuntu debian freebsd
 # partial support:
 #   cygwin osx
+
+# Are we on one of the cluster nodes?
+in_cluster=
+if echo $host | grep -qE '^nn[0-9]+$' && [[ ${host:2} -le 15 ]]; then
+  in_cluster=true
+fi
 
 ##### Determine distro #####
 
@@ -183,7 +189,7 @@ if [[ $distro == ubuntu || $distro == cygwin || $distro == debian ]]; then
   alias ll='ls -lFhAb --color=auto --group-directories-first'
   alias lld='ls -lFhAbd --color=auto --group-directories-first'
 else
-  # long options don't work on nfshost (freebsd) or OS X
+  # long options don't work on FreeBSD or OS X
   alias ll='ls -lFhAb'
   alias lld='ls -lFhAbd'
 fi
@@ -249,13 +255,13 @@ function cds {
   if [[ $n == 1 ]]; then
     if [[ $host == brubeck ]]; then
       cd /scratch/nick
-    elif [[ $host == scofield ]] || [[ $host =~ ^nn[0-9] ]]; then
+    elif [[ $host == scofield ]] || [[ $in_cluster ]]; then
       cd /nfs/brubeck.bx.psu.edu/scratch1/nick
     fi
   elif [[ $n == 2 ]]; then
     if [[ $host == brubeck ]]; then
       cd /scratch2/nick
-    elif [[ $host == scofield ]] || [[ $host =~ ^nn[0-9] ]]; then
+    elif [[ $host == scofield ]] || [[ $in_cluster ]]; then
       cd /nfs/brubeck.bx.psu.edu/scratch2/nick
     fi
   elif [[ $n -ge 3 ]]; then
@@ -1288,7 +1294,7 @@ fi
 # add correct bin directory to PATH
 if [[ $host == scofield ]]; then
   pathadd /galaxy/home/$USER/bin
-elif [[ $host =~ ^nn[0-9] ]]; then
+elif [[ $in_cluster ]]; then
   true  # inherited from scofield
 else
   pathadd ~/bin
@@ -1339,7 +1345,7 @@ if [[ $remote ]]; then
   #    - Set via: $ LC_NO_SCREEN=true ssh -o SendEnv=LC_NO_SCREEN me@destination
   # 4. ! -f ~/NOSCREEN: The user has requested not to enter a screen (backup method).
   if ! [[ "$STY" ]] && [[ -t 1 ]] && [[ $LC_NO_SCREEN != true ]] && ! [[ -f ~/NOSCREEN ]]; then
-    if [[ $host == uniport ]] || [[ $host == ndojo ]] || [[ $host == nbs ]]; then
+    if [[ $host == uniport ]] || [[ $host == ndojo ]] || [[ $host == nbs ]] || [[ $in_cluster ]]; then
       true  # screen unavailable or undesired
     elif [[ $host == brubeck || $host == scofield ]] && [[ -x ~/code/pagscr-me.sh ]]; then
       exec ~/code/pagscr-me.sh -RR -S auto
