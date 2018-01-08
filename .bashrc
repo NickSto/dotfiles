@@ -1332,10 +1332,13 @@ fi
 # If it's a remote shell, change $PS1 prompt format and enter a screen.
 if [[ $remote ]]; then
   export PS1='${ps1_timer_show}\e[${pecol}[\d]\e[m \u@\h: \w\n$ps1_branch\$ '
-  # If not already in a screen, enter one (IMPORTANT to avoid infinite loops).
-  # Also check that stdout is attached to a real terminal with -t 1, and that the user hasn't
-  # requested not to enter a screen.
-  if [[ ! "$STY" && -t 1 ]] && [[ $LC_NO_SCREEN != true ]] && ! [[ -f ~/NOSCREEN ]]; then
+  # Enter a screen, UNLESS:
+  # 1. ! "$STY": We're already in a screen (IMPORTANT to avoid infinite loops).
+  # 2. -t 1: We're not attached to a real terminal.
+  # 3. $LC_NO_SCREEN != true: The user has requested not to enter a screen.
+  #    - Set via: $ LC_NO_SCREEN=true ssh -o SendEnv=LC_NO_SCREEN me@destination
+  # 4. ! -f ~/NOSCREEN: The user has requested not to enter a screen (backup method).
+  if ! [[ "$STY" ]] && [[ -t 1 ]] && [[ $LC_NO_SCREEN != true ]] && ! [[ -f ~/NOSCREEN ]]; then
     if [[ $host == uniport ]] || [[ $host == ndojo ]] || [[ $host == nbs ]]; then
       true  # screen unavailable or undesired
     elif [[ $host == brubeck || $host == scofield ]] && [[ -x ~/code/pagscr-me.sh ]]; then
