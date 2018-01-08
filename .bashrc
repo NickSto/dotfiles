@@ -203,6 +203,9 @@ alias tarb='tar -jxvpf'
 alias pseudo=sudo
 alias vib="vim $bashrc_dir/.bashrc"
 alias awkt="awk -F '\t' -v OFS='\t'"
+function now {
+  date +%s
+}
 
 alias pingg='ping -c 1 google.com'
 alias curlip='curl -s icanhazip.com'
