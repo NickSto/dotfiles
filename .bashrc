@@ -177,14 +177,21 @@ shopt -s checkwinsize
 shopt -s globstar 2>/dev/null || true
 
 
-##### Aliases #####
+### Environment variables ###
 
-# Set my default text editor
-export EDITOR=vim
-# Set a default bx destination server
-export LC_BX_DEST=bru
 # Set directory for my special data files
 data_dir="$HOME/.local/share/nbsdata"
+# Set a default bx destination server
+export LC_BX_DEST=bru
+# Set my default text editor
+export EDITOR=vim
+# Allow disabling ~/.python_history.
+# See https://unix.stackexchange.com/questions/121377/how-can-i-disable-the-new-history-feature-in-python-3-4
+export PYTHONSTARTUP=~/.pythonrc
+
+
+##### Aliases #####
+
 if [[ $distro == ubuntu || $distro == cygwin || $distro == debian ]]; then
   alias ll='ls -lFhAb --color=auto --group-directories-first'
   alias lld='ls -lFhAbd --color=auto --group-directories-first'
