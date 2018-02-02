@@ -279,6 +279,7 @@ function cds {
   fi
 }
 alias noheader='grep -v "^#"'
+alias veramount="veracrypt -t --truecrypt -k '' --protect-hidden=no"
 # Swap caps lock and esc.
 alias swapkeys="loadkeys-safe.sh && sudo loadkeys $HOME/aa/computer/keymap-loadkeys.txt"
 # If an .xmodmap is present, source it to alter the keys however it says. Disable with noremap=1.
