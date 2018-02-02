@@ -600,9 +600,9 @@ function vix {
 }
 function calc {
   if [[ $# -gt 0 ]]; then
-    python3 -c "from __future__ import division; from math import *; print($*)"
+    python3 -c "from math import *; print($*)"
   else
-    python3 -i -c "from __future__ import division; from math import *"
+    python3 -i -c 'from math import *'
   fi
 }
 function wcc {
