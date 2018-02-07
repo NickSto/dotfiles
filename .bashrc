@@ -3,7 +3,7 @@
 host=$(hostname -s 2>/dev/null || hostname)
 
 # supported hosts:
-# ruby main nsto2 ndojo nbs yarr brubeck scofield nn[0-9]+ uniport lion cyberstar
+# ruby main nsto2 ndojo nbs yarr brubeck scofield desmond nn[0-9]+ uniport lion cyberstar
 
 # supported distros:
 #   ubuntu debian freebsd
@@ -182,7 +182,7 @@ shopt -s globstar 2>/dev/null || true
 # Set directory for my special data files
 data_dir="$HOME/.local/share/nbsdata"
 # Set a default bx destination server
-export LC_BX_DEST=bru
+export LC_BX_DEST=desmond
 # Set my default text editor
 export EDITOR=vim
 # Allow disabling ~/.python_history.
@@ -260,18 +260,18 @@ function cds {
   if [[ "$1" ]]; then
     local n=$1
   else
-    local n=2
+    local n=5
   fi
   if [[ $n == 1 ]]; then
     if [[ $host == brubeck ]]; then
       cd /scratch/nick
-    elif [[ $host == scofield ]] || [[ $in_cluster ]]; then
+    else
       cd /nfs/brubeck.bx.psu.edu/scratch1/nick
     fi
   elif [[ $n == 2 ]]; then
     if [[ $host == brubeck ]]; then
       cd /scratch2/nick
-    elif [[ $host == scofield ]] || [[ $in_cluster ]]; then
+    else
       cd /nfs/brubeck.bx.psu.edu/scratch2/nick
     fi
   elif [[ $n -ge 3 ]]; then
@@ -1134,7 +1134,7 @@ if [[ $host == ruby ]]; then
   alias scpus="ssh bru 'sinfo -h -p general -t idle,alloc -o "'"'"%n %C"'"'"' | tr ' /' '\t\t' | cut -f 1,3 | sort -k 1.3g"
   alias squeue='ssh bru squeue'
   alias squeuep="ssh bru 'squeue -o "'"'"%.7i %Q %.8u %.8T %.10M %11R %4h %j"'"'"' | sort -g -k 2"
-elif [[ $host == brubeck ]] || [[ $host == scofield ]]; then
+else
   alias sinfoc='sinfo -p general -o "%11T %.5D %.15C %.15N"'
   alias sfree='sinfo -h -p general -t idle -o %n'
   alias scpus="sinfo -h -p general -t idle,alloc -o '%n %C' | tr ' /' '\t\t' | cut -f 1,3 | sort -k 1.3g"
@@ -1358,7 +1358,8 @@ if [[ $remote ]]; then
   if ! [[ "$STY" ]] && [[ -t 1 ]] && [[ $LC_NO_SCREEN != true ]] && ! [[ -f ~/NOSCREEN ]]; then
     if [[ $host == uniport ]] || [[ $host == ndojo ]] || [[ $host == nbs ]] || [[ $in_cluster ]]; then
       true  # screen unavailable or undesired
-    elif [[ $host == brubeck || $host == scofield ]] && [[ -x ~/code/pagscr-me.sh ]]; then
+    elif [[ $host == brubeck || $host == scofield || $host == desmond ]] \
+        && [[ -x ~/code/pagscr-me.sh ]]; then
       exec ~/code/pagscr-me.sh -RR -S auto
     elif which screen >/dev/null 2>/dev/null; then
       exec screen -RR -S auto
