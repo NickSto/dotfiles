@@ -182,7 +182,7 @@ shopt -s globstar 2>/dev/null || true
 # Set directory for my special data files
 data_dir="$HOME/.local/share/nbsdata"
 # Set a default bx destination server
-export LC_BX_DEST=desmond
+export LC_BX_DEST=bru
 # Set my default text editor
 export EDITOR=vim
 # Allow disabling ~/.python_history.
@@ -1137,7 +1137,8 @@ if [[ $host == ruby ]]; then
 else
   alias sinfoc='sinfo -p general -o "%11T %.5D %.15C %.15N"'
   alias sfree='sinfo -h -p general -t idle -o %n'
-  alias scpus="sinfo -h -p general -t idle,alloc -o '%n %C' | tr ' /' '\t\t' | cut -f 1,3 | sort -k 1.3g"
+  alias scpus="echo -e 'Node\tFree\tTotal' && sinfo -h -p general -t idle,alloc -o '%n %C' \
+                 | tr ' /' '\t\t' | cut -f 1,3,5 | sort -k 1.3g | sed -E 's/\.c\.bx\.psu\.edu//'"
   alias squeuep='squeue -o "%.7i %Q %.8u %.8T %.10M %11R %4h %j" | sort -g -k 2'
   function sgetnode {
     node_arg='-C new'
