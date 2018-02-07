@@ -1295,14 +1295,6 @@ if [ -f ~/.bashrc_private ]; then
   source ~/.bashrc_private
 fi
 
-# Run the cluster-monitoring script on login, if it isn't already running
-# (cron jobs don't have the permissions).
-if [[ $host == brubeck ]] && which smonitor-cp.sh >/dev/null 2>/dev/null && \
-    ! [[ $(ps aux | awk '$1 == "'$USER'" && $12 ~ /smonitor-cp\.sh$/') ]]; then
-  nohup smonitor-cp.sh $HOME/cron/public_html/ /afs/bx.psu.edu/user/n/nick/public_html/ \
-    >/dev/null 2>/dev/null &
-fi
-
 # add correct bin directory to PATH
 if [[ $host == scofield ]]; then
   pathadd /galaxy/home/$USER/bin
