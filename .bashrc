@@ -220,7 +220,19 @@ function cpu {
   ps aux | awk 'NR > 1 {cpu+=$3; mem+=$4} END {printf("%0.2f\t%0.2f\n", cpu/100, mem/100)}'
 }
 alias mem=cpu
-function chrome {
+alias chrome='totalmem /opt/google/chrome/ Chrome'
+alias foxmem='totalmem /usr/lib/firefox/ Firefox'
+function totalmem {
+  if [[ $# -lt 1 ]] || [[ "$1" == '-h' ]]; then
+    echo "Usage: totalmem cmd_prefix [name]" >&2
+    return 1
+  fi
+  local prefix="$1"
+  local name="$prefix"
+  if [[ $# -ge 2 ]]; then
+    name="$2"
+  fi
+  local prefix_len=$(echo -n "$prefix" | wc -c)
   local mem=$(awk '$1 == "MemTotal:" && $3 == "kB" {print $2*1024}' /proc/meminfo)
   if ! [[ $mem ]]; then
     echo 'Error getting total memory.' >&2
@@ -231,8 +243,9 @@ function chrome {
     echo 'Error getting number of cores.' >&2
     return 1
   fi
-  ps aux | awk '$11 ~ /\/opt\/google\/chrome\// {cpu+=$3; mem+=$4} \
-    END {printf("Chrome is using %.1f%% CPU, %.2fGB RAM\n", cpu/'$cores', '$mem'*mem/100/1024/1024/1024)}'
+  ps aux | awk 'substr($11, 1, '"$prefix_len"') == "'"$prefix"'" {cpu+=$3; mem+=$4} \
+    END {printf("'"$name"' is using %.1f%% CPU, %.2fGB RAM\n", \
+         cpu/'"$cores"', '"$mem"'*mem/100/1024/1024/1024)}'
 }
 function geoip {
   curl http://freegeoip.net/csv/$1
