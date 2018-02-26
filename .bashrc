@@ -740,6 +740,9 @@ $1 ~ /^[0-9]:$/ && $2 ~ /:$/ {
   }
   split($2, fields, ":")
   iface=fields[1]
+  mac = ""
+  ipv4 = ""
+  ipv6 = ""
 }
 # Get the MAC address.
 $1 == "link/ether" {
@@ -762,7 +765,11 @@ $1 == "inet6" && $3 == "scope" && $4 == "global" && $5 == "temporary" {
   }
 }
 # Print the last interface.
-END {print iface, mac, ipv4, ipv6}'
+END {
+  if (iface && (ipv4 || ipv6)) {
+    print iface, mac, ipv4, ipv6
+  }
+}'
 }
 alias getmac=getip
 function getinterface {
