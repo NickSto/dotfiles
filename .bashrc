@@ -308,8 +308,10 @@ function kerb {
   if [[ $# -le 0 ]]; then
     realm="$default"
   elif [[ $1 == bx ]]; then
-    ream="$bx_realm"
+    realm="$bx_realm"
   elif [[ ${1:0:3} == bru ]]; then
+    realm="$bx_realm"
+  elif [[ ${1:0:3} == des ]]; then
     realm="$bx_realm"
   elif [[ ${1:0:3} == sco ]]; then
     realm="$galaxy_realm"
