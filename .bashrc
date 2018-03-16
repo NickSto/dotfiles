@@ -240,10 +240,14 @@ if which trash-put >/dev/null 2>/dev/null; then
   alias trash=trash-put
 else
   function trash {
-    if [[ ! -d $HOME/.trash ]]; then
-      mkdir $HOME/.trash
+    echo "No trash-cli found. Falling back to manual ~/.trash directory." >&2
+    if ! [[ -d $HOME/.trash ]]; then
+      if ! mkdir $HOME/.trash; then
+        echo "Error creating ~/.trash" >&2
+        return 1
+      fi
     fi
-    mv $@ $HOME/.trash
+    mv "$@" $HOME/.trash
   }
 fi
 function cds {
