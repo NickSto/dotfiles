@@ -221,8 +221,8 @@ function cpu {
 }
 alias mem=cpu
 if which totalmem.sh >/dev/null 2>/dev/null; then
-  alias chrome='totalmem.sh /opt/google/chrome/ Chrome'
-  alias foxmem='totalmem.sh /usr/lib/firefox/ Firefox'
+  alias chrome='totalmem.sh -n Chrome /opt/google/chrome/'
+  alias foxmem='totalmem.sh -n Firefox /usr/lib/firefox/'
 fi
 function geoip {
   curl http://freegeoip.net/csv/$1
