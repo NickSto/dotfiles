@@ -1055,6 +1055,15 @@ function revcomp {
     echo "$1" | tr 'ATGCatgc' 'TACGtacg' | rev
   fi
 }
+function seqdiff {
+  if [[ "$#" != 2 ]]; then
+    echo "Usage: seqdiff GATTACA GATTANA" >&2
+    return 1
+  fi
+  echo "$1" | fold -w 1 \
+    | paste - <(echo "$2" | fold -w 1) \
+    | awk '{printf("%4d  %s  %s", NR, $1, $2); if ($1 != $2) {printf("  !")} printf("\n")}'
+}
 function dotplot {
   if [[ $# -lt 3 ]]; then
     echo "Usage: dotplot seq1.fa seq2.fa output.jpg" >&2 && return
