@@ -182,7 +182,7 @@ shopt -s globstar 2>/dev/null || true
 # Set directory for my special data files
 data_dir="$HOME/.local/share/nbsdata"
 # Set a default bx destination server
-export LC_BX_DEST=bru
+export LC_BX_DEST=desmond
 # Set my default text editor
 export EDITOR=vim
 # Allow disabling ~/.python_history.
