@@ -225,7 +225,12 @@ if which totalmem.sh >/dev/null 2>/dev/null; then
   alias foxmem='totalmem.sh -n Firefox /usr/lib/firefox/'
 fi
 function geoip {
-  curl http://freegeoip.net/csv/$1
+  if [[ "$1" ]]; then
+    ip="$1"
+  else
+    ip=$(curlip)
+  fi
+  curl -s "http://ipinfo.io/$ip" | jq -r '.city + ", " + .region + ", " + .country + ": " + .org'
 }
 if which longurl.py >/dev/null 2>/dev/null; then
   alias longurl='longurl.py -bc'
@@ -420,6 +425,7 @@ on error." >&2
 }
 if which tmpcmd.sh >/dev/null 2>/dev/null; then
   function crashpause {
+    title crashpause
     if [[ $# -ge 1 ]]; then
       if [[ $1 == '-h' ]]; then
         echo "Usage: \$ crashpause [time]" >&2
@@ -1088,6 +1094,10 @@ function bamsummary {
     printf "%-30s%6.2f%% % ${len}d\n" "$1:" $(_pct $3 $2) $3
   }
   for bam in $@; do
+    if ! [[ -s "$bam" ]]; then
+      echo "Missing or empty file: $bam" >&2
+      continue
+    fi
     echo -e "\t$bam:"
     local total=$(samtools view -c $bam)
     printf "%-39s%d\n" "total alignments:" $total
