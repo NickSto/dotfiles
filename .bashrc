@@ -425,6 +425,7 @@ on error." >&2
 }
 if which tmpcmd.sh >/dev/null 2>/dev/null; then
   function crashpause {
+    local old_title="$TITLE"
     title crashpause
     if [[ $# -ge 1 ]]; then
       if [[ $1 == '-h' ]]; then
@@ -437,6 +438,7 @@ if which tmpcmd.sh >/dev/null 2>/dev/null; then
       local timeout=2h
     fi
     sudo tmpcmd.sh -t $timeout 'service crashplan stop' 'service crashplan start'
+    title "$old_title"
   }
   if which dnsadd.sh >/dev/null 2>/dev/null; then
     function dnsadd {
