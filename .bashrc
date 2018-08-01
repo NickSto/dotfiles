@@ -1006,6 +1006,22 @@ if ! which readsfq >/dev/null 2>/dev/null; then
   }
 fi
 alias bcat="samtools view -h"
+function quals {
+  # From: http://blog.wittelab.ucsf.edu/visualizing-fastq-file-quality-scores/
+  local command='n;n;n;y/!"#$%&'\''()*+,-.\/0123456789:;<=>?@ABCDEFGHIJKL/▁▁▁▁▁▁▁▁▂▂▂▂▂▃▃▃▃▃▄▄▄▄▄▅▅▅▅▅▆▆▆▆▆▇▇▇▇▇██████/'
+  if [[ "$#" -ge 1 ]]; then
+    if [[ "$1" == '-h' ]]; then
+      echo "Usage: quals reads.fq" >&2
+      echo "       head reads.fq | quals" >&2
+      echo "Displays FASTQ reads with visual quality scores." >&2
+      return 1
+    else
+      sed -e "$command" "$1"
+    fi
+  else
+    sed -e "$command"
+  fi
+}
 function align {
   local opts_default='-M -t 32'
   if [[ $# -lt 3 ]]; then
