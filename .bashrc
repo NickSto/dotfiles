@@ -1375,7 +1375,9 @@ else
   fi
 fi
 
-ROOTPS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
+if [[ "$USER" == root ]]; then
+  export PS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
+fi
 # Retitle window only if it's an interactive session. Otherwise, this can cause scp to hang.
 if [[ $- == *i* ]] && [[ $host != uniport ]]; then
   title $host
