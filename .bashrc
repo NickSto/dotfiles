@@ -537,6 +537,21 @@ function pathsub {
   done
   PATH="$newpath"
 }
+function dusort {
+  if [[ "$#" -ge 1 ]] && [[ "$1" == '-h' ]]; then
+    echo "Usage: dusort [path1 [path2 [path3 [...]]]]" >&2
+    return 1
+  fi
+  if [[ "$#" -ge 1 ]]; then
+    du -sb "$@" | sort -g -k 1 | while read size path; do
+      du -sh "$path"
+    done
+  else
+    du -sb * | sort -g -k 1 | while read size path; do
+      du -sh "$path"
+    done
+  fi
+}
 # a quick shortcut to placing a script in the ~/bin dir
 # only if the system supports readlink -f (BSD doesn't)
 if readlink -f / >/dev/null 2>/dev/null; then
@@ -712,6 +727,72 @@ finds." >&2
   else
     echo "Error: no .venv/bin/activate file found." >&2
     return 1
+  fi
+}
+function eta {
+  if [[ "$#" -lt 3 ]] || [[ "$1" == '-h' ]]; then
+    echo "Usage: eta start_time start_count current_count [goal_count]" >&2
+    return 1
+  fi
+  local start_time=$1
+  local start=$2
+  local current=$3
+  if [[ "$#" -ge 4 ]]; then
+    local goal=$4
+  else
+    local goal=10000
+  fi
+  local now=$(date +%s)
+  local sec_left=$(calc "($goal-$current)*($now-$start_time)/($current-$start)")
+  local eta=$(date -d "now + $sec_left seconds")
+  local eta_diff=$(datediff "$eta")
+  local min_left=$(calc "'{:0.2f}'.format($sec_left/60)")
+  echo -e "$eta_diff\t($min_left min from now)"
+}
+function datediff {
+  if [[ "$#" -lt 1 ]] || [[ "$1" == '-h' ]]; then
+    echo "Usage: datediff date1 [date2]
+Compare two dates in the default format output by the date command.
+Print the parts of date1 that are different from date2.
+date2 is the current time by default." >&2
+    return 1
+  elif [[ "$#" -ge 2 ]]; then
+    local date2="$2"
+  else
+    local date2=$(date)
+  fi
+  local date1="$1"
+  local timestamp1=$(date +%s -d "$date1")
+  local timestamp2=$(date +%s -d "$date2")
+  local sec_diff=$((timestamp1-timestamp2))
+  if [[ "$sec_diff" -gt 864000 ]] || [[ "$sec_diff" -lt -864000 ]]; then
+    local gt10days=true
+  else
+    local gt10days=
+  fi
+  local dow1 dow2 mon1 mon2 dom1 dom2 time1 time2 tz1 tz2 year1 year2
+  read dow1 mon1 dom1 time1 tz1 year1 <<< "$date1"
+  read dow2 mon2 dom2 time2 tz2 year2 <<< "$date2"
+  if [[ "$tz1" != "$tz2" ]]; then
+    time1="$time1 $tz1"
+    time2="$time2 $tz2"
+  fi
+  if [[ "$date1" == "$date2" ]]; then
+    # The two dates are the same.
+    echo "$time1"
+  elif [[ "$year1" != "$year2" ]]; then
+    # They're in different years.
+    echo "$dow1 $mon1 $dom1 $year1 $time1"
+  elif [[ "$mon1" != "$mon2" ]] || [[ "$dom1" != "$dom2" ]]; then
+    # They're in the same year, but different days.
+    if [[ "$gt10days" ]]; then
+      echo "$mon1 $dom1 $time1"
+    else
+      echo "$dow1 $mon1 $dom1 $time1"
+    fi
+  else
+    # They're within the same day.
+    echo "$time1"
   fi
 }
 function getip {
