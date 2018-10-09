@@ -50,6 +50,8 @@ cd - >/dev/null
 
 # Set distro based on known hostnames
 case "$host" in
+  aknot)
+    distro="ubuntu";;
   ruby)
     distro="ubuntu";;
   main)
@@ -1346,8 +1348,8 @@ fi
 if [[ $host == lion ]]; then
   pathadd /opt/local/bin
 fi
-if [[ $host == ruby ]]; then
-  pathadd $HOME/bx/bin
+if [[ -d "$HOME/bx/bin" ]]; then
+  pathadd "$HOME/bx/bin"
 fi
 pathadd /sbin
 pathadd /usr/sbin
