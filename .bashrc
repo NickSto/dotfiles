@@ -539,18 +539,22 @@ function pathsub {
 }
 function dusort {
   if [[ "$#" -ge 1 ]] && [[ "$1" == '-h' ]]; then
-    echo "Usage: dusort [path1 [path2 [path3 [...]]]]" >&2
+    echo "Usage: dusort [path1 [path2 [path3 [...]]]]
+Note: This works with dotfiles and files with spaces." >&2
     return 1
   fi
+  local hidden=
   if [[ "$#" -ge 1 ]]; then
-    du -sb "$@" | sort -g -k 1 | while read size path; do
-      du -sh "$path"
-    done
+    local paths="$@"
   else
-    du -sb * | sort -g -k 1 | while read size path; do
-      du -sh "$path"
-    done
+    local paths=*
+    if ls .[!.]* >/dev/null 2>/dev/null; then
+      hidden=.[!.]*
+    fi
   fi
+  du -sb $paths $hidden | sort -g -k 1 | while read size path; do
+    du -sh "$path"
+  done
 }
 # a quick shortcut to placing a script in the ~/bin dir
 # only if the system supports readlink -f (BSD doesn't)
