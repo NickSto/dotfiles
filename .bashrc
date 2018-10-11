@@ -552,7 +552,7 @@ Note: This works with dotfiles and files with spaces." >&2
       hidden=.[!.]*
     fi
   fi
-  du -sb $paths $hidden | sort -g -k 1 | while read size path; do
+  du -sB1 $paths $hidden | sort -g -k 1 | while read size path; do
     du -sh "$path"
   done
 }
