@@ -709,6 +709,16 @@ function deref {
 function vil {
   vi $(deref "$1")
 }
+function dfh {
+  if ! which fit-columns.py >/dev/null 2>/dev/null; then
+    return 1
+  elif [[ "$host" == brubeck ]] || [[ "$host" == desmond ]]; then
+    local fit_cols=$(deref fit-columns.py)
+    df -h | python3.6 "$fit_cols" -s
+  else
+    df -h | fit-columns.py -s
+  fi
+}
 function venv {
   if [[ $# -ge 1 ]] && [[ $1 == '-h' ]]; then
     echo "Usage: \$ venv
