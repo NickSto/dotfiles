@@ -1,6 +1,6 @@
 ##### Detect host #####
 
-host=$(hostname -s 2>/dev/null || hostname)
+Host=$(hostname -s 2>/dev/null || hostname)
 
 # supported hosts:
 # ruby main nsto2 ndojo nbs yarr brubeck scofield desmond nn[0-9]+ uniport lion cyberstar
@@ -11,9 +11,9 @@ host=$(hostname -s 2>/dev/null || hostname)
 #   cygwin osx
 
 # Are we on one of the cluster nodes?
-in_cluster=
-if echo $host | grep -qE '^nn[0-9]+$' && [[ ${host:2} -le 15 ]]; then
-  in_cluster=true
+InCluster=
+if echo $Host | grep -qE '^nn[0-9]+$' && [[ ${Host:2} -le 15 ]]; then
+  InCluster=true
 fi
 
 ##### Determine distro #####
@@ -32,57 +32,57 @@ cd $HOME
 if [[ -f .bashrc ]]; then
   # Is it a link or real file?
   if [[ -h .bashrc ]]; then
-    bashrc_dir=$(realdirname .bashrc)
+    BashrcDir=$(realdirname .bashrc)
   else
-    bashrc_dir="$HOME"
+    BashrcDir="$HOME"
   fi
 elif [[ -f .bash_profile ]]; then
   # Is it a link or real file?
   if [[ -h .bash_profile ]]; then
-    bashrc_dir=$(realdirname .bash_profile)
+    BashrcDir=$(realdirname .bash_profile)
   else
-    bashrc_dir="$HOME"
+    BashrcDir="$HOME"
   fi
 else
-  bashrc_dir="$HOME/code/dotfiles"
+  BashrcDir="$HOME/code/dotfiles"
 fi
 cd - >/dev/null
 
 # Set distro based on known hostnames
-case "$host" in
+case "$Host" in
   aknot)
-    distro="ubuntu";;
+    Distro="ubuntu";;
   ruby)
-    distro="ubuntu";;
+    Distro="ubuntu";;
   main)
-    distro="ubuntu";;
+    Distro="ubuntu";;
   nsto2)
-    distro="ubuntu";;
+    Distro="ubuntu";;
   yarr)
-    distro="ubuntu";;
+    Distro="ubuntu";;
   ndojo)
-    distro="freebsd";;
+    Distro="freebsd";;
   nbs)
-    distro="freebsd";;
+    Distro="freebsd";;
   brubeck)
-    distro="debian";;
+    Distro="debian";;
   scofield)
-    distro="debian";;
+    Distro="debian";;
   *)  # Unrecognized host? Run detection script.
-    source $bashrc_dir/detect-distro.sh
+    source $BashrcDir/detect-distro.sh
 esac
 
 # Get the kernel string if detect-distro.sh didn't.
-if [[ ! $kernel ]]; then
-  kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')
+if [[ ! $Kernel ]]; then
+  Kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')
 fi
 
 # If we're in Tails, set $HOME to the USB drive with this bashrc on it.
-if [[ $distro == tails ]]; then
-  if [[ $host == localhost.localdomain ]]; then
-    host=tails
+if [[ $Distro == tails ]]; then
+  if [[ $Host == localhost.localdomain ]]; then
+    Host=tails
   fi
-  usb_drive=$(df $bashrc_dir | awk 'END {print $6}')
+  usb_drive=$(df $BashrcDir | awk 'END {print $6}')
   if [[ $usb_drive ]]; then
     export HOME=$usb_drive
     cd $HOME
@@ -90,7 +90,7 @@ if [[ $distro == tails ]]; then
 fi
 
 # If we're in the webserver, cd to the webroot.
-if [[ $host == nsto2 ]]; then
+if [[ $Host == nsto2 ]]; then
   cd /var/www/nstoler.com
 fi
 
@@ -100,7 +100,7 @@ fi
 
 
 # All comments in this block are from Ubuntu's default .bashrc
-if [[ $distro == ubuntu ]]; then
+if [[ $Distro == ubuntu ]]; then
 
   # ~/.bashrc: executed by bash(1) for non-login shells.
   # examples: /usr/share/doc/bash/examples/startup-files (in package bash-doc)
@@ -121,7 +121,7 @@ if [[ $distro == ubuntu ]]; then
 
 
 # All comments in this block are from brubeck's default .bashrc
-elif [[ $host == brubeck ]]; then
+elif [[ $Host == brubeck ]]; then
 
   # System wide functions and aliases
   # Environment stuff goes in /etc/profile
@@ -182,7 +182,7 @@ shopt -s globstar 2>/dev/null || true
 ### Environment variables ###
 
 # Set directory for my special data files
-data_dir="$HOME/.local/share/nbsdata"
+DataDir="$HOME/.local/share/nbsdata"
 # Set a default bx destination server
 export LC_BX_DEST=desmond
 # Set my default text editor
@@ -194,7 +194,7 @@ export PYTHONSTARTUP=~/.pythonrc
 
 ##### Aliases #####
 
-if [[ $distro == ubuntu || $distro == cygwin || $distro == debian ]]; then
+if [[ $Distro == ubuntu || $Distro == cygwin || $Distro == debian ]]; then
   alias ll='ls -lFhAb --color=auto --group-directories-first'
   alias lld='ls -lFhAbd --color=auto --group-directories-first'
 else
@@ -210,7 +210,7 @@ alias cp='cp -i'
 alias targ='tar -zxvpf'
 alias tarb='tar -jxvpf'
 alias pseudo=sudo
-alias vib="vim $bashrc_dir/.bashrc"
+alias vib="vim $BashrcDir/.bashrc"
 alias awkt="awk -F '\t' -v OFS='\t'"
 function now {
   date +%s
@@ -264,13 +264,13 @@ function cds {
     local n=5
   fi
   if [[ $n == 1 ]]; then
-    if [[ $host == brubeck ]]; then
+    if [[ $Host == brubeck ]]; then
       cd /scratch/nick
     else
       cd /nfs/brubeck.bx.psu.edu/scratch1/nick
     fi
   elif [[ $n == 2 ]]; then
-    if [[ $host == brubeck ]]; then
+    if [[ $Host == brubeck ]]; then
       cd /scratch2/nick
     else
       cd /nfs/brubeck.bx.psu.edu/scratch2/nick
@@ -338,16 +338,16 @@ alias mineme='ssh vps "cat src/minecraft/server.log" | grep -i nick | tail'
 alias minelist="ssh vps 'screen -S minecraft -X stuff \"list\"; sleep 1; tail src/minecraft/server.log'"
 alias minemem='ssh vps "if pgrep -f java >/dev/null; then pgrep -f java | xargs ps -o %mem; fi"'
 
-if [[ $distro =~ (^osx$|bsd$) ]]; then
+if [[ $Distro =~ (^osx$|bsd$) ]]; then
   alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tty,start,time,args'"
 else # doesn't work in cygwin, but no harm
   alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tname,start_time,time,args'"
 fi
-if [[ $host == ndojo || $host == nbs ]]; then
+if [[ $Host == ndojo || $Host == nbs ]]; then
   alias errlog='less +G /home/logs/error_log'
-elif [[ $host == nsto2 ]]; then
+elif [[ $Host == nsto2 ]]; then
   alias errlog='less +G /var/www/logs/error.log'
-elif [[ $distro == ubuntu || $distro == debian ]]; then
+elif [[ $Distro == ubuntu || $Distro == debian ]]; then
   alias errlog='less +G /var/log/syslog'
 fi
 # Search all encodings for strings, raise minimum length to 5 characters
@@ -369,13 +369,13 @@ for line in sys.stdin:
 alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
 alias bitcoin="curl -s 'https://api.coindesk.com/v1/bpi/currentprice.json' | jq .bpi.USD.rate_float | cut -d . -f 1"
 if ! which git >/dev/null 2>/dev/null; then
-  alias updaterc="wget 'https://raw.githubusercontent.com/NickSto/dotfiles/master/.bashrc' -O $bashrc_dir/.bashrc"
-elif [[ $host == cyberstar || $distro =~ bsd$ ]]; then
-  alias updaterc="cd $bashrc_dir && git pull && cd -"
+  alias updaterc="wget 'https://raw.githubusercontent.com/NickSto/dotfiles/master/.bashrc' -O $BashrcDir/.bashrc"
+elif [[ $Host == cyberstar || $Distro =~ bsd$ ]]; then
+  alias updaterc="cd $BashrcDir && git pull && cd -"
 else
-  alias updaterc="git --work-tree=$bashrc_dir --git-dir=$bashrc_dir/.git pull"
+  alias updaterc="git --work-tree=$BashrcDir --git-dir=$BashrcDir/.git pull"
 fi
-if [[ $host == main ]]; then
+if [[ $Host == main ]]; then
   alias logtail='~/bin/logtail.sh 100 | less +G'
   function logrep {
     cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab && grep -r $@
@@ -391,7 +391,7 @@ fi
 ##### Functions #####
 
 function silence {
-  local Silence="$data_dir/SILENCE"
+  local Silence="$DataDir/SILENCE"
   if [[ $# -ge 1 ]] && [[ $1 == '-h' ]]; then
     echo "Usage: \$ silence [-u]
 Toggles silence file $Silence
@@ -452,7 +452,7 @@ if which tmpcmd.sh >/dev/null 2>/dev/null; then
     }
   fi
 fi
-if [[ $host == ruby ]]; then
+if [[ $Host == ruby ]]; then
   # Log my current number of tabs to a file, for self-monitoring.
   # On my laptop, screw the tabs command for now. Never used it.
   function tabs {
@@ -490,8 +490,8 @@ Uses icanhazip.com to get your IP address.
 Add -f to force logging even when SILENCE is in effect." >&2
     return 1
   fi
-  if [[ $1 != '-f' ]] && [[ -e "$data_dir/SILENCE" ]]; then
-    echo "Error: SILENCE file exists ($data_dir/SILENCE). Add -f to override." >&2
+  if [[ $1 != '-f' ]] && [[ -e "$DataDir/SILENCE" ]]; then
+    echo "Error: SILENCE file exists ($DataDir/SILENCE). Add -f to override." >&2
     return 1
   fi
   local ip=$(curl -s icanhazip.com)
@@ -712,7 +712,7 @@ function vil {
 function dfh {
   if ! which fit-columns.py >/dev/null 2>/dev/null; then
     return 1
-  elif [[ "$host" == brubeck ]] || [[ "$host" == desmond ]]; then
+  elif [[ "$Host" == brubeck ]] || [[ "$Host" == desmond ]]; then
     local fit_cols=$(deref fit-columns.py)
     df -h | python3.6 "$fit_cols" -s
   else
@@ -1031,7 +1031,7 @@ Default: "Terminal"' >&2
     return 1
   fi
   if [[ $# == 0 ]]; then
-    TITLE="$host"
+    TITLE="$Host"
   else
     TITLE="$@"
   fi
@@ -1091,9 +1091,9 @@ function human_time {
 
 ##### Bioinformatics #####
 
-if [[ $host == ruby || $host == main ]]; then
+if [[ $Host == ruby || $Host == main ]]; then
   true #alias igv='java -Xmx4096M -jar ~/bin/igv.jar'
-elif [[ $host == nsto2 ]]; then
+elif [[ $Host == nsto2 ]]; then
   alias igv='java -Xmx256M -jar ~/bin/igv.jar'
 else
   alias igv='java -jar ~/bin/igv.jar'
@@ -1265,14 +1265,14 @@ Default library: $LibraryDefault" >&2
   fi
   tail -n +$line "$library" | sed -En 's/^'$key'\s*=\s*\{+(.+)\}+[^}]*$/\1/p' | sed -E -e 's/\}+\s*$//' -e 's/^\s*\{+//' | head -n 1
 }
-if [[ $host == scofield ]]; then
+if [[ $Host == scofield ]]; then
   aklog bx.psu.edu
 fi
 # Make it easier to run a command from a Docker container, auto-mounting the current directory so
 # it's accessible from inside the container.
 alias dockdir='docker run -v $(pwd):/dir/'
 # Slurm commands
-if [[ $host == ruby ]]; then
+if [[ $Host == ruby ]]; then
   alias sfree='ssh bru sinfo -h -p general -t idle -o %n'
   alias scpus="ssh bru 'sinfo -h -p general -t idle,alloc -o "'"'"%n %C"'"'"' | tr ' /' '\t\t' | cut -f 1,3 | sort -k 1.3g"
   alias squeue='ssh bru squeue'
@@ -1439,14 +1439,14 @@ if [ -f ~/.bashrc_private ]; then
 fi
 
 # add correct bin directory to PATH
-if [[ $host == scofield ]]; then
+if [[ $Host == scofield ]]; then
   pathadd /galaxy/home/$USER/bin
-elif [[ $in_cluster ]]; then
+elif [[ $InCluster ]]; then
   true  # inherited from scofield
 else
   pathadd ~/bin
 fi
-if [[ $host == lion ]]; then
+if [[ $Host == lion ]]; then
   pathadd /opt/local/bin
 fi
 if [[ -d "$HOME/bx/bin" ]]; then
@@ -1480,8 +1480,8 @@ if [[ "$USER" == root ]]; then
   export PS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
 fi
 # Retitle window only if it's an interactive session. Otherwise, this can cause scp to hang.
-if [[ $- == *i* ]] && [[ $host != uniport ]]; then
-  title $host
+if [[ $- == *i* ]] && [[ $Host != uniport ]]; then
+  title $Host
 fi
 
 # If it's a remote shell, change $PS1 prompt format and enter a screen.
@@ -1494,9 +1494,9 @@ if [[ $remote ]]; then
   #    - Set via: $ LC_NO_SCREEN=true ssh -o SendEnv=LC_NO_SCREEN me@destination
   # 4. ! -f ~/NOSCREEN: The user has requested not to enter a screen (backup method).
   if ! [[ "$STY" ]] && [[ -t 1 ]] && [[ $LC_NO_SCREEN != true ]] && ! [[ -f ~/NOSCREEN ]]; then
-    if [[ $host == uniport ]] || [[ $host == ndojo ]] || [[ $host == nbs ]] || [[ $in_cluster ]]; then
+    if [[ $Host == uniport ]] || [[ $Host == ndojo ]] || [[ $Host == nbs ]] || [[ $InCluster ]]; then
       true  # screen unavailable or undesired
-    elif [[ $host == brubeck || $host == scofield || $host == desmond ]] \
+    elif [[ $Host == brubeck || $Host == scofield || $Host == desmond ]] \
         && [[ -x ~/code/pagscr-me.sh ]]; then
       exec ~/code/pagscr-me.sh -RR -S auto
     elif which screen >/dev/null 2>/dev/null; then

@@ -13,12 +13,12 @@ if [[ $# -gt 0 ]]; then
     _script=$(basename $0)
     printf "Best-effort detection of the distro and kernel.
 
-Source this to set \$distro and \$kernel to the detected values:
+Source this to set \$Distro and \$Kernel to the detected values:
     source %s
 Or you can execute it, and get have it print the values (one per line), with the
 -p option:
-    \$ read distro kernel <<< \$(%s -p)
-    \$ echo \$distro \$kernel
+    \$ read Distro Kernel <<< \$(%s -p)
+    \$ echo \$Distro \$Kernel
     ubuntu linux\n" $_script $_script >&2
     exit 1
   fi
@@ -32,63 +32,63 @@ _EXCLUDED='os|lsb|system'
 # and http://en.wikipedia.org/wiki/Uname
 
 # Try to get the kernel name from uname
-if kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]'); then
+if Kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]'); then
   # Fuzzy-match some known non-linux uname -s outputs and assign standard names
   # for them.
-  if [[ $kernel =~ freebsd ]]; then
-    distro="freebsd"
-  elif [[ $kernel =~ bsd$ ]]; then
-    distro="bsd"
-  elif [[ $kernel =~ darwin ]]; then
-    distro="osx"
-  elif [[ $kernel =~ cygwin ]]; then
-    distro="cygwin"
-  elif [[ $kernel =~ mingw ]]; then
-    distro="mingw"
-  elif [[ $kernel =~ sunos ]]; then
-    distro="solaris"
-  elif [[ $kernel =~ haiku ]]; then
-    distro="haiku"
+  if [[ $Kernel =~ freebsd ]]; then
+    Distro="freebsd"
+  elif [[ $Kernel =~ bsd$ ]]; then
+    Distro="bsd"
+  elif [[ $Kernel =~ darwin ]]; then
+    Distro="osx"
+  elif [[ $Kernel =~ cygwin ]]; then
+    Distro="cygwin"
+  elif [[ $Kernel =~ mingw ]]; then
+    Distro="mingw"
+  elif [[ $Kernel =~ sunos ]]; then
+    Distro="solaris"
+  elif [[ $Kernel =~ haiku ]]; then
+    Distro="haiku"
   # If it's a linux kernel, try to determine the distro from files in /etc
-  elif [[ $kernel =~ linux ]]; then
+  elif [[ $Kernel =~ linux ]]; then
     # Preferred method: /etc/os-release cross-distro standard
     if [[ -f /etc/os-release ]]; then
       source /etc/os-release
-      distro="$ID"
-      if ! [[ $distro ]]; then
+      Distro="$ID"
+      if ! [[ $Distro ]]; then
         if [[ $TAILS_PRODUCT_NAME ]]; then
-          distro="tails"
+          Distro="tails"
         fi
       fi
     fi
     # Check for files like /etc/*-release, /etc/*_release,
     # /etc/*-version, or /etc/*_version, and derive the distro from the *
-    if ! [[ $distro ]]; then
+    if ! [[ $Distro ]]; then
       _files=$(ls /etc/*[-_]{release,version} 2>/dev/null | grep -Ev "/etc/($_EXCLUDED)[-_]")
       if [[ $files ]]; then
         # Extract from the first filename.
-        distro=$(printf '%s\n' "$_files" | sed -E 's#/etc/([^-_]+).*#\1#' | head -n 1)
+        Distro=$(printf '%s\n' "$_files" | sed -E 's#/etc/([^-_]+).*#\1#' | head -n 1)
       fi
     fi
     # Lastly, try /etc/lsb-release (not always helpful, even when present)
-    if [[ ! $distro ]]; then
+    if [[ ! $Distro ]]; then
       if source /etc/lsb-release 2>/dev/null; then
-        distro="$DISTRIB_ID"
+        Distro="$DISTRIB_ID"
       fi
     fi
     # If even that doesn't work, just call it "linux"
-    if [[ ! $distro ]]; then
-      distro="linux"
+    if [[ ! $Distro ]]; then
+      Distro="linux"
     fi
   # If the uname -s output is unrecognized, just use it unmodified
-  elif [[ $kernel ]]; then
-    distro="$kernel"
+  elif [[ $Kernel ]]; then
+    Distro="$Kernel"
   fi
 # Even uname -s didn't work? Give up.
 else
-  distro="unknown"
+  Distro="unknown"
 fi
 
 if [[ $_print ]]; then
-  printf '%s\n%s\n' $distro $kernel
+  printf '%s\n%s\n' $Distro $Kernel
 fi
