@@ -1,3 +1,8 @@
+if [[ $BashrcRan ]]; then
+  echo '.bashrc already sourced. Unset $BashrcRan to source again.' >&2
+  return 1
+fi
+
 ##### Detect host #####
 
 Host=$(hostname -s 2>/dev/null || hostname)
@@ -1506,3 +1511,5 @@ if [[ $remote ]]; then
 else
   export PS1='$ps1_timer_show\e[$pecol[\d]\e[m \e[0;32m\u@\h:\e[m \e[$pgcol\w\e[m\n$ps1_branch\$ '
 fi
+
+BashrcRan=true
