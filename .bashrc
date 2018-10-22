@@ -228,7 +228,7 @@ function cpu {
 }
 alias mem=cpu
 if which totalmem.sh >/dev/null 2>/dev/null; then
-  alias chrome='totalmem.sh -n Chrome /opt/google/chrome/'
+  alias chromem='totalmem.sh -n Chrome /opt/google/chrome/'
   alias foxmem='totalmem.sh -n Firefox /usr/lib/firefox/'
 fi
 function geoip {
@@ -715,13 +715,14 @@ function vil {
   vi $(deref "$1")
 }
 function dfh {
+  local args='-se -x 1,start,/dev/loop -x 1,tmpfs -x 1,udev -x 1,start,/dev/mapper/vg-var -x 1,AFS'
   if ! which fit-columns.py >/dev/null 2>/dev/null; then
     return 1
   elif [[ "$Host" == brubeck ]] || [[ "$Host" == desmond ]]; then
     local fit_cols=$(deref fit-columns.py)
-    df -h | python3.6 "$fit_cols" -s
+    df -h | python3.6 "$fit_cols" $args
   else
-    df -h | fit-columns.py -s
+    df -h | fit-columns.py $args
   fi
 }
 function venv {
