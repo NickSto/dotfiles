@@ -695,10 +695,10 @@ function parents {
   if [[ "$1" ]]; then
     local pid="$1"
   else
-    local pid=$$
+    local pid="$$"
   fi
   while [[ "$pid" -gt 0 ]]; do
-    ps -o comm="" -p $pid
+    ps -o pid="",command="" -p $pid
     pid=$(ps -o ppid="" -p $pid)
   done
 }
