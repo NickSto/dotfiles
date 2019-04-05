@@ -217,6 +217,9 @@ alias tarb='tar -jxvpf'
 alias pseudo=sudo
 alias vib="vim $BashrcDir/.bashrc"
 alias awkt="awk -F '\t' -v OFS='\t'"
+function mouse {
+  nohup mousepad "$1" >/dev/null 2>/dev/null &
+}
 function now {
   date +%s
 }
@@ -444,7 +447,16 @@ if which tmpcmd.sh >/dev/null 2>/dev/null; then
     else
       local timeout=2h
     fi
-    sudo tmpcmd.sh -t $timeout 'service crashplan stop' 'service crashplan start'
+    if service crashplan status >/dev/null 2>/dev/null; then
+      sudo tmpcmd.sh -t "$timeout" 'service crashplan stop' 'service crashplan start'
+    elif which CrashPlanEngine >/dev/null 2>/dev/null; then
+      tmpcmd.sh -t "$timeout" 'CrashPlanEngine stop' 'CrashPlanEngine start'
+    elif [[ -x "$HOME/src/crashplan/bin/CrashPlanEngine" ]]; then
+      tmpcmd.sh -t "$timeout" "$HOME/src/crashplan/bin/CrashPlanEngine stop" \
+                              "$HOME/src/crashplan/bin/CrashPlanEngine start"
+    else
+      echo "Error: Could crashplan service not found and CrashPlanEngine command not found."
+    fi
     title "$old_title"
   }
   if which dnsadd.sh >/dev/null 2>/dev/null; then
@@ -750,20 +762,40 @@ finds." >&2
   fi
 }
 function eta {
-  if [[ "$#" -lt 3 ]] || [[ "$1" == '-h' ]]; then
-    echo "Usage: eta start_time start_count current_count [goal_count]" >&2
+  local Usage="Usage: eta <start_time> <start_count> <current_count> [<goal_count>]
+       --- or ---
+       eta start <start_count> [<goal_count>]
+       eta <current_count>"
+  if [[ "$#" -lt 1 ]] || [[ "$1" == '-h' ]]; then
+    echo "$Usage" >&2
+    return 1
+  elif [[ "$#" -ge 2 ]] && [[ "$#" -le 3 ]] && [[ "$1" == start ]]; then
+    start_time=$(date +%s)
+    start_count="$2"
+    if [[ "$#" == 3 ]]; then
+      goal="$3"
+    else
+      goal=10000
+    fi
+    echo -e "start_time=$start_time\nstart_count=$start_count\ngoal=$goal"
+    return 0
+  elif [[ "$#" == 1 ]] && [[ "$start_time" ]] && [[ "$start_count" ]] && [[ "$goal" ]]; then
+    local current="$1"
+  elif [[ "$#" -ge 3 ]] && [[ "$#" -le 4 ]]; then
+    local start_time=$1
+    local start_count=$2
+    local current=$3
+    if [[ "$#" -ge 4 ]]; then
+      local goal=$4
+    else
+      local goal=10000
+    fi
+  else
+    echo "$Usage" >&2
     return 1
   fi
-  local start_time=$1
-  local start=$2
-  local current=$3
-  if [[ "$#" -ge 4 ]]; then
-    local goal=$4
-  else
-    local goal=10000
-  fi
   local now=$(date +%s)
-  local sec_left=$(calc "($goal-$current)*($now-$start_time)/($current-$start)")
+  local sec_left=$(calc "($goal-$current)*($now-$start_time)/($current-$start_count)")
   local eta=$(date -d "now + $sec_left seconds")
   local eta_diff=$(datediff "$eta")
   local min_left=$(calc "'{:0.2f}'.format($sec_left/60)")
