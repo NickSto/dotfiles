@@ -74,7 +74,11 @@ case "$Host" in
   scofield)
     Distro="debian";;
   *)  # Unrecognized host? Run detection script.
-    source $BashrcDir/detect-distro.sh
+    if [[ -f "$BashrcDir/detect-distro.sh" ]]; then
+      source "$BashrcDir/detect-distro.sh"
+    else
+      Distro=
+    fi;;
 esac
 
 # Get the kernel string if detect-distro.sh didn't.
