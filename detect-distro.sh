@@ -9,10 +9,11 @@ _print=""
 if [[ $# -gt 0 ]]; then
   if [[ $1 == '-p' ]]; then
     _print="true"
-  else
+  elif [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+    # We have to actively check if $1 is -h because sometimes, when executed via .bashrc in a
+    # login shell, $1 is set to the path to the user's .profile.
     _script=$(basename $0)
     printf "Best-effort detection of the distro and kernel.
-
 Source this to set \$Distro and \$Kernel to the detected values:
     source %s
 Or you can execute it, and get have it print the values (one per line), with the
@@ -71,13 +72,13 @@ if Kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]'); then
       fi
     fi
     # Lastly, try /etc/lsb-release (not always helpful, even when present)
-    if [[ ! $Distro ]]; then
+    if ! [[ $Distro ]]; then
       if source /etc/lsb-release 2>/dev/null; then
         Distro="$DISTRIB_ID"
       fi
     fi
     # If even that doesn't work, just call it "linux"
-    if [[ ! $Distro ]]; then
+    if ! [[ $Distro ]]; then
       Distro="linux"
     fi
   # If the uname -s output is unrecognized, just use it unmodified
