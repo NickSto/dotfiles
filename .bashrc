@@ -1054,17 +1054,29 @@ function hextoint {
   echo "ibase=16;obase=A;$in" | bc
 }
 function asciitobin {
-  python3 -c "print(bin(ord('$1'))[2:])"
+  python3 -c 'import sys
+if len(sys.argv) <= 1 or sys.argv[1] == "-h" or sys.argv[1] == "--help":
+  sys.stderr.write("Usage: asciitobin hello\n")
+  sys.exit(1)
+for i in range(1, len(sys.argv)):
+  word = sys.argv[i]
+  for char in word:
+    print("{0:08b}".format(ord(char)), end=" ")
+  if i < len(sys.argv)-1:
+    print("00100000", end=" ")
+print()' "$@"
 }
 function bintoascii {
-  if [[ $# != 1 ]] || [[ $1 == '-h' ]]; then
-    echo 'Usage: bintoascii 011011010111010101100101011100100111010001100101' >&2
-    return 1
-  fi
-  for i in $(seq 0 8 ${#1}); do
-    echo -n $(python3 -c "print(chr($((2#${1:$i:8}))))")
-  done
-  echo
+  python3 -c 'import sys
+if len(sys.argv) <= 1 or sys.argv[1] == "-h" or sys.argv[1] == "--help":
+  sys.stderr.write("Usage: bintoascii 011011010111010101100101011100100111010001100101\n")
+  sys.exit(1)
+binstr = "".join(sys.argv[1:])
+for i in range(0, len(binstr), 8):
+  byte = binstr[i:i+8]
+  integer = int(byte, 2)
+  print(chr(integer), end="")
+print()' "$@"
 }
 function title {
   if [[ $# == 1 ]] && [[ $1 == '-h' ]]; then
