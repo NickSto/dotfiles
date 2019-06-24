@@ -371,8 +371,8 @@ function stringsa {
 alias temp="sensors | grep -A 3 '^coretemp-isa-0000' | tail -n 1 | awk '{print \$3}' | sed -E -e 's/^\+//' -e 's/\.[0-9]+//'"
 alias mountv="sudo mount -t vboxsf -o uid=1000,gid=1000,rw shared $HOME/shared"
 function mountf {
-  mount | python -c "import sys
-print 'Device                    Mount Point               Type'
+  mount | python3 -c "import sys
+print('Device                    Mount Point               Type')
 for line in sys.stdin:
   fields = line.split()
   if len(fields) >= 5 and fields[1] == 'on' and fields[3] == 'type':
@@ -694,10 +694,10 @@ else
   }
 fi
 function tc {
-  python -c "import titlecase, sys
+  python3 -c "import titlecase, sys
 if len(sys.argv) > 1:
   line = ' '.join(sys.argv[1:])
-  print titlecase.titlecase(line.lower())
+  print(titlecase.titlecase(line.lower()))
 else:
   for line in sys.stdin:
     sys.stdout.write(titlecase.titlecase(line.lower()))" $@
@@ -923,7 +923,7 @@ function iprange {
 }
 # Print a random, valid MAC address.
 function randmac() {
-  python -c "
+  python3 -c "
 import random
 octets = []
 octet = random.randint(0, 63)*4
@@ -931,7 +931,7 @@ octets.append('{:02x}'.format(octet))
 for i in range(5):
   octet = random.randint(0, 255)
   octets.append('{:02x}'.format(octet))
-print ':'.join(octets)"
+print(':'.join(octets))"
 }
 function spoofmac() {
   local Usage="Usage: \$ spoofmac [mac]
@@ -1054,7 +1054,7 @@ function hextoint {
   echo "ibase=16;obase=A;$in" | bc
 }
 function asciitobin {
-  python -c "print bin(ord('$1'))[2:]"
+  python3 -c "print(bin(ord('$1'))[2:])"
 }
 function bintoascii {
   if [[ $# != 1 ]] || [[ $1 == '-h' ]]; then
@@ -1062,7 +1062,7 @@ function bintoascii {
     return 1
   fi
   for i in $(seq 0 8 ${#1}); do
-    echo -n $(python -c "print chr($((2#${1:$i:8})))")
+    echo -n $(python3 -c "print(chr($((2#${1:$i:8}))))")
   done
   echo
 }
@@ -1196,7 +1196,7 @@ Default number of bases: '$length >&2
     fi
     length=$1
   fi
-  python -c "import random
+  python3 -c "import random
 LINE_LENGTH = 100
 bases = []
 for i in range($length):
@@ -1250,7 +1250,7 @@ function dotplot {
 # Get some quality stats on a BAM using samtools
 function bamsummary {
   function _pct {
-    python -c "print 100.0*$1/$2"
+    python3 -c "print(100.0*$1/$2)"
   }
   function _print_stat {
     local len=$((${#2}+1))
