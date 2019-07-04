@@ -371,12 +371,15 @@ function stringsa {
 alias temp="sensors | grep -A 3 '^coretemp-isa-0000' | tail -n 1 | awk '{print \$3}' | sed -E -e 's/^\+//' -e 's/\.[0-9]+//'"
 alias mountv="sudo mount -t vboxsf -o uid=1000,gid=1000,rw shared $HOME/shared"
 function mountf {
-  mount | python3 -c "import sys
-print('Device                    Mount Point               Type')
-for line in sys.stdin:
-  fields = line.split()
-  if len(fields) >= 5 and fields[1] == 'on' and fields[3] == 'type':
-    print('{0:<25s} {2:<25s} {4:<25s}'.format(*fields))"
+  local args='-se -x 1,start,/var/lib/snapd -x 3,start,cgroup'
+  if ! which fit-columns.py >/dev/null 2>/dev/null; then
+    return 1
+  elif [[ "$Host" == brubeck ]] || [[ "$Host" == desmond ]]; then
+    local fit_cols=$(deref fit-columns.py)
+    (echo Device Mount Type && mount | awk '{print $1, $3, $5}' | sort) | python3.6 "$fit_cols" $args
+  else
+    (echo Device Mount Type && mount | awk '{print $1, $3, $5}' | sort) | fit-columns.py $args
+  fi
 }
 alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
 alias bitcoin="curl -s 'https://api.coindesk.com/v1/bpi/currentprice.json' | jq .bpi.USD.rate_float | cut -d . -f 1"
