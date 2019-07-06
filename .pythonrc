@@ -1,2 +1,5 @@
 import readline
-readline.set_auto_history(False)
+try:
+  readline.set_auto_history(False)
+except AttributeError:
+  readline.set_history_length(0)
