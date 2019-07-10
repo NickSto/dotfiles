@@ -409,7 +409,7 @@ function silence {
   local Silence="$DataDir/SILENCE"
   if [[ $# -ge 1 ]] && [[ $1 == '-h' ]]; then
     echo "Usage: \$ silence [-u]
-Toggles silence file $Silence
+Toggles silence file $Silence and silences some common background services.
 Prompts before unsilencing (unless -u is given). Returns 0 when silenced, 2 when unsilenced, and 1
 on error." >&2
     return 1
@@ -421,23 +421,128 @@ on error." >&2
   if [[ -f "$Silence" ]]; then
     if [[ $# -ge 1 ]] && [[ $1 == '-u' ]]; then
       rm -f "$Silence"
+      unsilence_services
       echo "Unsilenced!"
-      return 2
     else
       local response
       read -p "You're currently silenced! Type \"louden\" to unsilence! " response
       if [[ $response == 'louden' ]]; then
         rm -f "$Silence"
+        unsilence_services
         echo "Unsilenced!"
-        return 2
       else
         echo "Aborting!"
         return 1
       fi
     fi
   else
-    touch "$Silence"
-    echo "Silenced!"
+    if silence_services; then
+      touch "$Silence"
+      echo "Silenced!"
+    else
+      echo "Error silencing some services!" >&2
+      return 1
+    fi
+  fi
+}
+function silence_services {
+  local failure=
+  # Dropbox
+  echo "Killing Dropbox.."
+  if which dropbox >/dev/null 2>/dev/null; then
+    dropbox stop
+    local sleep_time=1
+    # The "running" command seems to return the opposite of what you expect.
+    while ! dropbox running >/dev/null 2>/dev/null; do
+      sleep "$sleep_time"
+      sleep_time=$((sleep_time*2))
+      if [[ "$sleep_time" -ge 32 ]]; then
+        echo "Error: Could not kill Dropbox!" >&2
+        failure=true
+        break
+      fi
+    done
+    if ! [[ "$failure" ]]; then
+      # Sometimes dropbox gives conflicting messages. Let's reassure with our own.
+      echo "Dropbox daemon stopped." >&2
+    fi
+  fi
+  # Crashplan
+  echo "Killing CrashPlan.."
+  if [[ "$(ps aux | awk '$11 != "awk" && $11 $12 $13 ~ /crashplan/')" ]]; then
+    local crashservice=$(get_crashservice)
+    if [[ "$crashservice" ]]; then
+      if ! $crashservice stop; then
+        failure=true
+      fi
+    else
+      echo "Error: Could not find command to kill CrashPlan!" >&2
+      failure=true
+    fi
+  fi
+  # Snap daemon (often maintains a connection) (listening for updates?)
+  echo "Killing snapd.."
+  if service snapd status >/dev/null 2>/dev/null; then
+    sudo service snapd stop
+  fi
+  if [[ "$failure" ]]; then
+    return 1
+  else
+    return 0
+  fi
+}
+function unsilence_services {
+  failure=
+  # Dropbox
+  echo "Starting Dropbox.."
+  if which dropbox >/dev/null 2>/dev/null; then
+    if ! dropbox start 2>/dev/null; then
+      echo "Error: Problem starting Dropbox." >&2
+      failure=true
+    else
+      echo "Dropbox started successfully." >&2
+    fi
+  fi
+  # Crashplan
+  echo "Starting CrashPlan.."
+  local crashservice=$(get_crashservice)
+  if [[ "$crashservice" ]]; then
+    if ! $crashservice start; then
+      echo "Error: Problem starting CrashPlan." >&2
+      failure=true
+    fi
+  else
+    echo "Warning: did not find command to start CrashPlan." >&2
+  fi
+  # Snap Daemon
+  echo "Starting snapd.."
+  service snapd status >/dev/null 2>/dev/null
+  if [[ "$?" != 4 ]]; then
+    # The status command returns 4 if the service doesn't exist, but 3 if it's not running.
+    sudo service snapd start
+  fi
+  if [[ "$failure" ]]; then
+    return 1
+  else
+    return 0
+  fi
+}
+function get_crashservice {
+  # status command returns 4 if the service doesn't exist.
+  service crashplan status >/dev/null 2>/dev/null
+  if [[ "$?" == 3 ]]; then
+    # Service exists and isn't running (returns 3).
+    echo sudo service crashplan
+  elif service crashplan status >/dev/null 2>/dev/null; then
+    # Service exists and is running (returns 0).
+    echo sudo service crashplan
+  elif which CrashPlanEngine >/dev/null 2>/dev/null; then
+    echo CrashPlanEngine
+  elif [[ -x "$HOME/src/crashplan/bin/CrashPlanEngine" ]]; then
+    echo "$HOME/src/crashplan/bin/CrashPlanEngine"
+  else
+    echo "Error: Crashplan service not found and CrashPlanEngine command not found." >&2
+    return 1
   fi
 }
 if which tmpcmd.sh >/dev/null 2>/dev/null; then
@@ -454,16 +559,11 @@ if which tmpcmd.sh >/dev/null 2>/dev/null; then
     else
       local timeout=2h
     fi
-    if service crashplan status >/dev/null 2>/dev/null; then
-      sudo tmpcmd.sh -t "$timeout" 'service crashplan stop' 'service crashplan start'
-    elif which CrashPlanEngine >/dev/null 2>/dev/null; then
-      tmpcmd.sh -t "$timeout" 'CrashPlanEngine stop' 'CrashPlanEngine start'
-    elif [[ -x "$HOME/src/crashplan/bin/CrashPlanEngine" ]]; then
-      tmpcmd.sh -t "$timeout" "$HOME/src/crashplan/bin/CrashPlanEngine stop" \
-                              "$HOME/src/crashplan/bin/CrashPlanEngine start"
-    else
-      echo "Error: Could crashplan service not found and CrashPlanEngine command not found."
+    local crashservice=$(get_crashservice)
+    if [[ "$?" != 0 ]]; then
+      return "$?"
     fi
+    tmpcmd.sh -t "$timeout" "$crashservice stop" "$crashservice start"
     title "$old_title"
   }
   if which dnsadd.sh >/dev/null 2>/dev/null; then
