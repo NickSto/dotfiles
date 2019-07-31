@@ -636,14 +636,29 @@ function bak {
 }
 # add to path **if it's not already there**
 function pathadd {
-  if [[ ! -d "$1" ]]; then return; fi
-  # handle empty PATH
-  if [[ ! "$PATH" ]]; then export PATH="$1"; return; fi
+  local dir="$1"
+  local location="$2"
+  if [[ ! -d "$dir" ]]; then
+    return
+  fi
+  # Handle empty PATH.
+  if [[ ! "$PATH" ]]; then
+    export PATH="$dir"
+    return
+  fi
+  # Check if it's already present.
   local path=''
   for path in $(echo "$PATH" | tr ':' '\n'); do
-    if [[ "$path" == "$1" ]]; then return; fi
+    if [[ "$path" == "$dir" ]]; then
+      return
+    fi
   done
-  PATH="$PATH:$1"
+  # Otherwise, do the normal concatenation.
+  if [[ "$location" == "start" ]]; then
+    PATH="$dir:$PATH"
+  else
+    PATH="$PATH:$dir"
+  fi
 }
 # subtract from path
 function pathsub {
@@ -1601,7 +1616,7 @@ if [[ $Host == scofield ]]; then
 elif [[ $InCluster ]]; then
   true  # inherited from scofield
 else
-  pathadd ~/bin
+  pathadd ~/bin start
 fi
 if [[ $Host == lion ]]; then
   pathadd /opt/local/bin
@@ -1612,7 +1627,7 @@ fi
 pathadd /sbin
 pathadd /usr/sbin
 pathadd /usr/local/sbin
-pathadd $HOME/.local/bin
+pathadd $HOME/.local/bin start
 # Add the Conda root environment bin directory last, so other versions are preferred.
 if [[ -d $HOME/src/miniconda2/bin ]]; then
   pathadd $HOME/src/miniconda2/bin
