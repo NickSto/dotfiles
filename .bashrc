@@ -199,6 +199,14 @@ export EDITOR=vim
 # Allow disabling ~/.python_history.
 # See https://unix.stackexchange.com/questions/121377/how-can-i-disable-the-new-history-feature-in-python-3-4
 export PYTHONSTARTUP=~/.pythonrc
+# Perl crap to enable CPAN modules installed to $HOME.
+if [[ -d "$HOME/perl5/bin" ]]; then
+  export PATH="$PATH:$HOME/perl5/bin"
+fi
+export PERL5LIB="$HOME/perl5/lib/perl5"
+export PERL_LOCAL_LIB_ROOT="$HOME/perl5"
+export PERL_MB_OPT="--install_base \"$HOME/perl5\""
+export PERL_MM_OPT="INSTALL_BASE=$HOME/perl5"
 
 
 ##### Aliases #####
@@ -1297,24 +1305,26 @@ function quals {
     sed -e "$command"
   fi
 }
-function align {
-  local opts_default='-M -t 32'
-  if [[ $# -lt 3 ]]; then
-    echo "Usage: \$ align ref.fa reads_1.fq reads_2.fq [--other --bwa --options]
-If you provide your own options, yours will replace the defaults ($opts_default)." 1>&2
-    return 1
-  fi
-  local ref fastq1 fastq2 opts
-  read ref fastq1 fastq2 opts <<< $@
-  if ! [[ $opts ]]; then
-    opts="$opts_default"
-  fi
-  local base=$(echo $fastq1 | sed -E -e 's/\.gz$//' -e 's/\.fa(sta)?$//' -e 's/\.f(ast)?q$//' -e 's/_[12]$//')
-  bwa mem $opts $ref $fastq1 $fastq2 > $base.sam
-  samtools view -Sbu $base.sam | samtools sort - $base
-  samtools index $base.bam
-  echo "Final alignment is in: $base.bam"
-}
+if ! which align.py >/dev/null 2>/dev/null && ! which align-mem.sh >/dev/null 2>/dev/null; then
+  function align {
+    local opts_default='-M -t 32'
+    if [[ $# -lt 3 ]]; then
+      echo "Usage: \$ align ref.fa reads_1.fq reads_2.fq [--other --bwa --options]
+  If you provide your own options, yours will replace the defaults ($opts_default)." 1>&2
+      return 1
+    fi
+    local ref fastq1 fastq2 opts
+    read ref fastq1 fastq2 opts <<< $@
+    if ! [[ $opts ]]; then
+      opts="$opts_default"
+    fi
+    local base=$(echo $fastq1 | sed -E -e 's/\.gz$//' -e 's/\.fa(sta)?$//' -e 's/\.f(ast)?q$//' -e 's/_[12]$//')
+    bwa mem $opts $ref $fastq1 $fastq2 > $base.sam
+    samtools view -Sbu $base.sam | samtools sort - $base
+    samtools index $base.bam
+    echo "Final alignment is in: $base.bam"
+  }
+fi
 # Print random DNA.
 function dna {
   length=200
