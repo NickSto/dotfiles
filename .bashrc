@@ -834,14 +834,14 @@ function pg {
   fi
 }
 function parents {
-  if [[ "$1" ]]; then
+  if [[ "$#" -ge 1 ]]; then
     local pid="$1"
   else
     local pid="$$"
   fi
   while [[ "$pid" -gt 0 ]]; do
-    ps -o pid="",command="" -p $pid
-    pid=$(ps -o ppid="" -p $pid)
+    ps -o pid,args -p $pid | tail -n +2
+    pid=$(ps -o ppid -p $pid | tail -n +2)
   done
 }
 # readlink -f except it handles commands on the PATH too
