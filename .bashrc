@@ -354,7 +354,20 @@ function vnc {
   echo "[Ctrl+C to exit]"
   ssh -t -L 5900:localhost:5900 home 'x11vnc -localhost -display :0 -ncache 10 -nopw' >/dev/null
 }
-
+function config {
+  if [[ "$#" != 3 ]]; then
+    echo "Usage: config settings.ini section key" >&2
+    return 1
+  fi
+  python3 -c 'import configparser, sys
+config = configparser.ConfigParser(interpolation=None)
+config.read(sys.argv[1])
+try:
+  print(config.get(sys.argv[2], sys.argv[3]))
+except configparser.Error as error:
+  print(error, file=sys.stderr)
+  sys.exit(1)' "$1" "$2" "$3"
+}
 alias minecraft="cd ~/src/minecraft && java -Xmx400M -Xincgc -jar $HOME/src/minecraft_server.jar nogui"
 alias minelog='ssh vps "tail src/minecraft/server.log"'
 alias mineme='ssh vps "cat src/minecraft/server.log" | grep -i nick | tail'
