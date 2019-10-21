@@ -229,15 +229,18 @@ alias tarb='tar -jxvpf'
 alias pseudo=sudo
 alias vib="vim $BashrcDir/.bashrc"
 alias awkt="awk -F '\t' -v OFS='\t'"
+alias pingg='ping -c 1 google.com'
+alias curlip='curl -s icanhazip.com'
+
+
+##### Functions and Aliases #####
+
 function mouse {
   nohup mousepad "$1" >/dev/null 2>/dev/null &
 }
 function now {
   date +%s
 }
-
-alias pingg='ping -c 1 google.com'
-alias curlip='curl -s icanhazip.com'
 function cpu {
   ps aux | awk 'NR > 1 {cpu+=$3; mem+=$4} END {printf("%0.2f\t%0.2f\n", cpu/100, mem/100)}'
 }
@@ -409,10 +412,6 @@ else
     ssh home "cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab && grep -r $*"
   }
 fi
-
-
-##### Functions #####
-
 function silence {
   local Silence="$DataDir/SILENCE"
   if [[ $# -ge 1 ]] && [[ $1 == '-h' ]]; then
