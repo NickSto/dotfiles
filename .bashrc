@@ -579,11 +579,18 @@ if which tmpcmd.sh >/dev/null 2>/dev/null; then
     else
       local timeout=2h
     fi
-    local crashservice=$(get_crashservice)
+    local prefix rest
+    read prefix rest <<< $(get_crashservice)
     if [[ "$?" != 0 ]]; then
       return "$?"
     fi
-    tmpcmd.sh -t "$timeout" "$crashservice stop" "$crashservice start"
+    if [[ "$prefix" == sudo ]]; then
+      local crashservice="$rest"
+    else
+      local crashservice="$prefix $rest"
+      prefix=''
+    fi
+    "$prefix" tmpcmd.sh -t "$timeout" "$crashservice stop" "$crashservice start"
     title "$old_title"
   }
   if which dnsadd.sh >/dev/null 2>/dev/null; then
