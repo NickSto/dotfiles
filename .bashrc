@@ -33,7 +33,9 @@ function realdirname {
 }
 
 # Determine directory with .bashrc files
-cd $HOME
+if [[ -d "$HOME" ]]; then
+  cd $HOME
+fi
 if [[ -f .bashrc ]]; then
   # Is it a link or real file?
   if [[ -h .bashrc ]]; then
