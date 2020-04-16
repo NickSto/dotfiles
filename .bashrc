@@ -952,11 +952,47 @@ function eta {
   local min_left=$(calc "'{:0.2f}'.format($sec_left/60)")
   echo -e "$eta_diff\t($min_left min from now)"
 }
+function timer {
+  if [[ "$#" -lt 1 ]] || [[ "$#" -gt 2 ]] || [[ "$1" == '-h' ]]; then
+    echo "Usage: timer delay [message]
+The 'delay' should be parseable by the 'sleep' command.
+This will sleep for 'delay', then notify-send the message and play a tone." >&2
+    return 1
+  fi
+  local delay="$1"
+  local message=
+  if [[ "$#" -ge 2 ]]; then
+    message="$2"
+  fi
+  sleep "$delay"
+  if [[ "$?" != 0 ]]; then
+    echo "Timer cancelled by user." >&2
+    return 1
+  fi
+  echo "$message"
+  notify-send "$message"
+  local sound_path="$HOME/aa/audio/30 second silence and tone.mp3"
+  if [[ -f "$sound_path" ]]; then
+    vlc --play-and-exit "$sound_path" 2>/dev/null
+  else
+    echo "Sound file not found: $sound_path" >&2
+  fi
+}
+function readcsv {
+  if [[ "$#" -ge 1 ]]; then
+    python -c 'import sys, csv
+csv.writer(sys.stdout, dialect="excel-tab").writerows(csv.reader(open(sys.argv[1])))' "$1"
+  else
+    python -c 'import sys, csv
+csv.writer(sys.stdout, dialect="excel-tab").writerows(csv.reader(sys.stdin))'
+  fi
+}
 function datediff {
   if [[ "$#" -lt 1 ]] || [[ "$1" == '-h' ]]; then
     echo "Usage: datediff date1 [date2]
 Compare two datetimes and print the parts of date1 that are different from date2.
-date2 is the current time by default." >&2
+date2 is the current time by default.
+The dates should be parseable by the 'date -d' command." >&2
     return 1
   elif [[ "$#" -ge 2 ]]; then
     local timestamp2=$(date +%s -d "$2")
