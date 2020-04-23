@@ -959,12 +959,27 @@ The 'delay' should be parseable by the 'sleep' command.
 This will sleep for 'delay', then notify-send the message and play a tone." >&2
     return 1
   fi
-  local delay="$1"
+  local delay_str="$1"
   local message=
   if [[ "$#" -ge 2 ]]; then
     message="$2"
   fi
-  sleep "$delay"
+  local remaining=$(time_to_sec "$delay_str")
+  local interval
+  if [[ "$remaining" -lt 120 ]]; then
+    interval=10
+  elif [[ "$remaining" -lt 1800 ]]; then
+    interval=60
+  elif [[ "$interval" -lt 9000 ]]; then
+    interval=300
+  else
+    interval=1800
+  fi
+  while [[ "$remaining" -gt 0 ]]; do
+    echo "$(human_time "$remaining" 1unit) remaining.."
+    sleep "$interval"
+    remaining=$((remaining-interval))
+  done
   if [[ "$?" != 0 ]]; then
     echo "Timer cancelled by user." >&2
     return 1
