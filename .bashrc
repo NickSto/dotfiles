@@ -1279,7 +1279,19 @@ alias tilte=title
 # Convert a number of seconds into a human-readable time string.
 # Example output: "1 year 33 days 2:43:06"
 function human_time {
-  local sec_total=$1
+  if [[ "$#" -lt 1 ]] || [[ "$#" -gt 2 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+    echo "Usage: human_time num_sec [format]
+Formats:
+            2309487     |   23094   |     2309     |     23
+clock: 26 days 17:31:27 | 6:24:54   | 38:29        | 23
+1unit: 3.8 weeks        | 6.4 hours | 38.5 minutes | 23 seconds" >&2
+    return 1
+  fi
+  local sec_total="$1"
+  local format="clock"
+  if [[ "$#" -ge 2 ]]; then
+    format="$2"
+  fi
   local sec=$((sec_total % 60))
   local min_total=$((sec_total/60))
   local min=$((min_total % 60))
@@ -1288,15 +1300,30 @@ function human_time {
   local days_total=$((hr_total/24))
   local days=$((days_total % 365))
   local years_total=$((days_total/365))
+  local formatter=
+  case "$format" in
+    clock)
+      formatter=human_time_clock;;
+    1unit)
+      formatter=human_time_1unit;;
+    *)
+      echo "Error: Invalid format \"$format\"" >&2
+      return 1;;
+  esac
+  $formatter "$sec_total" "$sec" "$min" "$hr" "$days" "$years_total"
+}
+function human_time_clock {
+  local sec_total sec min hr days years
+  read sec_total sec min hr days years <<< "$@"
   if [[ $days == 1 ]]; then
     local days_str='1 day '
   else
     local days_str="$days days "
   fi
-  if [[ $years_total == 1 ]]; then
+  if [[ $years == 1 ]]; then
     local years_str='1 year '
   else
-    local years_str="$years_total years "
+    local years_str="$years years "
   fi
   local hr_str="$hr:"
   local min_str="$min:"
@@ -1307,7 +1334,7 @@ function human_time {
   if [[ $sec -lt 10 ]] && [[ $sec_total -ge 60 ]]; then
     sec_str="0$sec"
   fi
-  if [[ $years_total == 0 ]]; then
+  if [[ $years == 0 ]]; then
     years_str=''
     if [[ $days == 0 ]]; then
       days_str=''
@@ -1323,6 +1350,68 @@ function human_time {
     fi
   fi
   echo "$years_str$days_str$hr_str$min_str$sec_str"
+}
+function human_time_1unit {
+  local sec_total sec min hr days years
+  read sec_total sec min hr days years <<< "$@"
+  local unit quantity
+  if [[ "$sec_total" -lt 60 ]]; then
+    unit='second'
+    quantity="$sec_total"
+  elif [[ "$sec_total" -lt 3600 ]]; then
+    unit='minute'
+    quantity=$(echo "$sec_total/60" | bc -l)
+  elif [[ "$sec_total" -lt 86400 ]]; then
+    unit='hour'
+    quantity=$(echo "$sec_total/60/60" | bc -l)
+  elif [[ "$sec_total" -lt 864000 ]]; then
+    unit='day'
+    quantity=$(echo "$sec_total/60/60/24" | bc -l)
+  elif [[ "$sec_total" -lt 3456000 ]]; then
+    unit='week'
+    quantity=$(echo "$sec_total/60/60/24/7" | bc -l)
+  elif [[ "$sec_total" -lt 31536000 ]]; then
+    unit='month'
+    quantity=$(echo "$sec_total/60/60/24/30.5" | bc -l)
+  else
+    unit='year'
+    quantity=$(echo "$sec_total/60/60/24/365" | bc -l)
+  fi
+  local rounded=$(printf '%0.1f' "$quantity")
+  local integered=$(printf '%0.0f' "$quantity")
+  if [[ "$rounded" == "$integered.0" ]]; then
+    rounded="$integered"
+  fi
+  output="$rounded $unit"
+  if [[ "$rounded" != 1 ]]; then
+    output="${output}s"
+  fi
+  echo "$output"
+}
+function time_to_sec {
+  if [[ "$#" != 1 ]] || [[ "$1" == '-h' ]]; then
+    echo "Usage: time_to_sec 15m
+Returns number of seconds.
+Input format same as for 'sleep' command, except integers only." >&2
+    return 1
+  fi
+  local time="$1"
+  local quantity unit
+  read quantity unit <<< $(echo "$time" | sed -En 's/^([0-9]+)([smhd])?$/\1 \2/p')
+  if ! [[ "$quantity" ]]; then
+    echo "Error: Invalid time string \"$time\"" >&2
+    return 1
+  fi
+  multiplier=1
+  case "$unit" in
+    m)
+      multiplier=60;;
+    h)
+      multiplier=3600;;
+    d)
+      multiplier=86400;;
+  esac
+  echo $((quantity*multiplier))
 }
 
 
