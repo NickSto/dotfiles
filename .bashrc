@@ -960,13 +960,15 @@ This will sleep for 'delay', then notify-send the message and play a tone." >&2
     return 1
   fi
   local delay_str="$1"
-  local message=
+  local message='Timer finished!'
   if [[ "$#" -ge 2 ]]; then
     message="$2"
   fi
   local remaining=$(time_to_sec "$delay_str")
   local interval
-  if [[ "$remaining" -lt 120 ]]; then
+  if [[ "$remaining" -lt 10 ]]; then
+    interval="$remaining"
+  elif [[ "$remaining" -lt 120 ]]; then
     interval=10
   elif [[ "$remaining" -lt 1800 ]]; then
     interval=60
