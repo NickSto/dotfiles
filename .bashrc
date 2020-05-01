@@ -17,7 +17,7 @@ Host=$(hostname -s 2>/dev/null || hostname)
 
 # Are we on one of the cluster nodes?
 InCluster=
-if echo $Host | grep -qE '^nn[0-9]+$' && [[ ${Host:2} -le 15 ]]; then
+if echo "$Host" | grep -qE '^nn[0-9]+$' && [[ "${Host:2}" -le 15 ]]; then
   InCluster=true
 fi
 
@@ -29,12 +29,12 @@ unset CDPATH
 
 # Reliably get the actual parent dirname of a link (no readlink -f in BSD)
 function realdirname {
-  echo $(cd $(dirname $(readlink $1)) && pwd)
+  echo $(cd $(dirname $(readlink "$1")) && pwd)
 }
 
 # Determine directory with .bashrc files
 if [[ -d "$HOME" ]]; then
-  cd $HOME
+  cd "$HOME"
 fi
 if [[ -f .bashrc ]]; then
   # Is it a link or real file?
@@ -84,24 +84,24 @@ case "$Host" in
 esac
 
 # Get the kernel string if detect-distro.sh didn't.
-if [[ ! $Kernel ]]; then
+if [[ ! "$Kernel" ]]; then
   Kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')
 fi
 
 # If we're in Tails, set $HOME to the USB drive with this bashrc on it.
-if [[ $Distro == tails ]]; then
-  if [[ $Host == localhost.localdomain ]]; then
+if [[ "$Distro" == tails ]]; then
+  if [[ "$Host" == localhost.localdomain ]]; then
     Host=tails
   fi
-  usb_drive=$(df $BashrcDir | awk 'END {print $6}')
+  usb_drive=$(df "$BashrcDir" | awk 'END {print $6}')
   if [[ $usb_drive ]]; then
-    export HOME=$usb_drive
-    cd $HOME
+    export HOME="$usb_drive"
+    cd "$HOME"
   fi
 fi
 
 # If we're in the webserver, cd to the webroot.
-if [[ $Host == nsto2 ]]; then
+if [[ "$Host" == nsto2 ]]; then
   cd /var/www/nstoler.com
 fi
 
@@ -111,7 +111,7 @@ fi
 
 
 # All comments in this block are from Ubuntu's default .bashrc
-if [[ $Distro == ubuntu ]]; then
+if [[ "$Distro" == ubuntu ]]; then
 
   # ~/.bashrc: executed by bash(1) for non-login shells.
   # examples: /usr/share/doc/bash/examples/startup-files (in package bash-doc)
@@ -132,7 +132,7 @@ if [[ $Distro == ubuntu ]]; then
 
 
 # All comments in this block are from brubeck's default .bashrc
-elif [[ $Host == brubeck ]]; then
+elif [[ "$Host" == brubeck ]]; then
 
   # System wide functions and aliases
   # Environment stuff goes in /etc/profile
@@ -157,7 +157,7 @@ elif [[ $Host == brubeck ]]; then
   # make afs friendlier-ish
   if [ -d /afs/bx.psu.edu/service/etc/bash.d/ ]; then
     for file in /afs/bx.psu.edu/service/etc/bash.d/*.bashrc; do
-    . $file
+    . "$file"
     done
   fi
 
@@ -213,7 +213,7 @@ export PERL_MM_OPT="INSTALL_BASE=$HOME/perl5"
 
 ##### Aliases #####
 
-if [[ $Distro == ubuntu || $Distro == cygwin || $Distro == debian ]]; then
+if [[ "$Distro" == ubuntu || "$Distro" == cygwin || "$Distro" == debian ]]; then
   alias ll='ls -lFhAb --color=auto --group-directories-first'
   alias lld='ls -lFhAbd --color=auto --group-directories-first'
 else
@@ -273,35 +273,35 @@ if which trash-put >/dev/null 2>/dev/null; then
 else
   function trash {
     echo "No trash-cli found. Falling back to manual ~/.trash directory." >&2
-    if ! [[ -d $HOME/.trash ]]; then
-      if ! mkdir $HOME/.trash; then
+    if ! [[ -d "$HOME/.trash" ]]; then
+      if ! mkdir "$HOME/.trash"; then
         echo "Error creating ~/.trash" >&2
         return 1
       fi
     fi
-    mv "$@" $HOME/.trash
+    mv "$@" "$HOME/.trash"
   }
 fi
 function cds {
   if [[ "$1" ]]; then
-    local n=$1
+    local n="$1"
   else
     local n=5
   fi
-  if [[ $n == 1 ]]; then
-    if [[ $Host == brubeck ]]; then
+  if [[ "$n" == 1 ]]; then
+    if [[ "$Host" == brubeck ]]; then
       cd /scratch/nick
     else
       cd /nfs/brubeck.bx.psu.edu/scratch1/nick
     fi
-  elif [[ $n == 2 ]]; then
-    if [[ $Host == brubeck ]]; then
+  elif [[ "$n" == 2 ]]; then
+    if [[ "$Host" == brubeck ]]; then
       cd /scratch2/nick
     else
       cd /nfs/brubeck.bx.psu.edu/scratch2/nick
     fi
-  elif [[ $n -ge 3 ]]; then
-    cd /nfs/brubeck.bx.psu.edu/scratch$n/nick
+  elif [[ "$n" -ge 3 ]]; then
+    cd "/nfs/brubeck.bx.psu.edu/scratch$n/nick"
   fi
 }
 alias noheader='grep -v "^#"'
@@ -310,7 +310,7 @@ alias veramount="veracrypt -t --truecrypt -k '' --protect-hidden=no"
 alias swapkeys="loadkeys-safe.sh && sudo loadkeys $HOME/aa/computer/keymap-loadkeys.txt"
 # If an .xmodmap is present, source it to alter the keys however it says. Disable with noremap=1.
 # This is possibly obsoleted by the loadkeys method above.
-if [[ -f ~/.xmodmap ]] && [[ -z $noremap ]]; then
+if [[ -f ~/.xmodmap ]] && [[ -z "$noremap" ]]; then
   xmodmap ~/.xmodmap
 fi
 function kerb {
@@ -318,17 +318,17 @@ function kerb {
   local galaxy_realm="nick@GALAXYPROJECT.ORG"
   local default_realm="$bx_realm"
   local realm="$1"
-  if [[ $# -le 0 ]]; then
+  if [[ "$#" -le 0 ]]; then
     realm="$default"
-  elif [[ $1 == bx ]]; then
+  elif [[ "$1" == bx ]]; then
     realm="$bx_realm"
-  elif [[ ${1:0:3} == bru ]]; then
+  elif [[ "${1:0:3}" == bru ]]; then
     realm="$bx_realm"
-  elif [[ ${1:0:3} == des ]]; then
+  elif [[ "${1:0:3}" == des ]]; then
     realm="$bx_realm"
-  elif [[ ${1:0:3} == sco ]]; then
+  elif [[ "${1:0:3}" == sco ]]; then
     realm="$galaxy_realm"
-  elif [[ ${1:0:3} == gal ]]; then
+  elif [[ "${1:0:3}" == gal ]]; then
     realm="$galaxy_realm"
   fi
   kinit -l 90d "$realm"
@@ -341,17 +341,17 @@ function rsynchome {
   else
     local dest='home'
   fi
-  if [[ -d $HOME/aa ]] && [[ -d $HOME/annex ]] && [[ -d $HOME/code ]]; then
-    rsynca $HOME/aa/ $dest:/home/$USER/aa/ \
-      && rsynca $HOME/annex/ $dest:/home/$USER/annex/ \
-      && rsynca $HOME/code/ $dest:/home/$USER/code/
+  if [[ -d "$HOME/aa" ]] && [[ -d "$HOME/annex" ]] && [[ -d "$HOME/code" ]]; then
+    rsynca "$HOME/aa/" "$dest:/home/$USER/aa/" \
+      && rsynca "$HOME/annex/" "$dest:/home/$USER/annex/" \
+      && rsynca "$HOME/code/" "$dest:/home/$USER/code/"
   else
     echo "Wrong set of directories exists. Is this the right machine?" >&2
   fi
 }
 function vnc {
   local delay=8
-  (sleep $delay && vinagre localhost:0) &
+  (sleep "$delay" && vinagre localhost:0) &
   echo "starting ssh tunnel and vnc server, then client in $delay seconds.."
   echo "[Ctrl+C to exit]"
   ssh -t -L 5900:localhost:5900 home 'x11vnc -localhost -display :0 -ncache 10 -nopw' >/dev/null
@@ -376,23 +376,23 @@ alias mineme='ssh vps "cat src/minecraft/server.log" | grep -i nick | tail'
 alias minelist="ssh vps 'screen -S minecraft -X stuff \"list\"; sleep 1; tail src/minecraft/server.log'"
 alias minemem='ssh vps "if pgrep -f java >/dev/null; then pgrep -f java | xargs ps -o %mem; fi"'
 
-if [[ $Distro =~ (^osx$|bsd$) ]]; then
+if [[ "$Distro" =~ (^osx$|bsd$) ]]; then
   alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tty,start,time,args'"
 else # doesn't work in cygwin, but no harm
   alias psp="ps -o 'user,pid,ppid,%cpu,%mem,rss,tname,start_time,time,args'"
 fi
-if [[ $Host == ndojo || $Host == nbs ]]; then
+if [[ "$Host" == ndojo || "$Host" == nbs ]]; then
   alias errlog='less +G /home/logs/error_log'
-elif [[ $Host == nsto2 ]]; then
+elif [[ "$Host" == nsto2 ]]; then
   alias errlog='less +G /var/www/logs/error.log'
-elif [[ $Distro == ubuntu || $Distro == debian ]]; then
+elif [[ "$Distro" == ubuntu || "$Distro" == debian ]]; then
   alias errlog='less +G /var/log/syslog'
 fi
 # Search all encodings for strings, raise minimum length to 5 characters
 function stringsa {
-  strings -n 5 -e s $1
-  strings -n 5 -e b $1
-  strings -n 5 -e l $1
+  strings -n 5 -e s "$1"
+  strings -n 5 -e b "$1"
+  strings -n 5 -e l "$1"
 }
 alias temp="sensors | grep -A 3 '^coretemp-isa-0000' | tail -n 1 | awk '{print \$3}' | sed -E -e 's/^\+//' -e 's/\.[0-9]+//'"
 alias mountv="sudo mount -t vboxsf -o uid=1000,gid=1000,rw shared $HOME/shared"
@@ -402,53 +402,42 @@ function mountf {
     return 1
   elif [[ "$Host" == brubeck ]] || [[ "$Host" == desmond ]]; then
     local fit_cols=$(deref fit-columns.py)
-    (echo Device Mount Type && mount | awk '{print $1, $3, $5}' | sort) | python3.6 "$fit_cols" $args
+    (echo Device Mount Type && mount | awk '{print $1, $3, $5}' | sort) | python3.6 "$fit_cols" "$args"
   else
-    (echo Device Mount Type && mount | awk '{print $1, $3, $5}' | sort) | fit-columns.py $args
+    (echo Device Mount Type && mount | awk '{print $1, $3, $5}' | sort) | fit-columns.py "$args"
   fi
 }
 alias blockedips="grep 'UFW BLOCK' /var/log/ufw.log | sed -E 's/.* SRC=([0-9a-f:.]+) .*/\1/g' | sort -g | uniq -c | sort -rg -k 1"
 alias bitcoin="curl -s 'https://api.coindesk.com/v1/bpi/currentprice.json' | jq .bpi.USD.rate_float | cut -d . -f 1"
 if ! which git >/dev/null 2>/dev/null; then
   alias updaterc="wget 'https://raw.githubusercontent.com/NickSto/dotfiles/master/.bashrc' -O $BashrcDir/.bashrc"
-elif [[ $Host == cyberstar || $Distro =~ bsd$ ]]; then
+elif [[ "$Host" == cyberstar || "$Distro" =~ bsd$ ]]; then
   alias updaterc="cd $BashrcDir && git pull && cd -"
 else
   alias updaterc="git --work-tree=$BashrcDir --git-dir=$BashrcDir/.git pull"
 fi
-if [[ $Host == main ]]; then
-  alias logtail='~/bin/logtail.sh 100 | less +G'
-  function logrep {
-    cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab && grep -r $@
-  }
-else
-  alias logtail='ssh home "~/bin/logtail.sh 100" | less +G'
-  function logrep {
-    ssh home "cd ~/0utbox/annex/Work/PSU/Nekrutenko/misc/chatlogs/galaxy-lab && grep -r $*"
-  }
-fi
 function silence {
   local Silence="$DataDir/SILENCE"
-  if [[ $# -ge 1 ]] && [[ $1 == '-h' ]]; then
+  if [[ "$#" -ge 1 ]] && [[ "$1" == '-h' ]]; then
     echo "Usage: \$ silence [-u]
 Toggles silence file $Silence and silences some common background services.
 Prompts before unsilencing (unless -u is given). Returns 0 when silenced, 2 when unsilenced, and 1
 on error." >&2
     return 1
   fi
-  if [[ $# == 1 ]] && [[ $1 == '-u' ]] && ! [[ -f "$Silence" ]]; then
+  if [[ "$#" == 1 ]] && [[ "$1" == '-u' ]] && ! [[ -f "$Silence" ]]; then
     echo "Error: -u given, but silence file doesn't exist. You're already unsilenced!" >&2
     return 1
   fi
   if [[ -f "$Silence" ]]; then
-    if [[ $# -ge 1 ]] && [[ $1 == '-u' ]]; then
+    if [[ "$#" -ge 1 ]] && [[ "$1" == '-u' ]]; then
       rm -f "$Silence"
       unsilence_services
       echo "Unsilenced!"
     else
       local response
       read -p "You're currently silenced! Type \"louden\" to unsilence! " response
-      if [[ $response == 'louden' ]]; then
+      if [[ "$response" == 'louden' ]]; then
         rm -f "$Silence"
         unsilence_services
         echo "Unsilenced!"
@@ -571,8 +560,8 @@ if which tmpcmd.sh >/dev/null 2>/dev/null; then
   function crashpause {
     local old_title="$TITLE"
     title crashpause
-    if [[ $# -ge 1 ]]; then
-      if [[ $1 == '-h' ]]; then
+    if [[ "$#" -ge 1 ]]; then
+      if [[ "$1" == '-h' ]]; then
         echo "Usage: \$ crashpause [time]" >&2
         return 1
       else
@@ -597,7 +586,7 @@ if which tmpcmd.sh >/dev/null 2>/dev/null; then
   }
   if which dnsadd.sh >/dev/null 2>/dev/null; then
     function dnsadd {
-      if [[ $# -lt 1 ]]; then
+      if [[ "$#" -lt 1 ]]; then
         echo "Usage: \$ dnsadd [domain.com]" >&2
         return 1
       fi
@@ -605,52 +594,23 @@ if which tmpcmd.sh >/dev/null 2>/dev/null; then
     }
   fi
 fi
-if [[ $Host == ruby ]]; then
-  # Log my current number of tabs to a file, for self-monitoring.
-  # On my laptop, screw the tabs command for now. Never used it.
-  function tabs {
-    local LogFile=~/aa/computer/logs/tabs.tsv
-    if [[ $# == 0 ]] || [[ $1 == '-h' ]]; then
-      echo "Usage: \$ tabs main_tabs [all_tabs]
-Log your current number of tabs, plus a timestamp, to $LogFile
-Format is tab-delimited: unix timestamp, number of tabs in main window,
-number of tabs in all windows, human-readable timestamp." >&2
-      return 1
-    fi
-    if ! [[ -d $(dirname $LogFile) ]]; then
-      echo "Error: Missing directory $(dirname $LogFile)" >&2
-      return 1
-    fi
-    local timestamp=$(date +%s)
-    local time_human=$(date -d @$timestamp)
-    local main_tabs=$1
-    local all_tabs=.
-    if [[ $# -gt 1 ]]; then
-      all_tabs=$2
-    fi
-    if [[ $main_tabs -gt 100 ]]; then
-      echo "Dang, that's a lot of tabs."
-    fi
-    echo -e "$timestamp\t$main_tabs\t$all_tabs\t$time_human" >> $LogFile
-  }
-fi
 function logip {
   local LogFile=~/aa/computer/logs/ips.tsv
-  if [[ $1 == '-h' ]]; then
+  if [[ "$1" == '-h' ]]; then
     echo "Usage: \$ logip [-f]
 Log your current public IP address to $LogFile.
 Uses icanhazip.com to get your IP address.
 Add -f to force logging even when SILENCE is in effect." >&2
     return 1
   fi
-  if [[ $1 != '-f' ]] && [[ -e "$DataDir/SILENCE" ]]; then
+  if [[ "$1" != '-f' ]] && [[ -e "$DataDir/SILENCE" ]]; then
     echo "Error: SILENCE file exists ($DataDir/SILENCE). Add -f to override." >&2
     return 1
   fi
   local ip=$(curl -s icanhazip.com)
-  if [[ $ip ]]; then
-    echo $ip >> $LogFile
-    echo echo $ip '>>' $LogFile
+  if [[ "$ip" ]]; then
+    echo "$ip" >> "$LogFile"
+    echo echo "$ip" '>>' "$LogFile"
   else
     echo "Error: Failed getting IP address." >&2
   fi
@@ -728,9 +688,10 @@ Note: This works with dotfiles and files with spaces." >&2
 # only if the system supports readlink -f (BSD doesn't)
 if readlink -f / >/dev/null 2>/dev/null; then
   function bin {
-    ln -s $(readlink -f $1) ~/bin/$(basename $1)
+    ln -s $(readlink -f "$1") ~/bin/$(basename "$1")
   }
 fi
+# Done quoting variables up to here. [keys: quotes]
 alias gitgraph='git log --oneline --abbrev-commit --all --graph --decorate --color'
 alias gig='nohup giggle >/dev/null 2>/dev/null &'
 function gitswitch {
