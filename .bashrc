@@ -1264,6 +1264,21 @@ Default: "Terminal"' >&2
 }
 # I keep typing this for some reason.
 alias tilte=title
+function test_rate {
+  if [[ "$#" == 2 ]]; then
+    local fpos_rate="$1"
+    local prevalence="$2"
+  else
+    echo 'Usage: $ test_rate false_positive_rate population_prevalence
+E.g. for a 10% false positive rate and a 2% true population infection rate:
+$ test_rate 10 2' >&2
+    return 1
+  fi
+  local false_positives=$(calc "1000*$fpos_rate*100")
+  local true_positives=$(calc "1000*$prevalence*100")
+  local likelihood=$(calc "100*$true_positives/($true_positives+$false_positives)")
+  printf "Chance a positive result means you're actually positive: %0.1f%%\n" "$likelihood"
+}
 # Convert a number of seconds into a human-readable time string.
 # Example output: "1 year 33 days 2:43:06"
 function human_time {
