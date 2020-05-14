@@ -949,9 +949,14 @@ This will sleep for 'delay', then notify-send the message and play a tone." >&2
     interval=1800
   fi
   while [[ "$remaining" -gt 0 ]]; do
-    echo "$(human_time "$remaining" 1unit) remaining.."
-    sleep "$interval"
-    remaining=$((remaining-interval))
+    if [[ "$interval" -lt "$remaining" ]]; then
+      local sleep_time="$interval"
+    else
+      local sleep_time="$remaining"
+    fi
+    echo "$(human_time "$remaining" 1unit) remaining."
+    sleep "$sleep_time"
+    remaining=$((remaining-sleep_time))
   done
   if [[ "$?" != 0 ]]; then
     echo "Timer cancelled by user." >&2
