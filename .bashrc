@@ -838,11 +838,21 @@ function parents {
 }
 # readlink -f except it handles commands on the PATH too
 function deref {
-  local file="$1"
-  if [ ! -e "$file" ]; then
-    file=$(which "$file" 2>/dev/null)
+  local arg="$1"
+  local path
+  if [[ $(type -t "$arg") == file ]]; then
+    # It's a command on the $PATH. Look up its actual path.
+    path=$(which "$arg" 2>/dev/null)
+    readlink -f "$path"
+    return "$?"
+  else
+    path="$arg"
   fi
-  readlink -f "$file"
+  while [[ "$path" ]]; do
+    local old_path="$path"
+    path=$(readlink "$old_path")
+  done
+  echo "$old_path"
 }
 # this requires deref()!
 function vil {
