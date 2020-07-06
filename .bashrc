@@ -894,36 +894,32 @@ finds." >&2
   fi
 }
 function eta {
-  local Usage="Usage: eta <start_time> <start_count> <current_count> [<goal_count>]
+  local Usage="Usage: eta <start_time> <start_count> <current_count> <goal_count>
        --- or ---
-       eta start <start_count> [<goal_count>]
+       eta start <goal_count> <start_count>
        eta <current_count>"
   if [[ "$#" -lt 1 ]] || [[ "$1" == '-h' ]]; then
     echo "$Usage" >&2
     return 1
-  elif [[ "$#" -ge 2 ]] && [[ "$#" -le 3 ]] && [[ "$1" == start ]]; then
+  elif [[ "$1" == 'start' ]] && [[ "$#" == 3 ]]; then
     start_time=$(date +%s)
-    start_count="$2"
-    if [[ "$#" == 3 ]]; then
-      goal="$3"
-    else
-      goal=10000
-    fi
+    goal="$2"
+    start_count="$3"
     echo -e "start_time=$start_time\nstart_count=$start_count\ngoal=$goal"
     return 0
   elif [[ "$#" == 1 ]] && [[ "$start_time" ]] && [[ "$start_count" ]] && [[ "$goal" ]]; then
     local current="$1"
-  elif [[ "$#" -ge 3 ]] && [[ "$#" -le 4 ]]; then
-    local start_time=$1
-    local start_count=$2
-    local current=$3
-    if [[ "$#" -ge 4 ]]; then
-      local goal=$4
-    else
-      local goal=10000
-    fi
+  elif [[ "$#" == 4 ]]; then
+    local start_time="$1"
+    local start_count="$2"
+    local current="$3"
+    local goal="$4"
   else
     echo "$Usage" >&2
+    return 1
+  fi
+  if [[ "$(calc "$current <= $start_count")" == 'True' ]]; then
+    echo "Error: $current <= $start_count" >&2
     return 1
   fi
   local now=$(date +%s)
