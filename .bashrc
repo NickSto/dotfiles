@@ -419,40 +419,37 @@ fi
 function silence {
   local Silence="$DataDir/SILENCE"
   if [[ "$#" -ge 1 ]] && [[ "$1" == '-h' ]]; then
-    echo "Usage: \$ silence [-u]
+    echo "Usage: \$ silence [-u|-f]
 Toggles silence file $Silence and silences some common background services.
-Prompts before unsilencing (unless -u is given). Returns 0 when silenced, 2 when unsilenced, and 1
-on error." >&2
+Prompts before unsilencing (unless -u is given).
+Use -f to force silencing even if SILENCE file exists.
+Returns 0 when silenced, 2 when unsilenced, and 1 on error." >&2
     return 1
   fi
-  if [[ "$#" == 1 ]] && [[ "$1" == '-u' ]] && ! [[ -f "$Silence" ]]; then
-    echo "Error: -u given, but silence file doesn't exist. You're already unsilenced!" >&2
-    return 1
-  fi
-  if [[ -f "$Silence" ]]; then
-    if [[ "$#" -ge 1 ]] && [[ "$1" == '-u' ]]; then
+  if [[ "$#" -ge 1 ]] && [[ "$1" == '-u' ]]; then
+    rm -f "$Silence"
+    unsilence_services
+    echo "Unsilenced!"
+  elif [[ -f "$Silence" ]] && [[ "$1" != '-f' ]]; then
+    local response
+    read -p "You're currently silenced! Use -f to force silencing again or type \"louden\" to unsilence! " response
+    if [[ "$response" == 'louden' ]]; then
       rm -f "$Silence"
       unsilence_services
       echo "Unsilenced!"
     else
-      local response
-      read -p "You're currently silenced! Type \"louden\" to unsilence! " response
-      if [[ "$response" == 'louden' ]]; then
-        rm -f "$Silence"
-        unsilence_services
-        echo "Unsilenced!"
-      else
-        echo "Aborting!"
-        return 1
-      fi
+      echo "Aborting!"
+      return 1
     fi
   else
-    if silence_services; then
-      touch "$Silence"
+    silence_services
+    retval="$?"
+    touch "$Silence"
+    if [[ "$retval" == 0 ]]; then
       echo "Silenced!"
     else
       echo "Error silencing some services!" >&2
-      return 1
+      return "$retval"
     fi
   fi
 }
@@ -480,16 +477,14 @@ function silence_services {
   fi
   # Crashplan
   echo "Killing CrashPlan.."
-  if [[ "$(ps aux | awk '$11 != "awk" && $11 $12 $13 ~ /crashplan/')" ]]; then
-    local crashservice=$(get_crashservice)
-    if [[ "$crashservice" ]]; then
-      if ! $crashservice stop; then
-        failure=true
-      fi
-    else
-      echo "Error: Could not find command to kill CrashPlan!" >&2
+  local crashservice=$(get_crashservice)
+  if [[ "$crashservice" ]]; then
+    if ! $crashservice stop; then
       failure=true
     fi
+  else
+    echo "Error: Could not find command to kill CrashPlan!" >&2
+    failure=true
   fi
   # Snap daemon (often maintains a connection) (listening for updates?)
   echo "Killing snapd.."
@@ -539,13 +534,9 @@ function unsilence_services {
   fi
 }
 function get_crashservice {
-  # status command returns 4 if the service doesn't exist.
-  service crashplan status >/dev/null 2>/dev/null
-  if [[ "$?" == 3 ]]; then
-    # Service exists and isn't running (returns 3).
-    echo sudo service crashplan
-  elif service crashplan status >/dev/null 2>/dev/null; then
-    # Service exists and is running (returns 0).
+  if service_exists code42; then
+    echo sudo service code42
+  elif service_exists crashplan; then
     echo sudo service crashplan
   elif which CrashPlanEngine >/dev/null 2>/dev/null; then
     echo CrashPlanEngine
@@ -553,6 +544,24 @@ function get_crashservice {
     echo "$HOME/src/crashplan/bin/CrashPlanEngine"
   else
     echo "Error: Crashplan service not found and CrashPlanEngine command not found." >&2
+    return 1
+  fi
+}
+function service_exists {
+  local service="$1"
+  service "$service" status >/dev/null 2>/dev/null
+  retval="$?"
+  if [[ "$retval" == 0 ]]; then
+    # Service exists and is running.
+    return 0
+  elif [[ "$retval" == 3 ]]; then
+    # Service exists and isn't running.
+    return 0
+  elif [[ "$retval" == 4 ]]; then
+    # Service unrecognized.
+    return 1
+  else
+    echo "Error: Unrecognized return value $retval for service $service." >&2
     return 1
   fi
 }
@@ -572,8 +581,8 @@ if which tmpcmd.sh >/dev/null 2>/dev/null; then
     fi
     local prefix rest
     read prefix rest <<< $(get_crashservice)
-    if [[ "$?" != 0 ]]; then
-      return "$?"
+    if ! [[ "$prefix" ]] && ! [[ "$rest" ]]; then
+      return 1
     fi
     if [[ "$prefix" == sudo ]]; then
       local crashservice="$rest"
