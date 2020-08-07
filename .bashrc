@@ -416,6 +416,18 @@ elif [[ "$Host" == cyberstar || "$Distro" =~ bsd$ ]]; then
 else
   alias updaterc="git --work-tree=$BashrcDir --git-dir=$BashrcDir/.git pull"
 fi
+function queryparams {
+  if [[ "$#" -gt 1 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+    echo 'Usage: $ queryparams $url
+    or
+       $ echo $url | queryparams'
+    return 1
+  elif [[ "$#" == 1 ]]; then
+    echo "$1" | tr '?&=' '\n\n\t' | pct decode
+  else
+    tr '?&=' '\n\n\t' | pct decode
+  fi
+}
 function silence {
   local Silence="$DataDir/SILENCE"
   if [[ "$#" -ge 1 ]] && [[ "$1" == '-h' ]]; then
