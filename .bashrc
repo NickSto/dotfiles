@@ -951,16 +951,18 @@ function eta {
   echo -e "$eta_diff\t($min_left min from now)"
 }
 function timer {
-  if [[ "$#" -lt 1 ]] || [[ "$#" -gt 2 ]] || [[ "$1" == '-h' ]]; then
+  if [[ "$#" -lt 1 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
     echo "Usage: timer delay [message]
 The 'delay' should be parseable by the 'sleep' command.
-This will sleep for 'delay', then notify-send the message and play a tone." >&2
+This will sleep for 'delay', then notify-send the message and play a tone.
+The message doesn't need to be quoted - it can be the rest of the arguments." >&2
     return 1
   fi
   local delay_str="$1"
   local message='Timer finished!'
   if [[ "$#" -ge 2 ]]; then
-    message="$2"
+    shift
+    message="$@"
   fi
   local remaining=$(time_to_sec "$delay_str")
   local interval
