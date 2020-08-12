@@ -3,6 +3,13 @@ if [[ $BashrcRan ]]; then
   return 1
 fi
 
+# Are we root? Be conservative.
+if [[ "$USER" == root ]] || [[ "$EUID" == 0 ]] || [[ "$UID" == 0 ]]; then
+  IsRoot=true
+else
+  IsRoot=
+fi
+
 ##### Detect host #####
 
 Host=$(hostname -s 2>/dev/null || hostname)
@@ -76,7 +83,7 @@ case "$Host" in
   scofield)
     Distro="debian";;
   *)  # Unrecognized host? Run detection script.
-    if [[ -f "$BashrcDir/detect-distro.sh" ]]; then
+    if [[ -f "$BashrcDir/detect-distro.sh" ]] && ! [[ "$IsRoot" ]]; then
       source "$BashrcDir/detect-distro.sh"
     else
       Distro=
@@ -101,7 +108,7 @@ if [[ "$Distro" == tails ]]; then
 fi
 
 # If we're in the webserver, cd to the webroot.
-if [[ "$Host" == nsto2 ]]; then
+if [[ "${Host:0:4}" == nsto ]] && [[ "${#Host}" -le 5 ]]; then
   cd /var/www/nstoler.com
 fi
 
@@ -164,7 +171,7 @@ elif [[ "$Host" == brubeck ]]; then
 fi
 
 # enable color support of ls and also add handy aliases
-if [ -x /usr/bin/dircolors ]; then
+if [[ -x /usr/bin/dircolors ]] && ! [[ "$IsRoot" ]]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
     alias grep='grep --color=auto'
     alias fgrep='fgrep --color=auto'
@@ -579,7 +586,7 @@ function service_exists {
 }
 if which tmpcmd.sh >/dev/null 2>/dev/null; then
   function crashpause {
-    local old_title="$TITLE"
+    local old_title="$Title"
     title crashpause
     if [[ "$#" -ge 1 ]]; then
       if [[ "$1" == '-h' ]]; then
@@ -1284,17 +1291,17 @@ for i in range(0, len(binstr), 8):
 print()' "$@"
 }
 function title {
-  if [[ $# == 1 ]] && [[ $1 == '-h' ]]; then
+  if [[ "$#" == 1 ]] && [[ "$1" == '-h' ]]; then
     echo 'Usage: $ title [New terminal title]
 Default: "Terminal"' >&2
     return 1
   fi
-  if [[ $# == 0 ]]; then
-    TITLE="$Host"
+  if [[ "$#" == 0 ]]; then
+    Title="$Host"
   else
-    TITLE="$@"
+    Title="$@"
   fi
-  echo -ne "\033]2;$TITLE\007"
+  printf "\033]2;$Title\007"
 }
 # I keep typing this for some reason.
 alias tilte=title
@@ -1713,6 +1720,18 @@ Default user is $SlurmUser." >&2
 fi
 
 
+##### Root bailout #####
+
+# There's too much stuff below that executes too much code.
+# For safety, let's avoid executing all of that as root.
+if [[ "$IsRoot" ]]; then
+  export PS1='\e[0;31m[\d] \u@\h: \w\e[m\n\$ '
+  title ROOT
+  BashrcRan=true
+  return 0
+fi
+
+
 ##### PS1 prompt #####
 
 # color red on last command failure
@@ -1729,16 +1748,17 @@ function prompt_exit_color {
 }
 # Set the window title, if needed.
 function prompt_set_title {
-  if ! [[ $TITLE ]]; then
+  # Some commands (usually environments you enter) will change the title.
+  # Afterward, try to detect some of those situations and reset the title.
+  if ! [[ $Title ]]; then
     return
   fi
-  local last_cmdline=$(history 1)
+  local last_cmdline=$(history 1 | awk '{for (i=2; i<NF; i++) {printf("%s ", $i)} print $NF}')
   local last_cmd=$(printf "%s" "$last_cmdline" | awk '{print $2}')
-  if [[ $last_cmd == ssh ]] || [[ ${last_cmd:0:7} == ipython ]]; then
-    title "$TITLE"
-  elif [[ ${last_cmd:0:6} == python ]] &&
-       [[ $(printf "%s" "$last_cmdline" | awk '{print $3,$4}') == "manage.py shell" ]]; then
-    title "$TITLE"
+  if [[ "$last_cmd" == ssh ]] || [[ "${last_cmd:0:7}" == ipython ]]; then
+    title "$Title"
+  elif [[ "$last_cmdline" == 'sudo su' ]] || [[ "$last_cmdline" == 'python manage.py shell' ]]; then
+    title "$Title"
   fi
 }
 # Gather info on the git repo, if we're in one.
@@ -1841,9 +1861,6 @@ else
   fi
 fi
 
-if [[ "$USER" == root ]]; then
-  export PS1="\e[0;31m[\d] \u@\h: \w\e[m\n# "
-fi
 # Retitle window only if it's an interactive session. Otherwise, this can cause scp to hang.
 if [[ $- == *i* ]] && [[ $Host != uniport ]]; then
   title $Host
