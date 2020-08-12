@@ -1734,9 +1734,9 @@ fi
 
 ##### PS1 prompt #####
 
-# color red on last command failure
+# Color red on last command failure.
 function prompt_exit_color {
-  if [[ $? == 0 ]]; then
+  if [[ "$?" == 0 ]]; then
     if [[ "$remote" ]]; then
       pecol='0;30m' # black
     else
@@ -1749,15 +1749,8 @@ function prompt_exit_color {
 # Set the window title, if needed.
 function prompt_set_title {
   # Some commands (usually environments you enter) will change the title.
-  # Afterward, try to detect some of those situations and reset the title.
-  if ! [[ $Title ]]; then
-    return
-  fi
-  local last_cmdline=$(history 1 | awk '{for (i=2; i<NF; i++) {printf("%s ", $i)} print $NF}')
-  local last_cmd=$(printf "%s" "$last_cmdline" | awk '{print $2}')
-  if [[ "$last_cmd" == ssh ]] || [[ "${last_cmd:0:7}" == ipython ]]; then
-    title "$Title"
-  elif [[ "$last_cmdline" == 'sudo su' ]] || [[ "$last_cmdline" == 'python manage.py shell' ]]; then
+  # Afterward, reset the title automatically.
+  if [[ "$Title" ]]; then
     title "$Title"
   fi
 }
@@ -1772,12 +1765,12 @@ function prompt_git_info {
     return
   fi
   # Color the prompt differently if there are modified, tracked files.
-  if echo "$info" | grep -qE '^ M'; then
+  if printf '%s' "$info" | grep -qE '^ M'; then
     pgcol='0;33m' # yellow
   fi
   # Show the branch if we're not on "master".
-  local branch=$(echo "$info" | head -n 1 | sed -E -e 's/^## //' -e 's/^(.+)\.\.\..*$/\1/')
-  if [[ $branch != master ]]; then
+  local branch=$(printf '%s' "$info" | head -n 1 | sed -E -e 's/^## //' -e 's/^(.+)\.\.\..*$/\1/')
+  if [[ "$branch" != master ]]; then
     ps1_branch="$branch "
   fi
 }
@@ -1785,29 +1778,29 @@ function prompt_git_info {
 timer_thres=10
 function timer_start {
   # $SECONDS is a shell built-in: the total number of seconds it's been running.
-  timer=${timer:-$SECONDS}
+  timer="${timer:-$SECONDS}"
 }
 function timer_stop {
-  local seconds=$(($SECONDS - $timer))
+  local seconds=$((SECONDS-timer))
   ps1_timer_show=''
-  if [[ $seconds -ge $timer_thres ]]; then
-    ps1_timer_show="$(time_format $seconds) "
+  if [[ "$seconds" -ge "$timer_thres" ]]; then
+    ps1_timer_show="$(time_format "$seconds") "
   fi
   unset timer
 }
 # format a number of seconds into a readable time
 function time_format {
-  local seconds=$1
-  local minutes=$(($seconds/60))
-  local hours=$(($minutes/60))
-  seconds=$(($seconds - $minutes*60))
-  minutes=$(($minutes - $hours*60))
-  if [[ $minutes -lt 1 ]]; then
-    echo $seconds's'
+  local seconds="$1"
+  local minutes=$((seconds/60))
+  local hours=$((minutes/60))
+  seconds=$((seconds - minutes*60))
+  minutes=$((minutes - hours*60))
+  if [[ "$minutes" -lt 1 ]]; then
+    printf '%ds' "$seconds"
   elif [[ $hours -lt 1 ]]; then
-    echo $minutes'm'$seconds's'
+    printf '%dm%ds' "$minutes" "$seconds"
   else
-    echo $hours'h'$minutes'm'
+    printf '%dh%dm' "$hours" "$minutes"
   fi
 }
 trap 'timer_start' DEBUG
