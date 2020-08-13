@@ -31,6 +31,7 @@ _EXCLUDED='os|lsb|system'
 # Do your best to detect the distro
 # Uses info from http://www.novell.com/coolsolutions/feature/11251.html
 # and http://en.wikipedia.org/wiki/Uname
+#TODO: Use $OSTYPE
 
 # Try to get the kernel name from uname
 if Kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]'); then
