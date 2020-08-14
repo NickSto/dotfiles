@@ -374,9 +374,9 @@ function queryparams {
        $ echo $url | queryparams'
     return 1
   elif [[ "$#" == 1 ]]; then
-    echo "$1" | tr '?&=' '\n\n\t' | pct decode
+    echo "$1" | tr '?#&=' '\n\n\n\t' | pct decode
   else
-    tr '?&=' '\n\n\t' | pct decode
+    tr '?#&=' '\n\n\n\t' | pct decode
   fi
 }
 # Make it easier to run a command from a Docker container, auto-mounting the current directory so
