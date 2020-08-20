@@ -338,20 +338,6 @@ function kerb {
   fi
   kinit -l 90d "$realm"
 }
-function config {
-  if [[ "$#" != 3 ]]; then
-    echo "Usage: config settings.ini section key" >&2
-    return 1
-  fi
-  python3 -c 'import configparser, sys
-config = configparser.ConfigParser(interpolation=None)
-config.read(sys.argv[1])
-try:
-  print(config.get(sys.argv[2], sys.argv[3]))
-except configparser.Error as error:
-  print(error, file=sys.stderr)
-  sys.exit(1)' "$1" "$2" "$3"
-}
 # Search all encodings for strings, raise minimum length to 5 characters
 function stringsa {
   strings -n 5 -e s "$1"
@@ -740,7 +726,7 @@ function wcc {
   fi
 }
 function uc {
-  if [[ $# -gt 0 ]]; then
+  if [[ "$#" -gt 0 ]]; then
     echo "$@" | tr '[:lower:]' '[:upper:]'
   else
     tr '[:lower:]' '[:upper:]'
@@ -761,15 +747,7 @@ function lc {
     fi
   fi
 }
-function tc {
-  python3 -c "import titlecase, sys
-if len(sys.argv) > 1:
-  line = ' '.join(sys.argv[1:])
-  print(titlecase.titlecase(line.lower()))
-else:
-  for line in sys.stdin:
-    sys.stdout.write(titlecase.titlecase(line.lower()))" "$@"
-}
+alias tc=tc.py
 function parents {
   if [[ "$#" -ge 1 ]]; then
     local pid="$1"
@@ -909,15 +887,6 @@ The message doesn't need to be quoted - it can be the rest of the arguments." >&
     echo "Sound file not found: $sound_path" >&2
   fi
 }
-function readcsv {
-  if [[ "$#" -ge 1 ]]; then
-    python -c 'import sys, csv
-csv.writer(sys.stdout, dialect="excel-tab").writerows(csv.reader(open(sys.argv[1])))' "$1"
-  else
-    python -c 'import sys, csv
-csv.writer(sys.stdout, dialect="excel-tab").writerows(csv.reader(sys.stdin))'
-  fi
-}
 function wifimac {
   iwconfig 2> /dev/null | sed -nE 's/^.*access point: ([a-zA-Z0-9:]+)\s*$/\1/pig'
 }
@@ -928,7 +897,7 @@ function wifiip {
   getip | awk 'substr($1, 1, 2) == "wl" {print $3}'
 }
 function getip {
-  if [[ $# -gt 0 ]]; then
+  if [[ "$#" -gt 0 ]]; then
     echo "Usage: \$ getip
 Parse the ifconfig command to get your interface names, IP addresses, and MAC addresses.
 Prints one line per interface, tab-delimited:
@@ -936,46 +905,7 @@ interface-name    MAC-address    IPv4-address    IPv6-address
 Does not work on OS X (totally different ifconfig output)." >&2
     return 1
   fi
-  ip addr | awk -v OFS='\t' '
-# Get the interface name.
-$1 ~ /^[0-9]:$/ && $2 ~ /:$/ {
-  # If we'\''re at the interface name line, we either just started or just finished the previous
-  # interface. If so, print the previous one.
-  if (iface && (ipv4 || ipv6)) {
-    print iface, mac, ipv4, ipv6
-  }
-  split($2, fields, ":")
-  iface=fields[1]
-  mac = ""
-  ipv4 = ""
-  ipv6 = ""
-}
-# Get the MAC address.
-$1 == "link/ether" {
-  mac = $2
-}
-# Get the IPv4 address.
-$1 == "inet" && $5 == "scope" && $6 == "global" {
-  split($2, fields, "/")
-  ipv4=fields[1]
-}
-# Get the IPv6 address.
-# "temporary" IPv6 addresses are the ones which aren'\''t derived from the MAC address:
-# https://en.wikipedia.org/wiki/IPv6_address#Modified_EUI-64
-$1 == "inet6" && $3 == "scope" && $4 == "global" && $5 == "temporary" {
-  split($2, fields, "/")
-  # Avoid private addresses:
-  # https://serverfault.com/questions/546606/what-are-the-ipv6-public-and-private-and-reserved-ranges/546619#546619
-  if (substr(fields[1], 1, 2) != "fd") {
-    ipv6=fields[1]
-  }
-}
-# Print the last interface.
-END {
-  if (iface && (ipv4 || ipv6)) {
-    print iface, mac, ipv4, ipv6
-  }
-}'
+  ip addr | awk -f "$BashrcDir/scripts/getip.awk"
 }
 alias getmac=getip
 function getinterface {
@@ -988,18 +918,6 @@ Print the name of the interface on the default route (like \"wlan0\" or \"wlp58s
 }
 function iprange {
   ipwraplib.py mask_ip "$@" | tr -d "(',')" | tr ' ' '\n'
-}
-# Print a random, valid MAC address.
-function randmac() {
-  python3 -c "
-import random
-octets = []
-octet = random.randint(0, 63)*4
-octets.append('{:02x}'.format(octet))
-for i in range(5):
-  octet = random.randint(0, 255)
-  octets.append('{:02x}'.format(octet))
-print(':'.join(octets))"
 }
 function spoofmac() {
   local Usage="Usage: \$ spoofmac [mac]
@@ -1034,9 +952,9 @@ function columns {
   echo " totals|columns"
   awkt '{print NF}' "$1" | sort -g | uniq -c | sort -rg -k 1
 }
-# Get totals of a specified column.
 function sumcolumn {
-  local Usage='Usage: $ sumcolumn 3 file.tsv [file2.tsv [file3.tsv [..]]]
+  local Usage='Get totals of a specified column.
+Usage: $ sumcolumn 3 file.tsv [file2.tsv [file3.tsv [..]]]
        $ cat file.tsv | sumcolumn 2'
   if [[ "$#" -lt 1 ]] || [[ "$1" == '-h' ]]; then
     echo "$Usage" >&2
@@ -1051,25 +969,14 @@ function sumcolumn {
   fi
   awk -F '\t' '{tot += $'"$col"'} END {print tot}' "$@"
 }
-# Get totals of all columns in stdin or in all filename arguments.
 function sumcolumns {
   if [[ "$#" == 1 ]] && [[ "$1" == '-h' ]]; then
-    echo 'Usage: $ sumcolumns file.tsv [file2.tsv [file3.tsv [..]]]
+    echo 'Get totals of all columns in stdin or in all filename arguments.
+Usage: $ sumcolumns file.tsv [file2.tsv [file3.tsv [..]]]
        $ cat file.tsv | sumcolumns' >&2
     return 1
   fi
-  awk -F '\t' -v OFS='\t' '
-  {
-    for (i = 1; i <= NF; i++) {
-      totals[i] += $i
-    }
-  }
-  END {
-    for (i = 1; totals[i] != ""; i++) {
-      printf("%d\t", totals[i])
-    }
-    print ""
-  }' "$@"
+  awk -f "$BashrcDir/scripts/sumcolumns.awk" "$@"
 }
 function repeat {
   if [[ "$#" -lt 2 ]] || ! [[ "$2" =~ ^[0-9]+$ ]]; then
@@ -1095,31 +1002,6 @@ function hextoint {
   # Input numbers in bc have to be in uppercase.
   in=$(echo "$1" | tr [:lower:] [:upper:])
   echo "ibase=16;obase=A;$in" | bc
-}
-function asciitobin {
-  python3 -c 'import sys
-if len(sys.argv) <= 1 or sys.argv[1] == "-h" or sys.argv[1] == "--help":
-  sys.stderr.write("Usage: asciitobin hello\n")
-  sys.exit(1)
-for i in range(1, len(sys.argv)):
-  word = sys.argv[i]
-  for char in word:
-    print("{0:08b}".format(ord(char)), end=" ")
-  if i < len(sys.argv)-1:
-    print("00100000", end=" ")
-print()' "$@"
-}
-function bintoascii {
-  python3 -c 'import sys
-if len(sys.argv) <= 1 or sys.argv[1] == "-h" or sys.argv[1] == "--help":
-  sys.stderr.write("Usage: bintoascii 011011010111010101100101011100100111010001100101\n")
-  sys.exit(1)
-binstr = "".join(sys.argv[1:])
-for i in range(0, len(binstr), 8):
-  byte = binstr[i:i+8]
-  integer = int(byte, 2)
-  print(chr(integer), end="")
-print()' "$@"
 }
 function title {
   if [[ "$#" == 1 ]] && [[ "$1" == '-h' ]]; then
@@ -1308,28 +1190,6 @@ function readsfq {
     echo "$(wc -l "$1" |  cut -f 1 -d ' ')/4" | bc
   fi
 }
-# Print random DNA.
-function dna {
-  length=200
-  if [[ "$#" -gt 0 ]]; then
-    if [[ "$1" == '-h' ]]; then
-      echo 'Usage: $ dna [nbases]
-Default number of bases: '$length >&2
-      return 1
-    fi
-    length="$1"
-  fi
-  python3 -c "import random
-LINE_LENGTH = 100
-bases = []
-for i in range($length):
-  bases.append(random.choice('ACGT'))
-  if i % LINE_LENGTH == LINE_LENGTH - 1:
-    print(''.join(bases))
-    bases = []
-if bases:
-  print(''.join(bases))"
-}
 function revcomp {
   if [[ "$#" == 0 ]]; then
     tr 'ATGCatgc' 'TACGtacg' | rev
@@ -1492,6 +1352,7 @@ pathadd /sbin
 pathadd /usr/sbin
 pathadd /usr/local/sbin
 pathadd "$HOME/.local/bin" start
+pathadd "$BashrcDir/scripts"
 # Add the Conda root environment bin directory last, so other versions are preferred.
 if [[ -d "$HOME/src/miniconda2/bin" ]]; then
   pathadd "$HOME/src/miniconda2/bin"
