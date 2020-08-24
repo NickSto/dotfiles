@@ -837,6 +837,59 @@ function eta {
   local min_left=$(calc "'{:0.2f}'.format($sec_left/60)")
   echo -e "$eta_diff\t($min_left min from now)"
 }
+function datediff {
+  if [[ "$#" -lt 1 ]] || [[ "$1" == '-h' ]]; then
+    echo "Usage: datediff date1 [date2]
+Compare two datetimes and print the parts of date1 that are different from date2.
+date2 is the current time by default.
+The dates should be parseable by the 'date -d' command." >&2
+    return 1
+  elif [[ "$#" -ge 2 ]]; then
+    local timestamp2=$(date +%s -d "$2")
+  else
+    local timestamp2=$(date +%s)
+  fi
+  local timestamp1=$(date +%s -d "$1")
+  local secdiff=$((timestamp1-timestamp2))
+  secdiff=${secdiff#-}
+  local dow1 dow2 mon1 mon2 dom1 dom2 time1 time2 tz1 tz2 year1 year2
+  read time1 tz1 dow1 mon1 dom1 year1 <<< $(date +'%l:%M:%S%p %Z %a %b %e %Y' -d "@$timestamp1")
+  read time2 tz2 dow2 mon2 dom2 year2 <<< $(date +'%l:%M:%S%p %Z %a %b %e %Y' -d "@$timestamp2")
+  tz1noDST=$(echo "$tz1" | sed -E 's/(.)[SD]T/\1XT/')
+  tz2noDST=$(echo "$tz2" | sed -E 's/(.)[SD]T/\1XT/')
+  if [[ "$tz1noDST" != "$tz2noDST" ]]; then
+    time1="$time1 $tz1"
+    time2="$time2 $tz2"
+  fi
+  if [[ "$timestamp1" == "$timestamp2" ]]; then
+    # The two dates are the same.
+    echo "$time1"
+  elif [[ "$year1" != "$year2" ]]; then
+    # They're in different years.
+    echo "$time1 $dow1 $mon1 $dom1, $year1"
+  elif [[ "$mon1" != "$mon2" ]] || [[ "$dom1" != "$dom2" ]]; then
+    # They're in the same year, but different days.
+    daystart1=$(date +%s -d "$dow1 $mon1 $dom1 0:00:00 $tz1 $year1")
+    daystart2=$(date +%s -d "$dow2 $mon2 $dom2 0:00:00 $tz2 $year2")
+    daydiff=$((daystart1-daystart2))
+    if [[ "$daydiff" -ge 82799 ]] && [[ "$daydiff" -le 90001 ]]; then
+      # Difference is about +1 day.
+      echo "$time1 Tomorrow"
+    elif [[ "$daydiff" -le -82799 ]] && [[ "$daydiff" -ge -90001 ]]; then
+      # Difference is about -1 day.
+      echo "$time1 Yesterday"
+    elif [[ "$secdiff" -ge 864000 ]]; then
+      # More than 10 days apart.
+      echo "$time1 $mon1 $dom1"
+    else
+      # Less than 10 days apart.
+      echo "$time1 $dow1 $mon1 $dom1"
+    fi
+  else
+    # They're within the same day.
+    echo "$time1"
+  fi
+}
 function timer {
   if [[ "$#" -lt 1 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
     echo "Usage: timer delay [message]
