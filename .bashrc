@@ -826,12 +826,19 @@ function eta {
     echo "$Usage" >&2
     return 1
   fi
-  if [[ "$(calc "$current <= $start_count")" == 'True' ]]; then
-    echo "Error: $current <= $start_count" >&2
-    return 1
-  fi
   local now=$(date +%s)
-  local sec_left=$(calc "($goal-$current)*($now-$start_time)/($current-$start_count)")
+  if [[ "$current" == "$start_count" ]]; then
+    echo 'No progress yet!' >&2
+    return 1
+  elif [[ "$(calc "$current > $start_count")" == 'True' ]]; then
+    local progress=$(calc "$current-$start_count")
+    local togo=$(calc "$goal-$current")
+  else
+    local progress=$(calc "$start_count-$current")
+    local togo=$(calc "$current-$goal")
+  fi
+  local elapsed=$(calc "$now-$start_time")
+  local sec_left=$(calc "$togo*$elapsed/$progress")
   local eta=$(date -d "now + $sec_left seconds")
   local eta_diff=$(datediff "$eta")
   local min_left=$(calc "'{:0.2f}'.format($sec_left/60)")
