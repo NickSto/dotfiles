@@ -804,15 +804,19 @@ finds." >&2
 function eta {
   local Usage="Usage: eta <start_time> <start_count> <current_count> <goal_count>
        --- or ---
-       eta start <goal_count> <start_count>
+       eta <goal_count> <start_count>
        eta <current_count>"
-  if [[ "$#" -lt 1 ]] || [[ "$1" == '-h' ]]; then
+  if [[ "$#" -lt 1 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
     echo "$Usage" >&2
     return 1
-  elif [[ "$1" == 'start' ]] && [[ "$#" == 3 ]]; then
+  elif [[ "$#" == 2 ]] || [[ "$#" == 3 ]]; then
+    if [[ "$1" == start ]]; then
+      # Backward compatibility with old command line format.
+      shift
+    fi
     start_time=$(date +%s)
-    goal="$2"
-    start_count="$3"
+    goal="$1"
+    start_count="$2"
     echo -e "start_time=$start_time\nstart_count=$start_count\ngoal=$goal"
     return 0
   elif [[ "$#" == 1 ]] && [[ "$start_time" ]] && [[ "$start_count" ]] && [[ "$goal" ]]; then
