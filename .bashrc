@@ -206,7 +206,7 @@ export EDITOR=vim
 # See https://unix.stackexchange.com/questions/121377/how-can-i-disable-the-new-history-feature-in-python-3-4
 export PYTHONSTARTUP=~/.pythonrc
 # Perl crap to enable CPAN modules installed to $HOME.
-if [[ -d "$HOME/perl5/bin" ]]; then
+if [[ -d "$HOME/perl5/bin" ]] && ! echo "$PATH" | grep -qE "(^|:)$HOME/perl5/bin(:|$)"; then
   export PATH="$PATH:$HOME/perl5/bin"
 fi
 export PERL5LIB="$HOME/perl5/lib/perl5"
@@ -442,7 +442,7 @@ function bak {
   path=$(echo "$path" | sed 's#/$##')
   cp -r "$path" "$path.bak"
 }
-# add to path **if it's not already there**
+# Add to PATH if the directory exists and it's not already in the PATH.
 function pathadd {
   local dir="$1"
   local location="$2"
@@ -455,12 +455,9 @@ function pathadd {
     return
   fi
   # Check if it's already present.
-  local path=''
-  for path in $(echo "$PATH" | tr ':' '\n'); do
-    if [[ "$path" == "$dir" ]]; then
-      return
-    fi
-  done
+  if echo "$PATH" | tr : '\n' | grep -qE "^$dir\$"; then
+    return
+  fi
   # Otherwise, do the normal concatenation.
   if [[ "$location" == "start" ]]; then
     PATH="$dir:$PATH"
@@ -1249,7 +1246,7 @@ if [[ "$Host" == scofield ]]; then
   aklog bx.psu.edu
 fi
 
-# add correct bin directory to PATH
+# Add correct bin directory to PATH.
 if [[ "$Host" == scofield ]]; then
   pathadd "/galaxy/home/$USER/bin"
 elif [[ "$InCluster" ]]; then
@@ -1260,18 +1257,29 @@ fi
 if [[ "$Host" == lion ]]; then
   pathadd /opt/local/bin
 fi
-if [[ -d "$HOME/bx/bin" ]]; then
-  pathadd "$HOME/bx/bin"
-fi
+pathadd "$HOME/bx/bin"
 pathadd /sbin
 pathadd /usr/sbin
 pathadd /usr/local/sbin
 pathadd "$HOME/.local/bin" start
 pathadd "$BashrcDir/scripts"
 # Add the Conda root environment bin directory last, so other versions are preferred.
-if [[ -d "$HOME/src/miniconda2/bin" ]]; then
-  pathadd "$HOME/src/miniconda2/bin"
-fi
+function _find_conda {
+  # Add only one Conda path, and prefer 3 over 2, and ~/src over ~/
+  # Find it in a function to avoid polluting the shell with temporary variables.
+  local ver dir path
+  for ver in 3 2; do
+    for dir in src/ ''; do
+      path="$HOME/${dir}miniconda$ver/bin"
+      if [[ -d "$path" ]]; then
+        echo "$path"
+        return 0
+      fi
+    done
+  done
+  return 1
+}
+pathadd "$(_find_conda)"
 
 # a more "sophisticated" method for determining if we're in a remote shell
 # check if the system supports the right ps parameters and if parents is able to
