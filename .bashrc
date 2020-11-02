@@ -539,7 +539,7 @@ between the 3rd and 2nd to last commits).' >&2
     fi
   fi
   local commit1 commit2
-  read commit2 commit1 <<< $(git log -n $((diff_num+1)) --pretty=format:%h | tail -n 2)
+  read commit2 commit1 <<< $(git log -n $((diff_num+1)) --pretty=format:%h | tail -n 2 | tr '\n' '\t')
   git diff "$commit1" "$commit2"
 }
 function gitgrep {
