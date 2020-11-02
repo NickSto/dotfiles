@@ -204,7 +204,7 @@ export LC_BX_DEST=desmond
 export EDITOR=vim
 # Allow disabling ~/.python_history.
 # See https://unix.stackexchange.com/questions/121377/how-can-i-disable-the-new-history-feature-in-python-3-4
-export PYTHONSTARTUP=~/.pythonrc
+export PYTHONSTARTUP="$HOME/.pythonrc"
 # Perl crap to enable CPAN modules installed to $HOME.
 if [[ -d "$HOME/perl5/bin" ]] && ! echo "$PATH" | grep -qE "(^|:)$HOME/perl5/bin(:|$)"; then
   export PATH="$PATH:$HOME/perl5/bin"
@@ -414,7 +414,7 @@ function dnsadd {
   sudo tmpcmd.sh -t 2h "dnsadd.sh add $1" "dnsadd.sh rm $1"
 }
 function logip {
-  local LogFile=~/aa/computer/logs/ips.tsv
+  local LogFile="$HOME/aa/computer/logs/ips.tsv"
   if [[ "$1" == '-h' ]]; then
     echo "Usage: \$ logip [-f]
 Log your current public IP address to $LogFile.
@@ -503,13 +503,13 @@ Note: This works with dotfiles and files with spaces." >&2
 alias gitgraph='git log --oneline --abbrev-commit --all --graph --decorate --color'
 alias gig='nohup giggle >/dev/null 2>/dev/null &'
 function gitswitch {
-  if [[ -f ~/.ssh/id_rsa-code ]]; then
-    mv ~/.ssh/id_rsa-code{,.pub} ~/.ssh/keys && \
-    mv ~/.ssh/keys/id_rsa-generic{,.pub} ~/.ssh && \
+  if [[ -f "$HOME/.ssh/id_rsa-code" ]]; then
+    mv "$HOME/.ssh/id_rsa-code"{,.pub} "$HOME/.ssh/keys" && \
+    mv "$HOME/.ssh/keys/id_rsa-generic"{,.pub} "$HOME/.ssh" && \
     echo "Switched to NickSto"
-  elif [[ -f ~/.ssh/id_rsa-generic ]]; then
-    mv ~/.ssh/id_rsa-generic{,.pub} ~/.ssh/keys && \
-    mv ~/.ssh/keys/id_rsa-code{,.pub} ~/.ssh && \
+  elif [[ -f "$HOME/.ssh/id_rsa-generic" ]]; then
+    mv "$HOME/.ssh/id_rsa-generic"{,.pub} "$HOME/.ssh/keys" && \
+    mv "$HOME/.ssh/keys/id_rsa-code"{,.pub} "$HOME/.ssh" && \
     echo "Switched to Qwerty0"
   fi
 }
@@ -1238,8 +1238,8 @@ PROMPT_COMMAND='prompt_exit_color;prompt_set_title;prompt_git_info;timer_stop'
 
 # Stuff I don't want to post publicly on Github. Still should be universal, not
 # machine-specific.
-if [ -f ~/.bashrc_private ]; then
-  source ~/.bashrc_private
+if [[ -f "$HOME/.bashrc_private" ]]; then
+  source "$HOME/.bashrc_private"
 fi
 
 if [[ "$Host" == scofield ]]; then
@@ -1252,7 +1252,7 @@ if [[ "$Host" == scofield ]]; then
 elif [[ "$InCluster" ]]; then
   true  # inherited from scofield
 else
-  pathadd ~/bin start
+  pathadd "$HOME/bin" start
 fi
 if [[ "$Host" == lion ]]; then
   pathadd /opt/local/bin
@@ -1310,12 +1310,12 @@ if [[ "$remote" ]]; then
   # 3. $LC_NO_SCREEN != true: The user has requested not to enter a screen.
   #    - Set via: $ LC_NO_SCREEN=true ssh -o SendEnv=LC_NO_SCREEN me@destination
   # 4. ! -f ~/NOSCREEN: The user has requested not to enter a screen (backup method).
-  if ! [[ "$STY" ]] && [[ -t 1 ]] && [[ "$LC_NO_SCREEN" != true ]] && ! [[ -f ~/NOSCREEN ]]; then
+  if ! [[ "$STY" ]] && [[ -t 1 ]] && [[ "$LC_NO_SCREEN" != true ]] && ! [[ -f "$HOME/NOSCREEN" ]]; then
     if [[ "$Host" == uniport ]] || [[ "$InCluster" ]]; then
       true  # screen unavailable or undesired
     elif [[ "$Host" == brubeck || "$Host" == scofield || "$Host" == desmond ]] \
-        && [[ -x ~/code/pagscr-me.sh ]]; then
-      exec ~/code/pagscr-me.sh -RR -S auto
+        && [[ -x "$HOME/code/pagscr-me.sh" ]]; then
+      exec "$HOME/code/pagscr-me.sh" -RR -S auto
     elif which screen >/dev/null 2>/dev/null; then
       exec screen -RR -S auto
     fi
