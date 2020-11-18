@@ -205,14 +205,6 @@ export EDITOR=vim
 # Allow disabling ~/.python_history.
 # See https://unix.stackexchange.com/questions/121377/how-can-i-disable-the-new-history-feature-in-python-3-4
 export PYTHONSTARTUP="$HOME/.pythonrc"
-# Perl crap to enable CPAN modules installed to $HOME.
-if [[ -d "$HOME/perl5/bin" ]] && ! echo "$PATH" | grep -qE "(^|:)$HOME/perl5/bin(:|$)"; then
-  export PATH="$PATH:$HOME/perl5/bin"
-fi
-export PERL5LIB="$HOME/perl5/lib/perl5"
-export PERL_LOCAL_LIB_ROOT="$HOME/perl5"
-export PERL_MB_OPT="--install_base \"$HOME/perl5\""
-export PERL_MM_OPT="INSTALL_BASE=$HOME/perl5"
 
 
 ##### Simple Aliases #####
@@ -1232,6 +1224,25 @@ function time_format {
 trap 'timer_start' DEBUG
 # $PROMPT_COMMAND is a shell built-in which is executed just before $PS1 is displayed.
 PROMPT_COMMAND='prompt_exit_color;prompt_set_title;prompt_git_info;timer_stop'
+
+
+##### Application-specific stuff #####
+
+# Perl crap to enable CPAN modules installed to $HOME.
+export PERL5LIB="$HOME/perl5/lib/perl5"
+export PERL_LOCAL_LIB_ROOT="$HOME/perl5"
+export PERL_MB_OPT="--install_base \"$HOME/perl5\""
+export PERL_MM_OPT="INSTALL_BASE=$HOME/perl5"
+pathadd "$PATH:$HOME/perl5/bin"
+
+# Homebrew
+export HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew"
+export HOMEBREW_CELLAR="/home/linuxbrew/.linuxbrew/Cellar"
+export HOMEBREW_REPOSITORY="/home/linuxbrew/.linuxbrew/Homebrew"
+export MANPATH="/home/linuxbrew/.linuxbrew/share/man${MANPATH+:$MANPATH}:"
+export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:${INFOPATH:-}"
+pathadd /home/linuxbrew/.linuxbrew/bin
+pathadd /home/linuxbrew/.linuxbrew/sbin
 
 
 ##### Things to execute directly on session start #####
