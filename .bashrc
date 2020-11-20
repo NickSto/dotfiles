@@ -930,31 +930,52 @@ function lsof_clean {
   # fields as much, but apparently things like the COMMAND are already truncated when the kernel
   # gives it to lsof. In the case of Ubuntu 20.04, the COMMAND is limited to 15 characters.
   echo -e 'COMMAND\tPID\tTID\tTASKCMD\tUID\tFD\tTYPE\tSIZE\tINODE\tNAME'
-  # Okay, it turns out that, of course, it's more complicated than this.
-  # It looks like the -F output lists the data for each process once, then lists all the files
-  # it's got open without repeating the process data.
+  # Note: The -F output lists the data for each process once, then lists all the files
+  # it's got open without repeating the process data. So it's not as simple as "for each line of the
+  # regular output, it prints the value of each applicable field".
+  #TODO: This is still buggy. It still seems to be omitting the process data sometimes.
   sudo lsof -FcpKMuftsin | awk '
     BEGIN {
-      order = "cpKMuftsin"
+      ORDER = "cpKMuftsin"
+      PTYPES = "cpKMu"
+      FTYPES = "ftsin"
     }
     {
       type = substr($0,1,1)
       data = substr($0,2)
-      if (record[type]) {
-        for (i=1; i<=length(order); i++) {
-          type_ = substr(order,i,1)
-          printf("%s", record[type_])
-          if (i < length(order)) {
-            printf("\t")
-          } else {
-            printf("\n")
-          }
+      if (index(PTYPES, type)) {
+        if (record[type]) {
+          print_line(record)
+          delete record
         }
-        delete record
+        record[type] = data
+      }
+      if (index(FTYPES, type)) {
+        if (record[type]) {
+          print_line(record)
+          delete_file_data(record)
+        }
+        file[type] = data
       }
       record[type] = data
+    }
+    function print_line(record) {
+      for (i=1; i<=length(ORDER); i++) {
+        type = substr(ORDER,i,1)
+        printf("%s", record[type])
+        if (i < length(ORDER)) {
+          printf("\t")
+        } else {
+          printf("\n")
+        }
+      }
+    }
+    function delete_file_data(record) {
+      for (i=1; i<=length(FTYPES); i++) {
+        type = substr(FTYPES,i,1)
+        delete record[type]
+      }
     }'
-  #TODO: Finish.
 }
 function test_rate {
   if [[ "$#" == 2 ]]; then
