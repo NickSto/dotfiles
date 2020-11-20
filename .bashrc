@@ -438,11 +438,11 @@ function bak {
 function pathadd {
   local dir="$1"
   local location="$2"
-  if [[ ! -d "$dir" ]]; then
+  if ! [[ -d "$dir" ]]; then
     return
   fi
   # Handle empty PATH.
-  if [[ ! "$PATH" ]]; then
+  if ! [[ "$PATH" ]]; then
     export PATH="$dir"
     return
   fi
@@ -922,6 +922,40 @@ Default: "Terminal"' >&2
 }
 # I keep typing this for some reason.
 alias tilte=title
+function lsof_clean {
+  # This is intended to output as close to the default lsof output as possible, but actually, like,
+  # comprehensible (tab-delimited). But surprise, of course it turns out it's not even really
+  # possible. There are no -F equivalents for a lot of the fields, and many are presented
+  # differently in the -F output than the text format. This is also intended to avoid truncating
+  # fields as much, but apparently things like the COMMAND are already truncated when the kernel
+  # gives it to lsof. In the case of Ubuntu 20.04, the COMMAND is limited to 15 characters.
+  echo -e 'COMMAND\tPID\tTID\tTASKCMD\tUID\tFD\tTYPE\tSIZE\tINODE\tNAME'
+  # Okay, it turns out that, of course, it's more complicated than this.
+  # It looks like the -F output lists the data for each process once, then lists all the files
+  # it's got open without repeating the process data.
+  sudo lsof -FcpKMuftsin | awk '
+    BEGIN {
+      order = "cpKMuftsin"
+    }
+    {
+      type = substr($0,1,1)
+      data = substr($0,2)
+      if (record[type]) {
+        for (i=1; i<=length(order); i++) {
+          type_ = substr(order,i,1)
+          printf("%s", record[type_])
+          if (i < length(order)) {
+            printf("\t")
+          } else {
+            printf("\n")
+          }
+        }
+        delete record
+      }
+      record[type] = data
+    }'
+  #TODO: Finish.
+}
 function test_rate {
   if [[ "$#" == 2 ]]; then
     local fpos_rate="$1"
