@@ -198,6 +198,9 @@ shopt -s globstar 2>/dev/null || true
 
 # Set directory for my special data files
 DataDir="$HOME/.local/share/nbsdata"
+# Set for easy access to cron logs.
+OutLog="$HOME/.local/share/nbsdata/cron-stdout.log"
+ErrLog="$HOME/.local/share/nbsdata/cron-stderr.log"
 # Set a default bx destination server
 export LC_BX_DEST=desmond
 # Set my default text editor
