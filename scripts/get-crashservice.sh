@@ -30,6 +30,8 @@ function get_crashservice {
     echo sudo service crashplan
   elif which CrashPlanEngine >/dev/null 2>/dev/null; then
     echo CrashPlanEngine
+  elif [[ -f /usr/local/crashplan/bin/service.sh ]]; then
+    echo sudo /usr/local/crashplan/bin/service.sh
   elif [[ -x "$HOME/src/crashplan/bin/CrashPlanEngine" ]]; then
     echo "$HOME/src/crashplan/bin/CrashPlanEngine"
   else
