@@ -537,6 +537,16 @@ between the 3rd and 2nd to last commits).' >&2
   read commit2 commit1 <<< $(git log -n $((diff_num+1)) --pretty=format:%h | tail -n 2 | tr '\n' '\t')
   git diff "$commit1" "$commit2"
 }
+function gitgrep {
+  if [[ "$#" -lt 1 ]] || [[ "$#" -gt 1 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+    echo 'Usage: $ gitgrep query
+Do a recursive search for an exact string anywhere under the current directory.
+Current features: ignores .git and .venv directories, truncates lines to current terminal width.' >&2
+    return 1
+  fi
+  local query="$1"
+  grep -RIF --exclude-dir .git --exclude-dir .venv "$query" | awk "{print substr(\$0, 1, $COLUMNS)}"
+}
 function vix {
   if ! [[ -e "$1" ]]; then
     touch "$1"
