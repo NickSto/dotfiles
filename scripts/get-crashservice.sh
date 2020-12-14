@@ -3,30 +3,21 @@ if [ "x$BASH" = x ] || [ ! "$BASH_VERSINFO" ] || [ "$BASH_VERSINFO" -lt 4 ]; the
   echo "Error: Must use bash version 4+." >&2
   exit 1
 fi
-declare -A Sourced
-if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
-  Sourced["${BASH_SOURCE[0]}"]=
-else
-  Sourced["${BASH_SOURCE[0]}"]=true
-fi
-if ! [[ "${Sourced[${BASH_SOURCE[0]}]}" ]]; then
-  set -ue
-fi
+set -ue
 unset CDPATH
 
 ScriptDir=$(dirname "${BASH_SOURCE[0]}")
-source "$ScriptDir/service-exists.sh"
-
 Usage="Usage: \$ $(basename "$0")"
 
 function main {
-  get_crashservice "$@"
+  get_crashservice
 }
 
 function get_crashservice {
-  if service_exists code42; then
+  service_exists=$(get_local_script 'service-exists.sh')
+  if "$service_exists" -q code42; then
     echo sudo service code42
-  elif service_exists crashplan; then
+  elif "$service_exists" -q crashplan; then
     echo sudo service crashplan
   elif which CrashPlanEngine >/dev/null 2>/dev/null; then
     echo CrashPlanEngine
@@ -40,15 +31,20 @@ function get_crashservice {
   fi
 }
 
-function fail {
-  echo "$@" >&2
-  if [[ "${Sourced[${BASH_SOURCE[0]}]}" ]]; then
-    return 1
+function get_local_script {
+  script_name="$1"
+  if which "$script_name" >/dev/null 2>/dev/null; then
+    echo "$script_name"
+  elif [[ -x "$ScriptDir/$script_name" ]]; then
+    echo "$ScriptDir/$script_name"
   else
-    exit 1
+    return 1
   fi
 }
 
-if ! [[ "${Sourced[${BASH_SOURCE[0]}]}" ]]; then
-  main "$@"
-fi
+function fail {
+  echo "$@" >&2
+  exit 1
+}
+
+main "$@"

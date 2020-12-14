@@ -3,20 +3,10 @@ if [ "x$BASH" = x ] || [ ! "$BASH_VERSINFO" ] || [ "$BASH_VERSINFO" -lt 4 ]; the
   echo "Error: Must use bash version 4+." >&2
   exit 1
 fi
-declare -A Sourced
-if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
-  Sourced["${BASH_SOURCE[0]}"]=
-else
-  Sourced["${BASH_SOURCE[0]}"]=true
-fi
-if ! [[ "${Sourced[${BASH_SOURCE[0]}]}" ]]; then
-  set -u
-fi
+set -u
 unset CDPATH
 
 ScriptDir=$(dirname "${BASH_SOURCE[0]}")
-source "$ScriptDir/get-crashservice.sh"
-
 SilenceRel=".local/share/nbsdata/SILENCE"
 Silence="$HOME/$SilenceRel"
 Usage="Usage: \$ $(basename "$0") [option]
@@ -28,18 +18,16 @@ Options:
 -f: Silence again, even if SILENCE file indicates you're already silenced.
 -w: Silence, then pause until you to tell it to unsilence. Useful for some services that require
     sudo, so you can run this script with sudo and not be prompted again.
--H: Force using this directory as \$HOME. Useful when executing as sudo.
+-H: Force using this directory as \$HOME. Even without this option, this script should automatically
+    detect when it's being run under sudo and set the \$HOME back to the real user's home.
+    But this could be useful if that doesn't work.
 Returns 0 when silenced, 2 when unsilenced, and 1 on error."
 
-function main {
-  silence "$@"
-}
 
-function silence {
+function main {
   # Read arguments.
-  local OPTIND OPTARG
-  local command=
-  local home="$HOME"
+  command=
+  home="$(get_home)"
   while getopts "ufwH:h" opt; do
     case "$opt" in
       u) command='unsilence';;
@@ -52,7 +40,6 @@ function silence {
   silence_file="$home/$SilenceRel"
   if [[ "$command" == "" ]] || [[ "$command" == 'force' ]]; then
     if [[ -f "$silence_file" ]] && ! [[ "$command" == 'force' ]]; then
-      local response
       read -p "You're currently silenced! Use -f to force silencing again or type \"louden\" to unsilence! " response
       if [[ "$response" == 'louden' ]]; then
         unsilence_services "$silence_file"
@@ -81,12 +68,12 @@ function silence_services {
     silence_file="$Silence"
   fi
   echo "Silencing.."
-  local failure=
+  failure=
   # Dropbox
   echo "Killing Dropbox.."
   if which dropbox >/dev/null 2>/dev/null; then
     dropbox stop
-    local sleep_time=1
+    sleep_time=1
     # The "running" command seems to return the opposite of what you expect.
     while ! dropbox running >/dev/null 2>/dev/null; do
       sleep "$sleep_time"
@@ -104,7 +91,8 @@ function silence_services {
   fi
   # Crashplan
   echo "Killing CrashPlan.."
-  local crashservice=$(get_crashservice)
+  get_crashservice=$(get_local_script 'get-crashservice.sh')
+  crashservice=$("$get_crashservice")
   if [[ "$crashservice" ]]; then
     if ! $crashservice stop; then
       failure=true
@@ -149,7 +137,8 @@ function unsilence_services {
   fi
   # Crashplan
   echo "Starting CrashPlan.."
-  local crashservice=$(get_crashservice)
+  get_crashservice=$(get_local_script 'get-crashservice.sh')
+  crashservice=$("$get_crashservice")
   if [[ "$crashservice" ]]; then
     if ! $crashservice start; then
       echo "Error: Problem starting CrashPlan." >&2
@@ -174,15 +163,28 @@ function unsilence_services {
   fi
 }
 
-function fail {
-  echo "$@" >&2
-  if [[ "${Sourced[${BASH_SOURCE[0]}]}" ]]; then
-    return 1
+function get_home {
+  if [[ "$SUDO_USER" ]]; then
+    getent passwd "$SUDO_USER" | cut -d : -f 6
   else
-    exit 1
+    echo "$HOME"
   fi
 }
 
-if ! [[ "${Sourced[${BASH_SOURCE[0]}]}" ]]; then
-  main "$@"
-fi
+function get_local_script {
+  script_name="$1"
+  if which "$script_name" >/dev/null 2>/dev/null; then
+    echo "$script_name"
+  elif [[ -x "$ScriptDir/$script_name" ]]; then
+    echo "$ScriptDir/$script_name"
+  else
+    return 1
+  fi
+}
+
+function fail {
+  echo "$@" >&2
+  exit 1
+}
+
+main "$@"

@@ -3,34 +3,40 @@ if [ "x$BASH" = x ] || [ ! "$BASH_VERSINFO" ] || [ "$BASH_VERSINFO" -lt 4 ]; the
   echo "Error: Must use bash version 4+." >&2
   exit 1
 fi
-declare -A Sourced
-if [[ "$0" == "${BASH_SOURCE[0]}" ]]; then
-  Sourced["${BASH_SOURCE[0]}"]=
-else
-  Sourced["${BASH_SOURCE[0]}"]=true
-fi
-if ! [[ "${Sourced[${BASH_SOURCE[0]}]}" ]]; then
-  set -ue
-fi
+set -ue
 unset CDPATH
 
 Usage="Usage: \$ $(basename "$0") service_name"
 
 function main {
-  if service_exists "$@"; then
-    echo "Service found!" >&2
+  # Read arguments.
+  quiet=
+  while getopts "qh" opt; do
+    case "$opt" in
+      q) quiet='true';;
+      [h?]) fail "$Usage";;
+    esac
+  done
+  service="${@:$OPTIND:1}"
+  if ! [[ "$service" ]]; then
+    fail "$Usage"
+  fi
+  # Look for service.
+  if service_exists "$service"; then
+    if ! [[ "$quiet" ]]; then
+      echo "Service found!" >&2
+    fi
     return 0
   else
-    echo "Service NOT found" >&2
+    if ! [[ "$quiet" ]]; then
+      echo "Service NOT found" >&2
+    fi
     return 1
   fi
 }
 
 function service_exists {
-  if [[ "$#" -lt 1 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
-    fail "$Usage"
-  fi
-  local service="$1"
+  service="$1"
   service "$service" status >/dev/null 2>/dev/null
   retval="$?"
   if [[ "$retval" == 0 ]]; then
@@ -50,13 +56,7 @@ function service_exists {
 
 function fail {
   echo "$@" >&2
-  if [[ "${Sourced[${BASH_SOURCE[0]}]}" ]]; then
-    return 1
-  else
-    exit 1
-  fi
+  exit 1
 }
 
-if ! [[ "${Sourced[${BASH_SOURCE[0]}]}" ]]; then
-  main "$@"
-fi
+main "$@"
