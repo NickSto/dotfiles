@@ -17,7 +17,8 @@ unset CDPATH
 ScriptDir=$(dirname "${BASH_SOURCE[0]}")
 source "$ScriptDir/get-crashservice.sh"
 
-Silence="$HOME/.local/share/nbsdata/SILENCE"
+SilenceRel=".local/share/nbsdata/SILENCE"
+Silence="$HOME/$SilenceRel"
 Usage="Usage: \$ $(basename "$0") [option]
 Silences background services and creates silence file $Silence
 If you are already silenced (as determined by the SILENCE file), this will give you the option
@@ -27,6 +28,7 @@ Options:
 -f: Silence again, even if SILENCE file indicates you're already silenced.
 -w: Silence, then pause until you to tell it to unsilence. Useful for some services that require
     sudo, so you can run this script with sudo and not be prompted again.
+-H: Force using this directory as \$HOME. Useful when executing as sudo.
 Returns 0 when silenced, 2 when unsilenced, and 1 on error."
 
 function main {
@@ -34,38 +36,50 @@ function main {
 }
 
 function silence {
-  local opt=
-  if [[ "$#" == 1 ]]; then
-    opt="$1"
-  fi
-  if [[ "$#" -gt 1 ]] || [[ "$opt" == '-h' ]] || [[ "$opt" == '--help' ]]; then
-    fail "$Usage"
-  fi
-  if [[ "$opt" == "" ]]; then
-    if [[ -f "$Silence" ]]; then
+  # Read arguments.
+  local OPTIND OPTARG
+  local command=
+  local home="$HOME"
+  while getopts "ufwH:h" opt; do
+    case "$opt" in
+      u) command='unsilence';;
+      f) command='force';;
+      w) command='wait';;
+      H) home="$OPTARG";;
+      [h?]) fail "$Usage";;
+    esac
+  done
+  silence_file="$home/$SilenceRel"
+  if [[ "$command" == "" ]] || [[ "$command" == 'force' ]]; then
+    if [[ -f "$silence_file" ]] && ! [[ "$command" == 'force' ]]; then
       local response
       read -p "You're currently silenced! Use -f to force silencing again or type \"louden\" to unsilence! " response
       if [[ "$response" == 'louden' ]]; then
-        unsilence_services
+        unsilence_services "$silence_file"
       else
         echo "Aborting!"
         return 1
       fi
     else
-      silence_services
+      silence_services "$silence_file"
     fi
-  elif [[ "$opt" == '-u' ]]; then
-    unsilence_services
-  elif [[ "$opt" == '-w' ]]; then
-    silence_services
+  elif [[ "$command" == 'unsilence' ]]; then
+    unsilence_services "$silence_file"
+  elif [[ "$command" == 'wait' ]]; then
+    silence_services "$silence_file"
     echo "Press  [enter] to unsilence."
     echo "Or hit [Ctrl+C] to exit without unsilencing"
     read
-    unsilence_services
+    unsilence_services "$silence_file"
   fi
 }
 
 function silence_services {
+  if [[ "$#" -ge 1 ]]; then
+    silence_file="$1"
+  else
+    silence_file="$Silence"
+  fi
   echo "Silencing.."
   local failure=
   # Dropbox
@@ -108,15 +122,20 @@ function silence_services {
     echo "Error silencing some services!" >&2
     return 1
   else
-    touch "$Silence"
+    touch "$silence_file"
     echo "Silenced!"
     return 0
   fi
 }
 
 function unsilence_services {
+  if [[ "$#" -ge 1 ]]; then
+    silence_file="$1"
+  else
+    silence_file="$Silence"
+  fi
   echo "Unsilencing.."
-  rm -f "$Silence"
+  rm -f "$silence_file"
   failure=
   # Dropbox
   echo "Starting Dropbox.."
