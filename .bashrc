@@ -24,9 +24,19 @@ Host=$(hostname -s 2>/dev/null || hostname)
 #   cygwin osx
 
 # Are we on one of the cluster nodes?
+InBx=
 InCluster=
 if echo "$Host" | grep -qE '^nn[0-9]+$' && [[ "${Host:2}" -le 15 ]]; then
+  InBx=true
   InCluster=true
+else
+  # Are we on a bx server?
+  case "$Host" in
+    brubeck)  InBx=true;;
+    scofield) InBx=true;;
+    desmond)  InBx=true;;
+    uniport)  InBx=true;;
+  esac
 fi
 
 ##### Determine distro #####
@@ -65,20 +75,13 @@ cd - >/dev/null
 
 # Set distro based on known hostnames
 case "$Host" in
-  aknot)
-    Distro="ubuntu";;
-  ruby)
-    Distro="ubuntu";;
-  main)
-    Distro="ubuntu";;
-  yarr)
-    Distro="ubuntu";;
-  brubeck)
-    Distro="debian";;
-  scofield)
-    Distro="debian";;
-  nsto[2-9])
-    Distro="ubuntu";;
+  aknot)     Distro="ubuntu";;
+  ruby)      Distro="ubuntu";;
+  main)      Distro="ubuntu";;
+  yarr)      Distro="ubuntu";;
+  brubeck)   Distro="debian";;
+  scofield)  Distro="debian";;
+  nsto[2-9]) Distro="ubuntu";;
   *)  # Unrecognized host? Run detection script.
     if [[ -f "$BashrcDir/detect-distro.sh" ]] && ! [[ "$IsRoot" ]]; then
       source "$BashrcDir/detect-distro.sh"
@@ -202,7 +205,7 @@ DataDir="$HOME/.local/share/nbsdata"
 OutLog="$HOME/.local/share/nbsdata/cron-stdout.log"
 ErrLog="$HOME/.local/share/nbsdata/cron-stderr.log"
 # Set a default bx destination server
-export LC_BX_DEST=desmond
+export LC_BX_DEST=brubeck
 # Set my default text editor
 export EDITOR=vim
 # Allow disabling ~/.python_history.
@@ -297,22 +300,34 @@ function cds {
   else
     local n=5
   fi
-  if [[ "$n" == 1 ]]; then
-    if [[ "$Host" == brubeck ]]; then
-      cd /scratch/nick
-    else
-      cd /nfs/brubeck.bx.psu.edu/scratch1/nick
-    fi
-  elif [[ "$n" == 2 ]]; then
-    if [[ "$Host" == brubeck ]]; then
-      cd /scratch2/nick
-    else
-      cd /nfs/brubeck.bx.psu.edu/scratch2/nick
-    fi
-  elif [[ "$n" -ge 3 ]]; then
+  if [[ -d "/nfs/brubeck.bx.psu.edu/scratch$n/nick" ]]; then
     cd "/nfs/brubeck.bx.psu.edu/scratch$n/nick"
+  elif [[ -d "/scratch$n/nick" ]]; then
+    cd "/scratch$n/nick"
+  elif [[ "$n" == 1 ]] && [[ -d "/scratch/nick" ]]; then
+    cd /scratch/nick
   fi
 }
+function _make_scratches {
+  # Make shorthand variables like $s4 to refer to /nfs/brubeck.bx.psu.edu/scratch4/nick.
+  if ! [[ "$InBx" ]]; then
+    return
+  fi
+  local n dirpath
+  for n in {0..10}; do
+    if [[ -d "/nfs/brubeck.bx.psu.edu/scratch$n/nick" ]]; then
+      dirpath="/nfs/brubeck.bx.psu.edu/scratch$n/nick"
+    elif [[ -d "/scratch$n/nick" ]]; then
+      dirpath="/scratch$n/nick"
+    elif [[ "$n" == 1 ]] && [[ -d "/scratch/nick" ]]; then
+      dirpath="/scratch/nick"
+    else
+      continue
+    fi
+    declare -g "s$n=$dirpath"
+  done
+}
+_make_scratches
 function kerb {
   local bx_realm="nick@BX.PSU.EDU"
   local galaxy_realm="nick@GALAXYPROJECT.ORG"
@@ -1382,8 +1397,7 @@ if [[ "$remote" ]]; then
   if ! [[ "$STY" ]] && [[ -t 1 ]] && [[ "$LC_NO_SCREEN" != true ]] && ! [[ -f "$HOME/NOSCREEN" ]]; then
     if [[ "$Host" == uniport ]] || [[ "$InCluster" ]]; then
       true  # screen unavailable or undesired
-    elif [[ "$Host" == brubeck || "$Host" == scofield || "$Host" == desmond ]] \
-        && [[ -x "$HOME/code/pagscr-me.sh" ]]; then
+    elif [[ "$InBx" ]] && [[ -x "$HOME/code/pagscr-me.sh" ]]; then
       exec "$HOME/code/pagscr-me.sh" -RR -S auto
     elif which screen >/dev/null 2>/dev/null; then
       exec screen -RR -S auto
