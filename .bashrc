@@ -363,18 +363,6 @@ function updaterc {
     git "--work-tree=$BashrcDir" "--git-dir=$BashrcDir/.git" pull
   fi
 }
-function queryparams {
-  if [[ "$#" -gt 1 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
-    echo 'Usage: $ queryparams $url
-    or
-       $ echo $url | queryparams'
-    return 1
-  elif [[ "$#" == 1 ]]; then
-    echo "$1" | tr '?#&=' '\n\n\n\t' | pct decode
-  else
-    tr '?#&=' '\n\n\n\t' | pct decode
-  fi
-}
 # Make it easier to run a command from a Docker container, auto-mounting the current directory so
 # it's accessible from inside the container.
 alias dockdir='docker run -v $(pwd):/dir/'
