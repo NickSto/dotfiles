@@ -1163,10 +1163,20 @@ fi
 alias seqlen="bioawk -c fastx '{ print \$name, length(\$seq) }'"
 alias readsfa='grep -Ec "^>"'
 function readsfq {
-  if which readsfq >/dev/null 2>/dev/null; then
-    readsfq "$@"
+  local fq lines
+  local exe=$(which readsfq 2>/dev/null)
+  if [[ "$exe" ]]; then
+    "$exe" "$@"
+  elif [[ "$#" -ge 1 ]]; then
+    local total=0
+    for fq in "$@"; do
+      lines=$(wc -l "$fq" | cut -f 1 -d ' ')
+      total=$(echo "$total + $lines/4" | bc)
+    done
+    echo "$total"
   else
-    echo "$(wc -l "$1" |  cut -f 1 -d ' ')/4" | bc
+    lines=$(wc -l | cut -f 1 -d ' ')
+    echo "$lines/4" | bc
   fi
 }
 function revcomp {
