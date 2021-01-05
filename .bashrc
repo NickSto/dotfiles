@@ -354,20 +354,6 @@ function stringsa {
   strings -n 5 -e b "$1"
   strings -n 5 -e l "$1"
 }
-function names {
-  local Usage='Usage: $ names [number of names]'
-  local num=10
-  if [[ "$#" == 1 ]]; then
-    if [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
-      echo "$Usage"
-    else
-      num="$1"
-    fi
-  elif [[ "$#" -gt 1 ]]; then
-    echo "$Usage"
-  fi
-  rig -mc "$num" | awk 'NR % 5 == 1' | sort
-}
 function updaterc {
   if ! which git >/dev/null 2>/dev/null; then
     wget 'https://raw.githubusercontent.com/NickSto/dotfiles/master/.bashrc' -O "$BashrcDir/.bashrc"
