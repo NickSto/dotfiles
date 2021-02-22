@@ -690,13 +690,13 @@ function eta {
   local elapsed=$(calc "$now-$start_time")
   local sec_left=$(calc "$togo*$elapsed/$progress")
   local eta=$(date -d "now + $sec_left seconds")
-  local eta_diff=$(datediff "$eta")
+  local eta_diff=$(date_parts_diff "$eta")
   local min_left=$(calc "'{:0.2f}'.format($sec_left/60)")
   echo -e "$eta_diff\t($min_left min from now)"
 }
-function datediff {
+function date_parts_diff {
   if [[ "$#" -lt 1 ]] || [[ "$1" == '-h' ]]; then
-    echo "Usage: datediff date1 [date2]
+    echo "Usage: date_parts_diff date1 [date2]
 Compare two datetimes and print the parts of date1 that are different from date2.
 date2 is the current time by default.
 The dates should be parseable by the 'date -d' command." >&2
@@ -1351,7 +1351,7 @@ function _find_conda {
   # Find it in a function to avoid polluting the shell with temporary variables.
   local ver dir path
   for ver in 3 2; do
-    for dir in src/ ''; do
+    for dir in src/installations/ ''; do
       path="$HOME/${dir}miniconda$ver/bin"
       if [[ -d "$path" ]]; then
         echo "$path"
