@@ -34,7 +34,7 @@ def main(argv):
 
   logging.basicConfig(stream=args.log, level=args.volume, format='%(message)s')
 
-  csv_out = csv.writer(sys.stdout, dialect='excel-tab')
+  csv_out = csv.writer(sys.stdout, dialect='excel-tab', lineterminator='\n')
   for infile in args.infiles:
     csv_file = csv.reader(infile)
     csv_out.writerows(csv_file)
