@@ -857,6 +857,21 @@ Set your wifi MAC address to the given one, or a random one otherwise."
   sudo ip link set dev "$wifi_iface" address "$mac"
   sudo ip link set dev "$wifi_iface" up
 }
+function passphrase {
+  local words=7
+  local wordlist="$HOME/aa/misc/eff_large_wordlist.txt"
+  if [[ "$#" -ge 1 ]]; then
+    if [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+      echo "Usage: passphrase [num_words [wordlist.txt]]" >&2
+      return 1
+    fi
+    words="$1"
+    if [[ "$#" -ge 2 ]]; then
+      wordlist="$2"
+    fi
+  fi
+  echo $(shuf --random-source /dev/random -n "$words" "$wordlist" | cut -f 2)
+}
 # What are the most common number of columns?
 function columns {
   echo " totals|columns"
@@ -1171,6 +1186,13 @@ function revcomp {
   else
     echo "$1" | tr 'ATGCatgc' 'TACGtacg' | rev
   fi
+}
+function dna {
+  local length=200
+  if [[ "$#" -ge 1 ]]; then
+    length="$1"
+  fi
+  python3 -c "import random; print(''.join([random.choice('ACGT') for i in range($length)]))"
 }
 # Get some quality stats on a BAM using samtools
 function bamsummary {
