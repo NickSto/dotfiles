@@ -241,7 +241,6 @@ alias now='date +%s'
 ##### Complex Aliases #####
 
 alias temp="sensors | grep -A 3 '^coretemp-isa-0000' | tail -n 1 | awk '{print \$3}' | sed -E -e 's/^\+//' -e 's/\.[0-9]+//'"
-alias mountf="(echo Device Mount Type && mount | awk '{print \$1, \$3, \$5}' | sort) | fit-columns.py -se -x 1,start,/var/lib/snapd -x 3,start,cgroup"
 alias chromem='totalmem.sh -n Chrome /opt/google/chrome/'
 alias foxmem='totalmem.sh -n Firefox /usr/lib/firefox/'
 alias bitcoin="curl -s 'https://api.coindesk.com/v1/bpi/currentprice.json' | jq .bpi.USD.rate_float | cut -d . -f 1"
@@ -264,6 +263,17 @@ function geoip {
     ip=$(curlip)
   fi
   curl -s "http://ipinfo.io/$ip" | jq -r '.city + ", " + .region + ", " + .country + ": " + .org'
+}
+function mountf {
+  mount | sort -k 3 | awk 'BEGIN {
+    print "Device", "Mount", "Type"
+  }
+  $2 == "on" {
+    print $1, $3, $5
+  }
+  $2 == "(deleted)" && $3 == "on" {
+    print $1, $4, $5
+  }' | fit-columns.py -se -x 2,start,/snap/ -x 3,start,cgroup
 }
 function pg {
   # Search for a process by matching against its whole command line.
