@@ -959,6 +959,24 @@ Default: "Terminal"' >&2
 }
 # I keep typing this for some reason.
 alias tilte=title
+function geotime {
+  if [[ "$#" == 0 ]] || [[ "$#" -gt 2 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+    echo 'Usage: $ geotime total [current]
+Estimate how much longer it will take for GeoTracker to export all my tracks.
+`current` defaults to 0.' >&2
+    return 1
+  fi
+  local total="$1"
+  local current=0
+  if [[ "$#" -ge 2 ]]; then
+    current="$2"
+  fi
+  local current_elapsed=$(calc "(($current/8.06)**(100/51))")
+  local total_eta=$(calc "(($total/8.06)**(100/51))")
+  local eta=$(calc "$total_eta-$current_elapsed")
+  local eta_time=$(date -d "now + $eta seconds")
+  printf 'Done in %0.1f minutes (at %s)\n' "$(calc "$eta/60")" "$eta_time"
+}
 function lsof_clean {
   # This is intended to output as close to the default lsof output as possible, but actually, like,
   # comprehensible (tab-delimited). But surprise, of course it turns out it's not even really
