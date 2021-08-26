@@ -805,12 +805,35 @@ The message doesn't need to be quoted - it can be the rest of the arguments." >&
     return 1
   fi
   echo "$message"
-  notify-send "$message"
-  local sound_path="$HOME/aa/audio/30 second silence and tone.mp3"
-  if [[ -f "$sound_path" ]]; then
-    vlc --play-and-exit "$sound_path" 2>/dev/null
-  else
-    echo "Sound file not found: $sound_path" >&2
+  notify -s "$message"
+}
+function notify {
+  local Usage="Usage: notify [-s] [message]"
+  local DefaultSound="$HOME/aa/audio/30 second silence and tone.mp3"
+  local sound=
+  while [[ "${1:0:1}" == '-' ]]; do
+    if [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+      echo "$Usage" >&2
+      return 1
+    elif [[ "$1" == '-s' ]]; then
+      sound="$DefaultSound"
+    fi
+    shift
+  done
+  if [[ "$#" -ge 1 ]]; then
+    local message="$1"
+    echo "$message"
+    notify-send "$message"
+  elif ! [[ "$sound" ]]; then
+    echo "$Usage" >&2
+    return 1
+  fi
+  if [[ "$sound" ]]; then
+    if [[ -f "$sound" ]]; then
+      vlc --play-and-exit "$sound" 2>/dev/null
+    else
+      echo "Sound file not found: $sound" >&2
+    fi
   fi
 }
 function wifimac {
