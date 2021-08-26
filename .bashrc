@@ -204,6 +204,8 @@ DataDir="$HOME/.local/share/nbsdata"
 # Set for easy access to cron logs.
 OutLog="$HOME/.local/share/nbsdata/cron-stdout.log"
 ErrLog="$HOME/.local/share/nbsdata/cron-stderr.log"
+# Make the `history` command display the date and time of each command.
+HISTTIMEFORMAT='%a %d %b %I:%M:%S %p  '
 # Set a default bx destination server
 export LC_BX_DEST=brubeck
 # Set my default text editor
