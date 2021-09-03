@@ -806,7 +806,6 @@ The message doesn't need to be quoted - it can be the rest of the arguments." >&
     echo "Timer cancelled by user." >&2
     return 1
   fi
-  echo "$message"
   notify -s "$message"
 }
 function notify {
