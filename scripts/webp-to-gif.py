@@ -12,14 +12,14 @@ except ImportError:
   )
   raise
 
-DESCRIPTION = """Convert an animated .webp to a .gif."""
+DESCRIPTION = """Convert a .webp to a .gif."""
 
 
 def make_argparser():
   parser = argparse.ArgumentParser(add_help=False, description=DESCRIPTION)
   options = parser.add_argument_group('Options')
   options.add_argument('webp', metavar='image.webp', type=pathlib.Path,
-    help='The .webp file.')
+    help='The .webp file. Can be animated.')
   options.add_argument('gif', metavar='image.gif', type=pathlib.Path,
     help='Where to write the .gif output to.')
   options.add_argument('-h', '--help', action='help',
