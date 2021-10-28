@@ -33,11 +33,12 @@ def main(argv):
 
   octets = []
   octet = random.randint(0, 63)*4
-  octets.append('{:02x}'.format(octet))
+  octets.append(octet)
   for i in range(5):
     octet = random.randint(0, 255)
-    octets.append('{:02x}'.format(octet))
-  print(':'.join(octets))
+    octets.append(octet)
+  octet_strs = ['{:02x}'.format(o) for o in octets]
+  print(':'.join(octet_strs))
 
 
 def fail(message):
