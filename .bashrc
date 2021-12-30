@@ -379,13 +379,16 @@ function updaterc {
 # it's accessible from inside the container.
 alias dockdir='docker run -v $(pwd):/dir/'
 function crashpause {
+  local DefaultTimeout='2h'
   if ! which tmpcmd.sh >/dev/null 2>/dev/null; then
     echo "Error: tmpcmd.sh not found." >&2
     return 1
   fi
   if [[ "$#" -ge 1 ]]; then
     if [[ "$1" == '-h' ]]; then
-      echo "Usage: \$ crashpause [time]" >&2
+      echo "Usage: \$ crashpause [time]
+time: How long before restarting CrashPlan automatically. Use the same syntax as for the 'sleep'
+      command. Default: '$DefaultTimeout'." >&2
       return 1
     else
       local timeout="$1"
