@@ -915,6 +915,17 @@ function passphrase {
   fi
   echo $(shuf --random-source /dev/random -n "$words" "$wordlist" | cut -f 2)
 }
+function scramble {
+  if [[ "$#" -ge 1 ]]; then
+    if [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+      echo "Usage: scramble word [word2 [word3]]" >&2
+      return 1
+    fi
+    echo "$@" | fold -w 1 | shuf | tr -d '\n'
+  else
+    fold -w 1 | shuf | tr -d '\n'
+  fi
+}
 # What are the most common number of columns?
 function columns {
   echo " totals|columns"
