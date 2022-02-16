@@ -1456,23 +1456,38 @@ pathadd /usr/sbin
 pathadd /usr/local/sbin
 pathadd "$HOME/.local/bin" start
 pathadd "$BashrcDir/scripts"
-# Add the Conda root environment bin directory last, so other versions are preferred.
+
+# Conda stuff
 function _find_conda {
   # Add only one Conda path, and prefer 3 over 2, and ~/src over ~/
   # Find it in a function to avoid polluting the shell with temporary variables.
   local ver dir path
   for ver in 3 2; do
     for dir in src/installations/ ''; do
-      path="$HOME/${dir}miniconda$ver/bin"
-      if [[ -d "$path" ]]; then
-        echo "$path"
+      path="$HOME/${dir}miniconda$ver"
+      if [[ -x "$path/bin/conda" ]]; then
+        printf '%s' "$path"
         return 0
       fi
     done
   done
   return 1
 }
-pathadd "$(_find_conda)"
+CondaDir="$(_find_conda)"
+if [[ "$CondaDir" ]]; then
+  # Manually do the stuff `conda init` puts in your .bashrc.
+  # Normally it evals the output of `conda shell.bash hook`. As of conda 4.11.0, that output is
+  # identical to $CondaDir/etc/profile.d/conda.sh, except it also activates the conda environment
+  # "base". I'd prefer to live in the real world and opt into a conda environment when I want, so
+  # I'll just source conda.sh myself.
+  if [[ -f "$CondaDir/etc/profile.d/conda.sh" ]]; then
+    source "$CondaDir/etc/profile.d/conda.sh"
+  else
+    # The code Conda generates adds its bin directory to the start of your PATH, but I'd rather it
+    # be at the end so that other versions are preferred.
+    pathadd "$CondaDir/bin"
+  fi
+fi
 
 # a more "sophisticated" method for determining if we're in a remote shell
 # check if the system supports the right ps parameters and if parents is able to
