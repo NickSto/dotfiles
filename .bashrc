@@ -628,21 +628,38 @@ function parents {
 }
 # readlink -f except it handles commands on the PATH too
 function deref {
-  local arg="$1"
-  local path
-  if [[ $(type -t "$arg") == file ]]; then
-    # It's a command on the $PATH. Look up its actual path.
-    path=$(which "$arg" 2>/dev/null)
+  local Usage="deref cmd"
+  local verbose=
+  if [[ "$#" == 1 ]]; then
+    local arg="$1"
+  elif [[ "$#" -gt 1 ]]; then
+    if [[ "$1" == '-h' ]]; then
+      echo "$Usage" >&2
+      return 1
+    elif [[ "$1" == '-v' ]]; then
+      verbose='true'
+    else
+      echo "Invalid argument '$1'" >&2
+      return 1
+    fi
+    local arg="$2"
+  else
+    echo "$Usage" >&2
+    return 1
+  fi
+  local path=$(which "$arg" 2>/dev/null)
+  if ! [[ "$verbose" ]]; then
+    # readlink -f will follow the chain of links to the end in one step.
     readlink -f "$path"
     return "$?"
-  else
-    path="$arg"
   fi
+  #TODO: This fails on relative links. For example, currently the contents of the link /usr/bin/gcc
+  #      is "gcc-9". I'd have to resolve that to /usr/bin/gcc-9 before proceeding.
   while [[ "$path" ]]; do
+    echo "$path"
     local old_path="$path"
     path=$(readlink "$old_path")
   done
-  echo "$old_path"
 }
 function venv {
   if [[ "$#" -ge 1 ]] && [[ "$1" == '-h' ]]; then
