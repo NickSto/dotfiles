@@ -866,6 +866,29 @@ function wifissid {
 function wifiip {
   getip | awk 'substr($1, 1, 2) == "wl" {print $3}'
 }
+function wifirssi {
+  local samples=3
+  if [[ "$#" -ge 1 ]]; then
+    if [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]] || [[ "$#" -gt 1 ]]; then
+      echo "Usage: \$ wifirssi [samples]
+Get the wifi signal strength (in dBm), averaging over the given number of samples (default: $samples)
+taken 1 second apart." >&2
+      return 1
+    else
+      samples="$1"
+    fi
+  fi
+  local i=0
+  local total=0
+  while [[ "$i" -lt "$samples" ]]; do
+    sample=$(iwconfig 2>/dev/null | sed -En 's/^.*Signal level=(-?[0-9]+) *dBm.*$/\1/p')
+    echo "$sample dBm"
+    total=$((total+sample))
+    sleep 1
+    i=$((i+1))
+  done
+  echo "Average: $((total/samples)) dBm"
+}
 function getip {
   if [[ "$#" -gt 0 ]]; then
     echo "Usage: \$ getip
