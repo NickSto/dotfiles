@@ -245,7 +245,8 @@ alias now='date +%s'
 alias temp="sensors | grep -A 3 '^coretemp-isa-0000' | tail -n 1 | awk '{print \$3}' | sed -E -e 's/^\+//' -e 's/\.[0-9]+//'"
 alias chromem='totalmem.sh -n Chrome /opt/google/chrome/'
 alias foxmem='totalmem.sh -n Firefox /usr/lib/firefox/'
-alias bitcoin="curl -s 'https://api.coindesk.com/v1/bpi/currentprice.json' | jq .bpi.USD.rate_float | cut -d . -f 1"
+alias bitcoin="curl -s 'https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD' | jq .USD"
+alias ethereum="curl -s 'https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD' | jq .USD"
 alias dfh='df -h | fit-columns.py -se -x 1,start,/dev/loop -x 1,tmpfs -x 1,udev -x 1,start,/dev/mapper/vg-var -x 1,AFS'
 
 
