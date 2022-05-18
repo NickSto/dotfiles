@@ -992,11 +992,22 @@ Usage: $ sumcolumn 3 file.tsv [file2.tsv [file3.tsv [..]]]
 function sumcolumns {
   if [[ "$#" == 1 ]] && [[ "$1" == '-h' ]]; then
     echo 'Get totals of all columns in stdin or in all filename arguments.
+Lines beginning with a # are ignored, as are non-numeric values anywhere.
 Usage: $ sumcolumns file.tsv [file2.tsv [file3.tsv [..]]]
        $ cat file.tsv | sumcolumns' >&2
     return 1
   fi
   awk -f "$BashrcDir/scripts/sumcolumns.awk" "$@"
+}
+function maxcolumns {
+  if [[ "$#" == 1 ]] && [[ "$1" == '-h' ]]; then
+    echo 'Get maximum values of all columns in stdin or in all filename arguments.
+Lines beginning with a # are ignored, as are non-numeric values anywhere.
+Usage: $ maxcolumns file.tsv [file2.tsv [file3.tsv [..]]]
+       $ cat file.tsv | maxcolumns' >&2
+    return 1
+  fi
+  awk -f "$BashrcDir/scripts/maxcolumns.awk" "$@"
 }
 function repeat {
   if [[ "$#" -lt 2 ]] || ! [[ "$2" =~ ^[0-9]+$ ]]; then
