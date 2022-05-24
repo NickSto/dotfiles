@@ -23,6 +23,7 @@ Options:
     But this could be useful if that doesn't work.
 Returns 0 when silenced, 2 when unsilenced, and 1 on error."
 
+#TODO: Turn off Ubuntu connectivity checking.
 
 function main {
   # Read arguments.
@@ -164,11 +165,13 @@ function unsilence_services {
 }
 
 function get_home {
+  set +u
   if [[ "$SUDO_USER" ]]; then
     getent passwd "$SUDO_USER" | cut -d : -f 6
   else
     echo "$HOME"
   fi
+  set -u
 }
 
 function get_local_script {
