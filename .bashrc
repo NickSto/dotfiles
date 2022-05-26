@@ -238,6 +238,7 @@ alias pingg='ping -c 1 google.com'
 alias curlip='curl -s icanhazip.com'
 alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
 alias now='date +%s'
+alias pip='python3 -m pip'
 
 
 ##### Complex Aliases #####
@@ -615,7 +616,7 @@ function lc {
     fi
   fi
 }
-alias tc=tc.py
+alias tc=titlecase
 function parents {
   if [[ "$#" -ge 1 ]]; then
     local pid="$1"
