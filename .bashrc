@@ -1165,16 +1165,16 @@ clock: 26 days 17:31:27 | 6:24:54   | 38:29        | 23
   local formatter=
   case "$format" in
     clock)
-      formatter=human_time_clock;;
+      formatter=_human_time_clock;;
     1unit)
-      formatter=human_time_1unit;;
+      formatter=_human_time_1unit;;
     *)
       echo "Error: Invalid format \"$format\"" >&2
       return 1;;
   esac
   $formatter "$sec_total" "$sec" "$min" "$hr" "$days" "$years_total"
 }
-function human_time_clock {
+function _human_time_clock {
   local sec_total sec min hr days years
   read sec_total sec min hr days years <<< "$@"
   if [[ "$days" == 1 ]]; then
@@ -1213,7 +1213,7 @@ function human_time_clock {
   fi
   echo "$years_str$days_str$hr_str$min_str$sec_str"
 }
-function human_time_1unit {
+function _human_time_1unit {
   local sec_total sec min hr days years
   read sec_total sec min hr days years <<< "$@"
   local unit quantity
