@@ -1010,6 +1010,34 @@ Usage: $ maxcolumns file.tsv [file2.tsv [file3.tsv [..]]]
   fi
   awk -f "$BashrcDir/scripts/maxcolumns.awk" "$@"
 }
+function average {
+  if [[ "$#" -gt 0 ]]; then
+    if [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+      echo 'Average a series of numbers.
+Usage: $ average num1 [num2 [num3 [..]]]' >&2
+      return 1
+    fi
+    count=0
+    sum=0
+    while [[ "$#" -gt 0 ]]; do
+      sum=$(printf '%s+%s\n' "$sum" "$1" | bc)
+      echo -e "$sum\t$1"
+      count=$((count+1))
+      shift
+    done
+    printf '%s/%s\n' "$sum" "$count" | bc -l | sed -E 's/\.?0+$//'
+  else
+    awk '{
+      for (i=1; i<=NF; i++) {
+        sum += $i
+        count++
+      }
+    }
+    END {
+      print sum/count
+    }'
+  fi
+}
 function repeat {
   if [[ "$#" -lt 2 ]] || ! [[ "$2" =~ ^[0-9]+$ ]]; then
     echo "Usage: repeat [string] [number of repeats]" 1>&2
