@@ -947,13 +947,19 @@ function passphrase {
   local wordlist="$HOME/aa/misc/eff_large_wordlist.txt"
   if [[ "$#" -ge 1 ]]; then
     if [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
-      echo "Usage: passphrase [num_words [wordlist.txt]]" >&2
+      echo "Usage: passphrase [[wordlist.txt] num_words]" >&2
       return 1
     fi
-    words="$1"
-    if [[ "$#" -ge 2 ]]; then
-      wordlist="$2"
+    if [[ "$#" == 1 ]]; then
+      words="$1"
+    elif [[ "$#" -ge 2 ]]; then
+      wordlist="$1"
+      words="$2"
     fi
+  fi
+  if ! [[ -f "$wordlist" ]]; then
+    echo "Error: Wordlist file not found: $wordlist" >&2
+    return 1
   fi
   echo $(shuf --random-source /dev/random -n "$words" "$wordlist" | cut -f 2)
 }
