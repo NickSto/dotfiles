@@ -1521,7 +1521,6 @@ fi
 if [[ "$Host" == lion ]]; then
   pathadd /opt/local/bin
 fi
-pathadd "$HOME/bx/bin"
 pathadd /sbin
 pathadd /usr/sbin
 pathadd /usr/local/sbin
