@@ -1246,7 +1246,7 @@ function _human_time_clock {
       fi
     fi
   fi
-  echo "$years_str$days_str$hr_str$min_str$sec_str"
+  printf '%s\n' "$years_str$days_str$hr_str$min_str$sec_str"
 }
 function _human_time_1unit {
   local sec_total sec min hr days years
@@ -1257,22 +1257,22 @@ function _human_time_1unit {
     quantity="$sec_total"
   elif [[ "$sec_total" -lt 3600 ]]; then
     unit='minute'
-    quantity=$(echo "$sec_total/60" | bc -l)
+    quantity=$(printf '%s' "$sec_total" | awk '{print $1/60}')
   elif [[ "$sec_total" -lt 86400 ]]; then
     unit='hour'
-    quantity=$(echo "$sec_total/60/60" | bc -l)
+    quantity=$(printf '%s' "$sec_total" | awk '{print $1/60/60}')
   elif [[ "$sec_total" -lt 864000 ]]; then
     unit='day'
-    quantity=$(echo "$sec_total/60/60/24" | bc -l)
+    quantity=$(printf '%s' "$sec_total" | awk '{print $1/60/60/24}')
   elif [[ "$sec_total" -lt 3456000 ]]; then
     unit='week'
-    quantity=$(echo "$sec_total/60/60/24/7" | bc -l)
+    quantity=$(printf '%s' "$sec_total" | awk '{print $1/60/60/24/7}')
   elif [[ "$sec_total" -lt 31536000 ]]; then
     unit='month'
-    quantity=$(echo "$sec_total/60/60/24/30.5" | bc -l)
+    quantity=$(printf '%s' "$sec_total" | awk '{print $1/60/60/24/30.5}')
   else
     unit='year'
-    quantity=$(echo "$sec_total/60/60/24/365" | bc -l)
+    quantity=$(printf '%s' "$sec_total" | awk '{print $1/60/60/24/365}')
   fi
   local rounded=$(printf '%0.1f' "$quantity")
   local integered=$(printf '%0.0f' "$quantity")
@@ -1283,7 +1283,7 @@ function _human_time_1unit {
   if [[ "$rounded" != 1 ]]; then
     output="${output}s"
   fi
-  echo "$output"
+  printf '%s\n' "$output"
 }
 function time_to_sec {
   if [[ "$#" != 1 ]] || [[ "$1" == '-h' ]]; then
@@ -1294,7 +1294,7 @@ Input format same as for 'sleep' command, except integers only." >&2
   fi
   local time="$1"
   local quantity unit
-  read quantity unit <<< $(echo "$time" | sed -En 's/^([0-9]+)([smhd])?$/\1 \2/p')
+  read quantity unit <<< $(printf '%s' "$time" | sed -En 's/^([0-9]+)([smhd])?$/\1 \2/p')
   if ! [[ "$quantity" ]]; then
     echo "Error: Invalid time string \"$time\"" >&2
     return 1
@@ -1308,7 +1308,7 @@ Input format same as for 'sleep' command, except integers only." >&2
     d)
       multiplier=86400;;
   esac
-  echo $((quantity*multiplier))
+  printf '%s\n' $((quantity*multiplier))
 }
 
 
@@ -1449,15 +1449,15 @@ function prompt_git_info {
 timer_thres=10
 function timer_start {
   # $SECONDS is a shell built-in: the total number of seconds it's been running.
-  timer="${timer:-$SECONDS}"
+  timer_sec="${timer_sec:-$SECONDS}"
 }
 function timer_stop {
-  local seconds=$((SECONDS-timer))
+  local seconds=$((SECONDS-timer_sec))
   ps1_timer_show=''
   if [[ "$seconds" -ge "$timer_thres" ]]; then
     ps1_timer_show="$(time_format "$seconds") "
   fi
-  unset timer
+  unset timer_sec
 }
 # format a number of seconds into a readable time
 function time_format {
