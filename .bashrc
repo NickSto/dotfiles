@@ -1500,10 +1500,13 @@ pathadd /home/linuxbrew/.linuxbrew/sbin
 
 ##### Things to execute directly on session start #####
 
-# Stuff I don't want to post publicly on Github. Still should be universal, not
-# machine-specific.
+# Stuff I don't want to post publicly on Github. Still should be universal, not machine-specific.
 if [[ -f "$HOME/.bashrc_private" ]]; then
   source "$HOME/.bashrc_private"
+fi
+# Stuff specific to a particular machine that I don't want to shoehorn into this file.
+if [[ -f "$HOME/.bashrc_single" ]]; then
+  source "$HOME/.bashrc_single"
 fi
 
 if [[ "$Host" == scofield ]]; then
@@ -1531,15 +1534,13 @@ pathadd "$BashrcDir/scripts"
 function _find_conda {
   # Add only one Conda path, and prefer 3 over 2, and ~/src over ~/
   # Find it in a function to avoid polluting the shell with temporary variables.
-  local ver dir path
-  for ver in 3 2; do
-    for dir in src/installations/ ''; do
-      path="$HOME/${dir}miniconda$ver"
-      if [[ -x "$path/bin/conda" ]]; then
-        printf '%s' "$path"
-        return 0
-      fi
-    done
+  local dir path
+  for dir in src/installations/ ''; do
+    path="$HOME/${dir}miniconda3"
+    if [[ -x "$path/bin/conda" ]]; then
+      printf '%s' "$path"
+      return 0
+    fi
   done
   return 1
 }
