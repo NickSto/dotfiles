@@ -16,28 +16,14 @@ fi
 Host=$(hostname -s 2>/dev/null || hostname)
 
 # supported hosts:
-# ruby main nsto[2-9] yarr brubeck scofield desmond nn[0-9]+ uniport lion cyberstar
+#   nsto[2-9] yarr nn[0-9]+ (and all my personal laptops)
+# deprecated:
+#   brubeck scofield desmond uniport lion cyberstar
 
 # supported distros:
 #   ubuntu debian freebsd
 # partial support:
-#   cygwin osx
-
-# Are we on one of the cluster nodes?
-InBx=
-InCluster=
-if echo "$Host" | grep -qE '^nn[0-9]+$' && [[ "${Host:2}" -le 15 ]]; then
-  InBx=true
-  InCluster=true
-else
-  # Are we on a bx server?
-  case "$Host" in
-    brubeck)  InBx=true;;
-    scofield) InBx=true;;
-    desmond)  InBx=true;;
-    uniport)  InBx=true;;
-  esac
-fi
+#   GitBash cygwin osx
 
 ##### Determine distro #####
 
@@ -79,8 +65,6 @@ case "$Host" in
   ruby)      Distro="ubuntu";;
   main)      Distro="ubuntu";;
   yarr)      Distro="ubuntu";;
-  brubeck)   Distro="debian";;
-  scofield)  Distro="debian";;
   nsto[2-9]) Distro="ubuntu";;
   *)  # Unrecognized host? Run detection script.
     if [[ -f "$BashrcDir/detect-distro.sh" ]] && ! [[ "$IsRoot" ]]; then
@@ -137,37 +121,6 @@ if [[ "$Distro" == ubuntu ]]; then
     fi
   fi
 
-
-# All comments in this block are from brubeck's default .bashrc
-elif [[ "$Host" == brubeck ]]; then
-
-  # System wide functions and aliases
-  # Environment stuff goes in /etc/profile
-
-  # By default, we want this to get set.
-  umask 002
-
-  if ! shopt -q login_shell ; then # We're not a login shell
-    if [ -d /etc/profile.d/ ]; then
-      for i in /etc/profile.d/*.sh; do
-        if [ -r "$i" ]; then
-          . "$i"
-        fi
-      unset i
-      done
-    fi
-  fi
-
-  # system path augmentation
-  test -f /afs/bx.psu.edu/service/etc/env.sh && . /afs/bx.psu.edu/service/etc/env.sh
-
-  # make afs friendlier-ish
-  if [ -d /afs/bx.psu.edu/service/etc/bash.d/ ]; then
-    for file in /afs/bx.psu.edu/service/etc/bash.d/*.bashrc; do
-    . "$file"
-    done
-  fi
-
 fi
 
 # enable color support of ls and also add handy aliases
@@ -206,8 +159,6 @@ OutLog="$HOME/.local/share/nbsdata/cron-stdout.log"
 ErrLog="$HOME/.local/share/nbsdata/cron-stderr.log"
 # Make the `history` command display the date and time of each command.
 HISTTIMEFORMAT='%a %d %b %I:%M:%S %p  '
-# Set a default bx destination server
-export LC_BX_DEST=brubeck
 # Set my default text editor
 export EDITOR=vim
 # Allow disabling ~/.python_history.
@@ -308,57 +259,11 @@ function trash {
     mv "$@" "$HOME/.trash"
   fi
 }
-function cds {
-  if [[ "$1" ]]; then
-    local n="$1"
-  else
-    local n=5
-  fi
-  if [[ -d "/nfs/brubeck.bx.psu.edu/scratch$n/nick" ]]; then
-    cd "/nfs/brubeck.bx.psu.edu/scratch$n/nick"
-  elif [[ -d "/scratch$n/nick" ]]; then
-    cd "/scratch$n/nick"
-  elif [[ "$n" == 1 ]] && [[ -d "/scratch/nick" ]]; then
-    cd /scratch/nick
-  fi
-}
-function _make_scratches {
-  # Make shorthand variables like $s4 to refer to /nfs/brubeck.bx.psu.edu/scratch4/nick.
-  if ! [[ "$InBx" ]]; then
-    return
-  fi
-  local n dirpath
-  for n in {0..10}; do
-    if [[ -d "/nfs/brubeck.bx.psu.edu/scratch$n/nick" ]]; then
-      dirpath="/nfs/brubeck.bx.psu.edu/scratch$n/nick"
-    elif [[ -d "/scratch$n/nick" ]]; then
-      dirpath="/scratch$n/nick"
-    elif [[ "$n" == 1 ]] && [[ -d "/scratch/nick" ]]; then
-      dirpath="/scratch/nick"
-    else
-      continue
-    fi
-    declare -g "s$n=$dirpath"
-  done
-}
-_make_scratches
 function kerb {
-  local bx_realm="nick@BX.PSU.EDU"
-  local galaxy_realm="nick@GALAXYPROJECT.ORG"
-  local default_realm="$bx_realm"
   local realm="$1"
-  if [[ "$#" -le 0 ]]; then
-    realm="$default"
-  elif [[ "$1" == bx ]]; then
-    realm="$bx_realm"
-  elif [[ "${1:0:3}" == bru ]]; then
-    realm="$bx_realm"
-  elif [[ "${1:0:3}" == des ]]; then
-    realm="$bx_realm"
-  elif [[ "${1:0:3}" == sco ]]; then
-    realm="$galaxy_realm"
-  elif [[ "${1:0:3}" == gal ]]; then
-    realm="$galaxy_realm"
+  if [[ "$#" == 0 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+    echo "Usage: \$ kerb realm" >&2
+    return 1
   fi
   kinit -l 90d "$realm"
 }
@@ -371,7 +276,7 @@ function stringsa {
 function updaterc {
   if ! which git >/dev/null 2>/dev/null; then
     wget 'https://raw.githubusercontent.com/NickSto/dotfiles/master/.bashrc' -O "$BashrcDir/.bashrc"
-  elif [[ "$Host" == cyberstar ]] || [[ "$Distro" == *bsd ]]; then
+  elif [[ "$Distro" == *bsd ]]; then
     (cd "$BashrcDir" && git pull && cd -)
   else
     git "--work-tree=$BashrcDir" "--git-dir=$BashrcDir/.git" pull
@@ -1387,7 +1292,7 @@ function bamsummary {
 alias sinfoc='sinfo -p general -o "%11T %.5D %.15C %.15N"'
 alias sfree='sinfo -h -p general -t idle -o %n'
 alias scpus="echo -e 'Node\tFree\tTotal' && sinfo -h -p general -t idle,alloc -o '%n %C' \
-                | tr ' /' '\t\t' | cut -f 1,3,5 | sort -k 1.3g | sed -E 's/\.c\.bx\.psu\.edu//'"
+                | tr ' /' '\t\t' | cut -f 1,3,5 | sort -k 1.3g"
 alias squeuep='squeue -o "%.7i %Q %.8u %.8T %.10M %11R %4h %j" | sort -g -k 2'
 
 
@@ -1509,21 +1414,8 @@ if [[ -f "$HOME/.bashrc_single" ]]; then
   source "$HOME/.bashrc_single"
 fi
 
-if [[ "$Host" == scofield ]]; then
-  aklog bx.psu.edu
-fi
-
-# Add correct bin directory to PATH.
-if [[ "$Host" == scofield ]]; then
-  pathadd "/galaxy/home/$USER/bin"
-elif [[ "$InCluster" ]]; then
-  true  # inherited from scofield
-else
-  pathadd "$HOME/bin" start
-fi
-if [[ "$Host" == lion ]]; then
-  pathadd /opt/local/bin
-fi
+# Add bin directories to PATH.
+pathadd "$HOME/bin" start
 pathadd /sbin
 pathadd /usr/sbin
 pathadd /usr/local/sbin
@@ -1576,7 +1468,7 @@ else
 fi
 
 # Retitle window only if it's an interactive session. Otherwise, this can cause scp to hang.
-if [[ "$-" == *i* ]] && [[ "$Host" != uniport ]]; then
+if [[ "$-" == *i* ]]; then
   title "$Host"
 fi
 
@@ -1589,14 +1481,9 @@ if [[ "$remote" ]]; then
   # 3. $LC_NO_SCREEN != true: The user has requested not to enter a screen.
   #    - Set via: $ LC_NO_SCREEN=true ssh -o SendEnv=LC_NO_SCREEN me@destination
   # 4. ! -f ~/NOSCREEN: The user has requested not to enter a screen (backup method).
-  if ! [[ "$STY" ]] && [[ -t 1 ]] && [[ "$LC_NO_SCREEN" != true ]] && ! [[ -f "$HOME/NOSCREEN" ]]; then
-    if [[ "$Host" == uniport ]] || [[ "$InCluster" ]]; then
-      true  # screen unavailable or undesired
-    elif [[ "$InBx" ]] && [[ -x "$HOME/code/pagscr-me.sh" ]]; then
-      exec "$HOME/code/pagscr-me.sh" -RR -S auto
-    elif which screen >/dev/null 2>/dev/null; then
+  if ! [[ "$STY" ]] && [[ -t 1 ]] && [[ "$LC_NO_SCREEN" != true ]] && ! [[ -f "$HOME/NOSCREEN" ]] \
+    && which screen >/dev/null 2>/dev/null; then
       exec screen -RR -S auto
-    fi
   fi
 else
   export PS1='$ps1_timer_show\e[$pecol[\d]\e[m \e[0;32m\u@\h:\e[m \e[$pgcol\w\e[m\n$ps1_branch\$ '
