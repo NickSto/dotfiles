@@ -362,6 +362,41 @@ function bak {
   path=$(echo "$path" | sed 's#/$##')
   cp -r "$path" "$path.bak"
 }
+function lnx {
+  if [[ "$#" -le 0 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+    echo "Usage: \$ lnx target [link/path]
+For use when you don't have the ability to make a symlink (cough Windows).
+This will create a two line shell script at link/path which calls target, passing through the args
+it was given. If no link/path is given, then, like ln, this will use the basename of the target and
+put the \"link\" in the current directory. The target can be a relative path from the current
+directory, instead of from the link's directory. It will be resolved to an absolute path anyway." >&2
+    return 1
+  fi
+  local target_raw="$1"
+  if [[ "$#" -ge 2 ]]; then
+    local link_path="$2"
+  else
+    local link_path=$(basename "$target")
+  fi
+  if [[ -e "$link_path" ]] || [[ -h "$link_path" ]]; then
+    echo "Error: A file already exists at the link path: $link_path" >&2
+    return 1
+  fi
+  if [[ -e "$target_raw" ]]; then
+    local target=$(realpath "$target_raw")
+  elif [[ "$#" -ge 2 ]]; then
+    # Allow the user to call it like ln -s, with the target relative to the link's directory.
+    local link_dir=$(dirname "$link_path")
+    local target=$(realpath "$link_dir/$target_raw")
+  fi
+  if ! [[ -e "$target" ]]; then
+    echo "Error: Target not found: $target_raw" >&2
+    return 1
+  fi
+  printf '%s\n' '#!/usr/bin/env bash' > "$link_path"
+  printf '%s "$@"\n' "$target" >> "$link_path"
+  chmod u+x "$link_path"
+}
 # Add to PATH if the directory exists and it's not already in the PATH.
 function pathadd {
   local dir="$1"
