@@ -166,6 +166,10 @@ export EDITOR=vim
 # Allow disabling ~/.python_history.
 # See https://unix.stackexchange.com/questions/121377/how-can-i-disable-the-new-history-feature-in-python-3-4
 export PYTHONSTARTUP="$HOME/.pythonrc"
+# In Git Bash, sometimes $USERNAME is set instead of $USER
+if ! [[ "$USER" ]] && [[ "$USERNAME" ]]; then
+  USER="$USERNAME"
+fi
 
 
 ##### Simple Aliases #####
