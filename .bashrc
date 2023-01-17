@@ -36,24 +36,26 @@ function realdirname {
   echo $(cd $(dirname $(readlink "$1")) && pwd)
 }
 
+function _get_dirname {
+  filename="$1"
+  # Is it a link or real file?
+  if [[ -h "$filename" ]]; then
+    realdirname "$filename"
+  elif grep -qE '^##BashrcDir:' "$filename"; then
+    sed -En 's/^##BashrcDir://p' "$filename"
+  else
+    printf '%s' "$HOME"
+  fi
+}
+
 # Determine directory with .bashrc files
 if [[ -d "$HOME" ]]; then
   cd "$HOME"
 fi
 if [[ -f .bashrc ]]; then
-  # Is it a link or real file?
-  if [[ -h .bashrc ]]; then
-    BashrcDir=$(realdirname .bashrc)
-  else
-    BashrcDir="$HOME"
-  fi
+  BashrcDir=$(_get_dirname .bashrc)
 elif [[ -f .bash_profile ]]; then
-  # Is it a link or real file?
-  if [[ -h .bash_profile ]]; then
-    BashrcDir=$(realdirname .bash_profile)
-  else
-    BashrcDir="$HOME"
-  fi
+  BashrcDir=$(_get_dirname .bash_profile)
 else
   BashrcDir="$HOME/code/dotfiles"
 fi
