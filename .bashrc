@@ -210,7 +210,8 @@ function mouse {
   nohup mousepad "$@" >/dev/null 2>/dev/null &
 }
 function cpu {
-  ps aux | awk 'NR > 1 {cpu+=$3; mem+=$4} END {printf("%0.2f\t%0.2f\n", cpu/100, mem/100)}'
+  ncores=$(grep -Ec '^ *core id' /proc/cpuinfo 2>/dev/null)
+  ps aux | awk -v "ncores=$ncores" -v "user=$USER" -f "$BashrcDir/scripts/cpu-mem.awk"
 }
 alias mem=cpu
 function geoip {
