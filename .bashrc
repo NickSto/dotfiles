@@ -253,15 +253,12 @@ function longurl {
   fi
 }
 function trash {
-  if which trash-put >/dev/null 2>/dev/null; then
+  if which trash.py >/dev/null 2>/dev/null; then
+    trash.py "$@"
+  elif which trash-put >/dev/null 2>/dev/null; then
     trash-put "$@"
-  elif python3 -m send2trash --help >/dev/null 2>/dev/null; then
-    python3 -m send2trash "$@"
-  elif python -m send2trash --help >/dev/null 2>/dev/null; then
-    python -m send2trash "$@"
-  elif ! (pip3 install --user send2trash && python3 -m send2trash "$@"); then
-    echo "No trash-cli found and installing (or running) send2trash failed.
-Falling back to manual ~/.trash directory." >&2
+  else
+    echo "Falling back to manual ~/.trash directory." >&2
     if ! [[ -d "$HOME/.trash" ]]; then
       if ! mkdir "$HOME/.trash"; then
         echo "Error creating ~/.trash" >&2
