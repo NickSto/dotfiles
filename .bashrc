@@ -195,7 +195,7 @@ alias pingg='ping -c 1 google.com'
 alias curlip='curl -s icanhazip.com'
 alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
 alias now='date +%s'
-alias pip='python3 -m pip'
+alias pipp='python3 -m pip'
 
 
 ##### Complex Aliases #####
@@ -242,12 +242,6 @@ function mountf {
   $2 == "(deleted)" && $3 == "on" {
     print $1, $4, $5
   }' | fit-columns.py -se -x 2,start,/snap/ -x 3,start,cgroup
-}
-function pg {
-  # Search for a process by matching against its whole command line.
-  if pgrep -f "$@" >/dev/null; then
-    pgrep -f "$@" | xargs ps -o user,pid,stat,rss,%mem,pcpu,args --sort -pcpu,-rss;
-  fi
 }
 function longurl {
   if which longurl.py >/dev/null 2>/dev/null; then
