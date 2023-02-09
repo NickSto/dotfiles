@@ -195,7 +195,7 @@ alias pingg='ping -c 1 google.com'
 alias curlip='curl -s icanhazip.com'
 alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
 alias now='date +%s'
-alias pip='python3 -m pip'
+alias pipp='python3 -m pip'
 
 
 ##### Complex Aliases #####
@@ -243,12 +243,6 @@ function mountf {
     print $1, $4, $5
   }' | fit-columns.py -se -x 2,start,/snap/ -x 3,start,cgroup
 }
-function pg {
-  # Search for a process by matching against its whole command line.
-  if pgrep -f "$@" >/dev/null; then
-    pgrep -f "$@" | xargs ps -o user,pid,stat,rss,%mem,pcpu,args --sort -pcpu,-rss;
-  fi
-}
 function longurl {
   if which longurl.py >/dev/null 2>/dev/null; then
     longurl.py -bc
@@ -259,15 +253,12 @@ function longurl {
   fi
 }
 function trash {
-  if which trash-put >/dev/null 2>/dev/null; then
+  if which trash.py >/dev/null 2>/dev/null; then
+    trash.py "$@"
+  elif which trash-put >/dev/null 2>/dev/null; then
     trash-put "$@"
-  elif python3 -m send2trash --help >/dev/null 2>/dev/null; then
-    python3 -m send2trash "$@"
-  elif python -m send2trash --help >/dev/null 2>/dev/null; then
-    python -m send2trash "$@"
-  elif ! (pip3 install --user send2trash && python3 -m send2trash "$@"); then
-    echo "No trash-cli found and installing (or running) send2trash failed.
-Falling back to manual ~/.trash directory." >&2
+  else
+    echo "Falling back to manual ~/.trash directory." >&2
     if ! [[ -d "$HOME/.trash" ]]; then
       if ! mkdir "$HOME/.trash"; then
         echo "Error creating ~/.trash" >&2
