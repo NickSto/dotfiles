@@ -210,9 +210,15 @@ alias dfh='df -h | fit-columns.py -se -x 1,start,/dev/loop -x 1,tmpfs -x 1,udev 
 
 ##### Functions Etc #####
 
-function mouse {
-  nohup mousepad "$@" >/dev/null 2>/dev/null &
-}
+if [[ "$Distro" == mingw ]]; then
+  function mouse {
+    nohup notepad++.exe -multiInst "$@" >/dev/null 2>/dev/null &
+  }
+else
+  function mouse {
+    nohup mousepad "$@" >/dev/null 2>/dev/null &
+  }
+fi
 function cpu {
   ncores=$(grep -Ec '^ *core id' /proc/cpuinfo 2>/dev/null)
   ps aux | awk -v "ncores=$ncores" -v "user=$USER" -f "$BashrcDir/scripts/cpu-mem.awk"
