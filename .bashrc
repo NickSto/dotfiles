@@ -536,6 +536,14 @@ function calc {
     python3 -i -c 'from math import *'
   fi
 }
+function pct {
+  if [[ "$#" -lt 2 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+    echo 'Usage: $ pct num1 num2
+Prints 100*num1/(num1+num2)' >&2
+    return 1
+  fi
+  python3 -c "print(f'{$1/($1+$2):%}')"
+}
 function wcc {
   if [[ "$#" == 0 ]]; then
     wc -c
