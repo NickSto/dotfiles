@@ -612,6 +612,25 @@ function deref {
     path=$(readlink "$old_path")
   done
 }
+function parent_find {
+  if [[ "$#" != 1 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+    echo "\$ parent_find filename
+Searches for 'filename' in the current directory or any parent directory. If it's found, it prints
+its absolute path and returns 0. Otherwise, it returns 1." >&2
+    return 1
+  fi
+  local filename="$1"
+  local dir=$(pwd)
+  while true; do
+    if [[ -e "$dir/$filename" ]]; then
+      printf '%s\n' "$dir/$filename"
+      return 0
+    elif [[ "$dir" == / ]]; then
+      return 1
+    fi
+    dir=$(dirname "$dir")
+  done
+}
 function venv {
   if [[ "$#" -ge 1 ]] && [[ "$1" == '-h' ]]; then
     echo "Usage: \$ venv
@@ -619,18 +638,15 @@ Looks for a .venv directory in the current directory or its parents, and activat
 finds." >&2
     return 1
   fi
-  local dir=$(pwd)
-  while ! [[ -d "$dir/.venv" ]] && [[ "$dir" != / ]]; do
-    dir=$(dirname "$dir")
-  done
-  if [[ "$dir" == / ]]; then
+  local venv=$(parent_find .venv)
+  if ! [[ "$venv" ]]; then
     echo "No .venv directory found." >&2
     return 1
   else
-    echo "Activating virtualenv in $dir/.venv" >&2
+    echo "Activating virtualenv in $venv" >&2
   fi
-  if [[ -f "$dir/.venv/bin/activate" ]]; then
-    source "$dir/.venv/bin/activate"
+  if [[ -f "$venv/bin/activate" ]]; then
+    source "$venv/bin/activate"
   else
     echo "Error: no .venv/bin/activate file found." >&2
     return 1
@@ -1380,6 +1396,11 @@ function prompt_set_title {
 function prompt_git_info {
   pgcol='0;32m' # cyan
   ps1_branch=
+  # Check if we're even in a git repo first. This saves time on slow filesystems by avoiding the
+  # call to `git status`.
+  if ! parent_find .git >/dev/null; then
+    return
+  fi
   local info=$(git status --porcelain --branch 2>/dev/null)
   if ! [[ "$info" ]]; then
     return
@@ -1401,10 +1422,10 @@ function timer_start {
   timer_sec="${timer_sec:-$SECONDS}"
 }
 function timer_stop {
-  local seconds=$((SECONDS-timer_sec))
+  LastCmdTime=$((SECONDS-timer_sec))
   ps1_timer_show=''
-  if [[ "$seconds" -ge "$timer_thres" ]]; then
-    ps1_timer_show="$(time_format "$seconds") "
+  if [[ "$LastCmdTime" -ge "$timer_thres" ]]; then
+    ps1_timer_show="$(time_format "$LastCmdTime") "
   fi
   unset timer_sec
 }
