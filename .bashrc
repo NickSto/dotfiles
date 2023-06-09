@@ -268,6 +268,76 @@ function trash {
     mv "$@" "$HOME/.trash"
   fi
 }
+function diffdir {
+  local Usage="Usage: \$ diffdir [-t] dir1 dir2
+-t: Ignore differences in dates modified."
+  if [[ "$#" -lt 2 ]] || [[ "$#" -gt 3 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+    echo "$Usage" >&2
+    return 1
+  fi
+  local ignore_time=''
+  if [[ "$#" == 3 ]]; then
+    if [[ "$1" == '-t' ]]; then
+      ignore_time='true'
+    else
+      echo "$Usage" >&2
+      return 1
+    fi
+    shift
+  fi
+  local dir1="$1" dir2="$2"
+  printf '%-11s %-11s\n' "$dir1" "$dir2"
+  local file
+  ls -1A "$dir1" "$dir2" | sort -u | while read file; do
+    if [[ "$file" == '' ]] || [[ "$file" == "$dir1:" ]] || [[ "$file" == "$dir2:" ]]; then
+      continue
+    fi
+    local date1='' time1='' size1='' present1=''
+    local path present size date time result1 result2
+    for path in "$dir1/$file" "$dir2/$file"; do
+      if [[ -e "$path" ]]; then
+        present='present'
+        size=$(du -sh --apparent-size "$path" | awk '{print $1}')
+        read date time < <(stat -c '%y' "$path" | awk '{print substr($0, 1, 10), substr($0, 12, 8)}')
+      else
+        present=''
+        size=''
+        date=''
+        time=''
+      fi
+      if ! [[ "$size1" ]]; then
+        present1="$present"
+        size1="$size"
+        date1="$date"
+        time1="$time"
+      fi
+    done
+    local present2="$present" size2="$size" date2="$date" time2="$time"
+    if [[ "$present1" != "$present2" ]]; then
+      if [[ "$present1" ]]; then
+        result1="$size1"
+        result2='MISSING'
+      else
+        result1='MISSING'
+        result2="$size2"
+      fi
+    elif [[ "$size1" != "$size2" ]]; then
+      result1="$size1"
+      result2="$size2"
+    elif [[ "$ignore_time" ]]; then
+      continue
+    elif [[ "$date1" != "$date2" ]]; then
+      result1="$date1"
+      result2="$date2"
+    elif [[ "$time1" != "$time2" ]]; then
+      result1="$time1"
+      result2="$time2"
+    else
+      continue
+    fi
+    printf '%11s%11s  %s\n' "$result1" "$result2" "$file"
+  done
+}
 function kerb {
   local realm="$1"
   if [[ "$#" == 0 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
