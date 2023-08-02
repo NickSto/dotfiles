@@ -105,6 +105,20 @@ function oneline {
     echo "$@" | tr -d '\n'
   fi
 }
+function dnsadd {
+  local cmd
+  for cmd in tmpcmd.sh dnsadd.sh; do
+    if ! which "$cmd" >/dev/null 2>/dev/null; then
+      echo "Error: $cmd not found." >&2
+      return 1
+    fi
+  done
+  if [[ "$#" -lt 1 ]]; then
+    echo "Usage: \$ dnsadd [domain.com]" >&2
+    return 1
+  fi
+  sudo tmpcmd.sh -t 2h "dnsadd.sh add $1" "dnsadd.sh rm $1"
+}
 
 
 ##### Bioinformatics #####
@@ -113,6 +127,19 @@ alias rdp='java -Xmx1g -jar ~/bin/MultiClassifier.jar'
 alias gatk="java -jar ~/bin/GenomeAnalysisTK.jar"
 alias qsh='source $HOME/src/qiime_software/activate.sh'
 alias bcat="samtools view -h"
+# Slurm commands
+alias sinfoc='sinfo -p general -o "%11T %.5D %.15C %.15N"'
+alias sfree='sinfo -h -p general -t idle -o %n'
+alias scpus="echo -e 'Node\tFree\tTotal' && sinfo -h -p general -t idle,alloc -o '%n %C' \
+                | tr ' /' '\t\t' | cut -f 1,3,5 | sort -k 1.3g"
+alias squeuep='squeue -o "%.7i %Q %.8u %.8T %.10M %11R %4h %j" | sort -g -k 2'
+if [[ "$Host" == ruby || "$Host" == main ]]; then
+  true #alias igv='java -Xmx4096M -jar ~/bin/igv.jar'
+elif [[ "$Host" == nsto* ]]; then
+  alias igv='java -Xmx256M -jar ~/bin/igv.jar'
+else
+  alias igv='java -jar ~/bin/igv.jar'
+fi
 function align {
   local opts_default='-M -t 32'
   if [[ "$#" -lt 3 ]]; then

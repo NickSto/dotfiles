@@ -174,7 +174,7 @@ fi
 
 ##### Simple Aliases #####
 
-if [[ "$Distro" == ubuntu || "$Distro" == cygwin || "$Distro" == debian ]]; then
+if [[ "$Distro" == ubuntu || "$Distro" == cygwin || "$Distro" == debian || "$Distro" == centos ]]; then
   alias ll='ls -lFhAb --color=auto --group-directories-first'
   alias lld='ls -lFhAbd --color=auto --group-directories-first'
 else
@@ -182,8 +182,6 @@ else
   alias ll='ls -lFhAb'
   alias lld='ls -lFhAbd'
 fi
-alias lsl=ll
-alias lsld=lld
 alias sll=sl # choo choo
 alias mv='mv -i'
 alias cp='cp -i'
@@ -327,20 +325,6 @@ time: How long before restarting CrashPlan automatically. Use the same syntax as
   fi
   "$prefix" tmpcmd.sh -t "$timeout" "$crashservice stop" "$crashservice start"
   title "$old_title"
-}
-function dnsadd {
-  local cmd
-  for cmd in tmpcmd.sh dnsadd.sh; do
-    if ! which "$cmd" >/dev/null 2>/dev/null; then
-      echo "Error: $cmd not found." >&2
-      return 1
-    fi
-  done
-  if [[ "$#" -lt 1 ]]; then
-    echo "Usage: \$ dnsadd [domain.com]" >&2
-    return 1
-  fi
-  sudo tmpcmd.sh -t 2h "dnsadd.sh add $1" "dnsadd.sh rm $1"
 }
 function logip {
   local LogFile="$HOME/aa/computer/logs/ips.tsv"
@@ -1287,13 +1271,6 @@ Input format same as for 'sleep' command, except integers only." >&2
 
 ##### Bioinformatics #####
 
-if [[ "$Host" == ruby || "$Host" == main ]]; then
-  true #alias igv='java -Xmx4096M -jar ~/bin/igv.jar'
-elif [[ "$Host" == nsto* ]]; then
-  alias igv='java -Xmx256M -jar ~/bin/igv.jar'
-else
-  alias igv='java -jar ~/bin/igv.jar'
-fi
 alias seqlen="bioawk -c fastx '{ print \$name, length(\$seq) }'"
 alias readsfa='grep -Ec "^>"'
 function readsfq {
@@ -1356,12 +1333,6 @@ function bamsummary {
   unset -f _pct
   unset -f _print_stat
 }
-# Slurm commands
-alias sinfoc='sinfo -p general -o "%11T %.5D %.15C %.15N"'
-alias sfree='sinfo -h -p general -t idle -o %n'
-alias scpus="echo -e 'Node\tFree\tTotal' && sinfo -h -p general -t idle,alloc -o '%n %C' \
-                | tr ' /' '\t\t' | cut -f 1,3,5 | sort -k 1.3g"
-alias squeuep='squeue -o "%.7i %Q %.8u %.8T %.10M %11R %4h %j" | sort -g -k 2'
 
 
 ##### Root bailout #####
