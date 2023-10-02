@@ -16,14 +16,20 @@ fi
 Host=$(hostname -s 2>/dev/null || hostname)
 
 # supported hosts:
-#   nsto[2-9] yarr nn[0-9]+ (and all my personal laptops)
+#   iebdev[0-9]{2} lmem[0-9]{2} nsto[2-9] yarr (and all my personal laptops)
 # deprecated:
-#   brubeck scofield desmond uniport lion cyberstar
+#   nn[0-9]+ brubeck scofield desmond uniport lion cyberstar
 
 # supported distros:
 #   ubuntu debian freebsd
 # partial support:
 #   GitBash cygwin osx
+
+# Are we on an NCBI server?
+InNcbi=
+if printf '%s' "$Host" | grep -qE '^(iebdev|lmem)[0-9][0-9]$'; then
+  InNcbi=true
+fi
 
 ##### Determine distro #####
 
@@ -1097,6 +1103,18 @@ function hextoint {
   in=$(echo "$1" | tr [:lower:] [:upper:])
   echo "ibase=16;obase=A;$in" | bc
 }
+function base64tohex {
+  python3 -c "import base64
+binary = base64.b64decode('$1')
+hex_bytes = base64.b16encode(binary)
+print(str(hex_bytes, 'utf8').lower())"
+}
+function hextobase64 {
+  python3 -c "import base64
+binary = base64.b16decode('$1'.upper())
+b64_bytes = base64.b64encode(binary)
+print(str(b64_bytes, 'utf8'))"
+}
 function title {
   if [[ "$#" == 1 ]] && [[ "$1" == '-h' ]]; then
     echo 'Usage: $ title [New terminal title]
@@ -1552,12 +1570,15 @@ function _find_conda {
 }
 CondaDir="$(_find_conda)"
 if [[ "$CondaDir" ]]; then
-  # Manually do the stuff `conda init` puts in your .bashrc.
-  # Normally it evals the output of `conda shell.bash hook`. As of conda 4.11.0, that output is
-  # identical to $CondaDir/etc/profile.d/conda.sh, except it also activates the conda environment
-  # "base". I'd prefer to live in the real world and opt into a conda environment when I want, so
-  # I'll just source conda.sh myself.
-  if [[ -f "$CondaDir/etc/profile.d/conda.sh" ]]; then
+  if [[ "$InNcbi" ]]; then
+    # The version of Conda installed there doesn't put the right path in the PATH.
+    pathadd "$CondaDir/bin" start
+  elif [[ -f "$CondaDir/etc/profile.d/conda.sh" ]]; then
+    # Manually do the stuff `conda init` puts in your .bashrc.
+    # Normally it evals the output of `conda shell.bash hook`. As of conda 4.11.0, that output is
+    # identical to $CondaDir/etc/profile.d/conda.sh, except it also activates the conda environment
+    # "base". I'd prefer to live in the real world and opt into a conda environment when I want, so
+    # I'll just source conda.sh myself.
     source "$CondaDir/etc/profile.d/conda.sh"
   else
     # The code Conda generates adds its bin directory to the start of your PATH, but I'd rather it
