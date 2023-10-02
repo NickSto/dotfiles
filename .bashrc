@@ -1142,8 +1142,14 @@ Estimate how much longer it will take for GeoTracker to export all my tracks.
   if [[ "$#" -ge 2 ]]; then
     current="$2"
   fi
-  local current_elapsed=$(calc "(($current/8.06)**(100/51))")
-  local total_eta=$(calc "(($total/8.06)**(100/51))")
+  # Testing new equations:
+  # $ end=1688409096
+  # $ total=575
+  # $ awkt "function est(amt) {return (amt/16.8)^(100/51)}
+  #     {print \$2, ($end-\$1)/60, "actual"; print \$2, (est($total) - est(\$2))/60, "estimate"}'
+  #     new4.tsv | scatterplot.py -g 3 -S 4 --width 1280 --height 960 -X 'Tracks done' -Y ETA
+  local current_elapsed=$(calc "(($current/9.28)**(100/51))")
+  local total_eta=$(calc "(($total/9.28)**(100/51))")
   local eta=$(calc "$total_eta-$current_elapsed")
   local eta_time=$(date -d "now + $eta seconds")
   printf 'Done in %0.1f minutes (at %s)\n' "$(calc "$eta/60")" "$eta_time"
