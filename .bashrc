@@ -445,7 +445,7 @@ directory, instead of from the link's directory. It will be resolved to an absol
   if [[ "$#" -ge 2 ]]; then
     local link_path="$2"
   else
-    local link_path=$(basename "$target")
+    local link_path=$(basename "$target_raw")
   fi
   if [[ -e "$link_path" ]] || [[ -h "$link_path" ]]; then
     echo "Error: A file already exists at the link path: $link_path" >&2
