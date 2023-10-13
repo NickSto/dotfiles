@@ -602,7 +602,7 @@ function pct {
 Prints 100*num1/(num1+num2)' >&2
     return 1
   fi
-  python3 -c "print(f'{$1/($1+$2):%}')"
+  python3 -c "print(f'{($1)/($1+$2):%}')"
 }
 function wcc {
   if [[ "$#" == 0 ]]; then
