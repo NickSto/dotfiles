@@ -146,10 +146,12 @@ fi
 
 ##### Bash options #####
 
-# don't put duplicate lines or lines starting with space in the history.
+# Don't put duplicate lines or lines starting with a space in the history.
 HISTCONTROL=ignoreboth
 HISTSIZE=2000       # max # of lines to keep in active history
-HISTFILESIZE=2000   # max # of lines to record in history file
+HISTFILESIZE=5000   # max # of lines to record in history file
+# Make the `history` command display the date and time of each command.
+HISTTIMEFORMAT='%a %d %b %I:%M:%S %p  '
 shopt -s histappend # append to the history file, don't overwrite it
 # check the window size after each command and update LINES and COLUMNS.
 shopt -s checkwinsize
@@ -165,8 +167,6 @@ DataDir="$HOME/.local/share/nbsdata"
 # Set for easy access to cron logs.
 OutLog="$HOME/.local/share/nbsdata/cron-stdout.log"
 ErrLog="$HOME/.local/share/nbsdata/cron-stderr.log"
-# Make the `history` command display the date and time of each command.
-HISTTIMEFORMAT='%a %d %b %I:%M:%S %p  '
 # Set my default text editor
 export EDITOR=vim
 # Allow disabling ~/.python_history.
@@ -1519,7 +1519,7 @@ function time_format {
 }
 trap 'timer_start' DEBUG
 # $PROMPT_COMMAND is a shell built-in which is executed just before $PS1 is displayed.
-PROMPT_COMMAND='prompt_exit_color;prompt_set_title;prompt_git_info;timer_stop'
+PROMPT_COMMAND='history -a;prompt_exit_color;prompt_set_title;prompt_git_info;timer_stop'
 
 
 ##### Application-specific stuff #####
