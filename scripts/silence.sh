@@ -3,8 +3,13 @@ if [ "x$BASH" = x ] || [ ! "$BASH_VERSINFO" ] || [ "$BASH_VERSINFO" -lt 4 ]; the
   echo "Error: Must use bash version 4+." >&2
   exit 1
 fi
-set -u
 unset CDPATH
+if [[ "$SUDO_USER" ]]; then
+  User="$SUDO_USER"
+else
+  User="$USER"
+fi
+set -u
 
 ScriptDir=$(dirname "${BASH_SOURCE[0]}")
 SilenceRel=".local/share/nbsdata/SILENCE"
@@ -21,19 +26,24 @@ Options:
 -H: Force using this directory as \$HOME. Even without this option, this script should automatically
     detect when it's being run under sudo and set the \$HOME back to the real user's home.
     But this could be useful if that doesn't work.
+-v: Verbose mode.
 Returns 0 when silenced, 2 when unsilenced, and 1 on error."
 
 #TODO: Turn off Ubuntu connectivity checking.
 
+
+
 function main {
   # Read arguments.
   command=
+  verbose=
   home="$(get_home)"
-  while getopts "ufwH:h" opt; do
+  while getopts "ufwvH:h" opt; do
     case "$opt" in
       u) command='unsilence';;
       f) command='force';;
       w) command='wait';;
+      v) verbose='true';;
       H) home="$OPTARG";;
       [h?]) fail "$Usage";;
     esac
@@ -44,30 +54,39 @@ function main {
     if [[ -f "$silence_file" ]] && ! [[ "$command" == 'force' ]]; then
       read -p "You're currently silenced! Use -f to force silencing again or type \"louden\" to unsilence! " response
       if [[ "$response" == 'louden' ]]; then
-        unsilence_services "$silence_file"
+        unsilence_services "$silence_file" "$verbose"
       else
         echo "Aborting!"
         return 1
       fi
     else
-      silence_services "$silence_file"
+      silence_services "$command" "$silence_file" "$verbose"
     fi
   elif [[ "$command" == 'unsilence' ]]; then
-    unsilence_services "$silence_file"
+    unsilence_services "$silence_file" "$verbose"
   elif [[ "$command" == 'wait' ]]; then
-    silence_services "$silence_file"
-    echo "Press  [enter] to unsilence."
-    echo "Or hit [Ctrl+C] to exit without unsilencing"
-    read
-    unsilence_services "$silence_file"
+    #TODO: This prevents any messages from unsilence_services unless we're in verbose mode.
+    #      A different method of stopping the endless loop might help?
+    #      https://stackoverflow.com/questions/47238297/how-to-immediately-skip-loop-and-go-to-trap-on-kill-command-to-process-bash
+    trap "unsilence_services $silence_file $verbose; exit" SIGINT SIGTERM
+    silence_services "$command" "$silence_file" "$verbose"
   fi
 }
 
 function silence_services {
   if [[ "$#" -ge 1 ]]; then
-    silence_file="$1"
+    command="$1"
+  else
+    fail "Error: Must provide 'command' to 'silence_services()'"
+  fi
+  if [[ "$#" -ge 2 ]]; then
+    silence_file="$2"
   else
     silence_file="$Silence"
+  fi
+  verbose=
+  if [[ "$#" -ge 3 ]]; then
+    verbose="$3"
   fi
   echo "Silencing.."
   failure=
@@ -76,24 +95,25 @@ function silence_services {
   if ! silence_dropbox; then
     failure=true
   fi
-  # Crashplan
-  echo "Killing CrashPlan.."
-  if ! silence_crashplan; then
-    failure=true
-  fi
   # Snap daemon (often maintains a connection) (listening for updates?)
   echo "Killing snapd.."
   if ! silence_snapd; then
     failure=true
   fi
-  # Results and silence file
+  # Results
   if [[ "$failure" ]]; then
     echo "Error silencing some services!" >&2
     return 1
   else
     touch "$silence_file"
-    echo "Silenced!"
-    return 0
+  fi
+  echo "Silenced most services. About to suppress Crashplan."
+  if [[ "$command" == 'wait' ]]; then
+    echo "Hit [Ctrl+C] to unsilence."
+  fi
+  if ! suppress_crashplan "$verbose"; then
+    echo "Error suppressing Crashplan!" >&2
+    return 1
   fi
 }
 
@@ -103,6 +123,10 @@ function unsilence_services {
   else
     silence_file="$Silence"
   fi
+  verbose=
+  if [[ "$#" -ge 2 ]]; then
+    verbose="$2"
+  fi
   echo "Unsilencing.."
   rm -f "$silence_file"
   failure=
@@ -111,14 +135,14 @@ function unsilence_services {
   if ! unsilence_dropbox; then
     failure=true
   fi
-  # Crashplan
-  echo "Starting CrashPlan.."
-  if ! unsilence_crashplan; then
-    failure=true
-  fi
   # Snap Daemon
   echo "Starting snapd.."
   if ! unsilence_snapd; then
+    failure=true
+  fi
+  # Crashplan
+  echo "Starting CrashPlan.."
+  if ! unsilence_crashplan; then
     failure=true
   fi
   # Results and silence file
@@ -135,10 +159,10 @@ function unsilence_services {
 
 function silence_dropbox {
   if which dropbox >/dev/null 2>/dev/null; then
-    dropbox stop
+    sudo -u "$User" dropbox stop
     sleep_time=1
     # The "running" command seems to return the opposite of what you expect.
-    while ! dropbox running >/dev/null 2>/dev/null; do
+    while ! sudo -u "$User" dropbox running >/dev/null 2>/dev/null; do
       sleep "$sleep_time"
       sleep_time=$((sleep_time*2))
       if [[ "$sleep_time" -ge 32 ]]; then
@@ -161,7 +185,7 @@ function silence_dropbox {
 
 function unsilence_dropbox {
   if which dropbox >/dev/null 2>/dev/null; then
-    if ! dropbox start 2>/dev/null; then
+    if ! sudo -u "$User" dropbox start 2>/dev/null; then
       echo "Error: Problem starting Dropbox." >&2
       return 1
     else
@@ -215,6 +239,35 @@ function unsilence_snapd {
   else
     return 1
   fi
+}
+
+function suppress_crashplan {
+  verbose=
+  if [[ "$#" -ge 1 ]]; then
+    verbose="$1"
+  fi
+  if ! ( [[ -d /usr/local/crashplan/bin ]] && [[ -f /usr/local/crashplan/bin/service.sh ]] ); then
+    echo "Did not find Crashplan installed in the expected location." >&2
+    return 1
+  fi
+  if [[ "$verbose" ]]; then
+    suppress_crashplan_loop
+  else
+    suppress_crashplan_loop >/dev/null 2>/dev/null
+  fi
+  return "$?"
+}
+
+function suppress_crashplan_loop {
+  while true; do
+    if pgrep -af /usr/local/crashplan/bin; then
+      /usr/local/crashplan/bin/service.sh stop
+      if [[ "$?" != 0 ]]; then
+        return 1
+      fi
+    fi
+    sleep 0.1
+  done
 }
 
 # Utilities
