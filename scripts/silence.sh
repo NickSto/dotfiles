@@ -39,6 +39,7 @@ function main {
     esac
   done
   silence_file="$home/$SilenceRel"
+
   if [[ "$command" == "" ]] || [[ "$command" == 'force' ]]; then
     if [[ -f "$silence_file" ]] && ! [[ "$command" == 'force' ]]; then
       read -p "You're currently silenced! Use -f to force silencing again or type \"louden\" to unsilence! " response
@@ -72,41 +73,20 @@ function silence_services {
   failure=
   # Dropbox
   echo "Killing Dropbox.."
-  if which dropbox >/dev/null 2>/dev/null; then
-    dropbox stop
-    sleep_time=1
-    # The "running" command seems to return the opposite of what you expect.
-    while ! dropbox running >/dev/null 2>/dev/null; do
-      sleep "$sleep_time"
-      sleep_time=$((sleep_time*2))
-      if [[ "$sleep_time" -ge 32 ]]; then
-        echo "Error: Could not kill Dropbox!" >&2
-        failure=true
-        break
-      fi
-    done
-    if ! [[ "$failure" ]]; then
-      # Sometimes dropbox gives conflicting messages. Let's reassure with our own.
-      echo "Dropbox daemon stopped." >&2
-    fi
+  if ! silence_dropbox; then
+    failure=true
   fi
   # Crashplan
   echo "Killing CrashPlan.."
-  get_crashservice=$(get_local_script 'get-crashservice.sh')
-  crashservice=$("$get_crashservice")
-  if [[ "$crashservice" ]]; then
-    if ! $crashservice stop; then
-      failure=true
-    fi
-  else
-    echo "Error: Could not find command to kill CrashPlan!" >&2
+  if ! silence_crashplan; then
     failure=true
   fi
   # Snap daemon (often maintains a connection) (listening for updates?)
   echo "Killing snapd.."
-  if service snapd status >/dev/null 2>/dev/null; then
-    sudo service snapd stop
+  if ! silence_snapd; then
+    failure=true
   fi
+  # Results and silence file
   if [[ "$failure" ]]; then
     echo "Error silencing some services!" >&2
     return 1
@@ -128,33 +108,20 @@ function unsilence_services {
   failure=
   # Dropbox
   echo "Starting Dropbox.."
-  if which dropbox >/dev/null 2>/dev/null; then
-    if ! dropbox start 2>/dev/null; then
-      echo "Error: Problem starting Dropbox." >&2
-      failure=true
-    else
-      echo "Dropbox started successfully." >&2
-    fi
+  if ! unsilence_dropbox; then
+    failure=true
   fi
   # Crashplan
   echo "Starting CrashPlan.."
-  get_crashservice=$(get_local_script 'get-crashservice.sh')
-  crashservice=$("$get_crashservice")
-  if [[ "$crashservice" ]]; then
-    if ! $crashservice start; then
-      echo "Error: Problem starting CrashPlan." >&2
-      failure=true
-    fi
-  else
-    echo "Warning: did not find command to start CrashPlan." >&2
+  if ! unsilence_crashplan; then
+    failure=true
   fi
   # Snap Daemon
   echo "Starting snapd.."
-  service snapd status >/dev/null 2>/dev/null
-  if [[ "$?" != 4 ]]; then
-    # The status command returns 4 if the service doesn't exist, but 3 if it's not running.
-    sudo service snapd start
+  if ! unsilence_snapd; then
+    failure=true
   fi
+  # Results and silence file
   if [[ "$failure" ]]; then
     echo "Error unsilencing some services!" >&2
     return 1
@@ -163,6 +130,94 @@ function unsilence_services {
     return 0
   fi
 }
+
+# Silencing and unsilencing individual services
+
+function silence_dropbox {
+  if which dropbox >/dev/null 2>/dev/null; then
+    dropbox stop
+    sleep_time=1
+    # The "running" command seems to return the opposite of what you expect.
+    while ! dropbox running >/dev/null 2>/dev/null; do
+      sleep "$sleep_time"
+      sleep_time=$((sleep_time*2))
+      if [[ "$sleep_time" -ge 32 ]]; then
+        echo "Error: Could not kill Dropbox!" >&2
+        failure=true
+        break
+      fi
+    done
+    if [[ "$failure" ]]; then
+      return 1
+    else
+      # Sometimes dropbox gives conflicting messages. Let's reassure with our own.
+      echo "Dropbox daemon stopped." >&2
+    fi
+  else
+    echo "Did not find 'dropbox' command" >&2
+    return 1
+  fi
+}
+
+function unsilence_dropbox {
+  if which dropbox >/dev/null 2>/dev/null; then
+    if ! dropbox start 2>/dev/null; then
+      echo "Error: Problem starting Dropbox." >&2
+      return 1
+    else
+      echo "Dropbox started successfully." >&2
+    fi
+  else
+    return 1
+  fi
+}
+
+function silence_crashplan {
+  get_crashservice=$(get_local_script 'get-crashservice.sh')
+  crashservice=$("$get_crashservice")
+  if [[ "$crashservice" ]]; then
+    if ! $crashservice stop; then
+      return 1
+    fi
+  else
+    echo "Error: Could not find command to kill CrashPlan!" >&2
+    return 1
+  fi
+}
+
+function unsilence_crashplan {
+  get_crashservice=$(get_local_script 'get-crashservice.sh')
+  crashservice=$("$get_crashservice")
+  if [[ "$crashservice" ]]; then
+    if ! $crashservice start; then
+      echo "Error: Problem starting CrashPlan." >&2
+      return 1
+    fi
+  else
+    echo "Warning: did not find command to start CrashPlan." >&2
+    return 1
+  fi
+}
+
+function silence_snapd {
+  if service snapd status >/dev/null 2>/dev/null; then
+    sudo service snapd stop
+  else
+    return 1
+  fi
+}
+
+function unsilence_snapd {
+  service snapd status >/dev/null 2>/dev/null
+  if [[ "$?" != 4 ]]; then
+    # The status command returns 4 if the service doesn't exist, but 3 if it's not running.
+    sudo service snapd start
+  else
+    return 1
+  fi
+}
+
+# Utilities
 
 function get_home {
   set +u
