@@ -1519,7 +1519,7 @@ function time_format {
 }
 trap 'timer_start' DEBUG
 # $PROMPT_COMMAND is a shell built-in which is executed just before $PS1 is displayed.
-PROMPT_COMMAND='history -a;prompt_exit_color;prompt_set_title;prompt_git_info;timer_stop'
+PROMPT_COMMAND='prompt_exit_color;prompt_set_title;prompt_git_info;timer_stop;history -a'
 
 
 ##### Application-specific stuff #####
