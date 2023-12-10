@@ -7,24 +7,33 @@ set -ue
 unset CDPATH
 
 ScriptDir=$(dirname "${BASH_SOURCE[0]}")
-Usage="Usage: \$ $(basename "$0")"
+Usage="Usage: \$ $(basename "$0") [stop|start]
+This will find the correct way to stop or start the background Crashplan service and do it for you."
 
 function main {
-  get_crashservice
+  crashservice "$@"
 }
 
-function get_crashservice {
+function crashservice {
+  if [[ "$#" -lt 1 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+    echo "$Usage" >&2
+    return 1
+  fi
+  command="$1"
   service_exists=$(get_local_script 'service-exists.sh')
-  if "$service_exists" -q code42; then
-    echo sudo service code42
-  elif "$service_exists" -q crashplan; then
-    echo sudo service crashplan
+  if "$service_exists" -q crashplan; then
+    sudo service crashplan "$command"
+    if [[ "$command" == 'stop' ]] && "$service_exists" -q code42; then
+      sudo service code42 "$command"
+    fi
+  elif "$service_exists" -q code42; then
+    sudo service code42 "$command"
   elif which CrashPlanEngine >/dev/null 2>/dev/null; then
-    echo CrashPlanEngine
+    CrashPlanEngine "$command"
   elif [[ -f /usr/local/crashplan/bin/service.sh ]]; then
-    echo sudo /usr/local/crashplan/bin/service.sh
+    sudo /usr/local/crashplan/bin/service.sh "$command"
   elif [[ -x "$HOME/src/crashplan/bin/CrashPlanEngine" ]]; then
-    echo "$HOME/src/crashplan/bin/CrashPlanEngine"
+    "$HOME/src/crashplan/bin/CrashPlanEngine" "$command"
   else
     echo "Error: Crashplan service not found and CrashPlanEngine command not found." >&2
     return 1

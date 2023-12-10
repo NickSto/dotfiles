@@ -32,7 +32,6 @@ Returns 0 when silenced, 2 when unsilenced, and 1 on error."
 #TODO: Turn off Ubuntu connectivity checking.
 
 
-
 function main {
   # Read arguments.
   command=
@@ -54,39 +53,30 @@ function main {
     if [[ -f "$silence_file" ]] && ! [[ "$command" == 'force' ]]; then
       read -p "You're currently silenced! Use -f to force silencing again or type \"louden\" to unsilence! " response
       if [[ "$response" == 'louden' ]]; then
-        unsilence_services "$silence_file" "$verbose"
+        unsilence_services "$silence_file"
       else
         echo "Aborting!"
         return 1
       fi
     else
-      silence_services "$command" "$silence_file" "$verbose"
+      silence_services "$silence_file"
     fi
   elif [[ "$command" == 'unsilence' ]]; then
-    unsilence_services "$silence_file" "$verbose"
+    unsilence_services "$silence_file"
   elif [[ "$command" == 'wait' ]]; then
-    #TODO: This prevents any messages from unsilence_services unless we're in verbose mode.
-    #      A different method of stopping the endless loop might help?
-    #      https://stackoverflow.com/questions/47238297/how-to-immediately-skip-loop-and-go-to-trap-on-kill-command-to-process-bash
-    trap "unsilence_services $silence_file $verbose; exit" SIGINT SIGTERM
-    silence_services "$command" "$silence_file" "$verbose"
+    silence_services "$silence_file"
+    echo "Press  [enter] to unsilence."
+    echo "Or hit [Ctrl+C] to exit without unsilencing"
+    read
+    unsilence_services "$silence_file"
   fi
 }
 
 function silence_services {
   if [[ "$#" -ge 1 ]]; then
-    command="$1"
-  else
-    fail "Error: Must provide 'command' to 'silence_services()'"
-  fi
-  if [[ "$#" -ge 2 ]]; then
-    silence_file="$2"
+    silence_file="$1"
   else
     silence_file="$Silence"
-  fi
-  verbose=
-  if [[ "$#" -ge 3 ]]; then
-    verbose="$3"
   fi
   echo "Silencing.."
   failure=
@@ -100,20 +90,19 @@ function silence_services {
   if ! silence_snapd; then
     failure=true
   fi
-  # Results
+  # CrashPlan
+  echo "Killing CrashPlan.."
+  if ! silence_crashplan; then
+    failure=true
+  fi
+  # Results and silence file
   if [[ "$failure" ]]; then
     echo "Error silencing some services!" >&2
     return 1
   else
     touch "$silence_file"
-  fi
-  echo "Silenced most services. About to suppress Crashplan."
-  if [[ "$command" == 'wait' ]]; then
-    echo "Hit [Ctrl+C] to unsilence."
-  fi
-  if ! suppress_crashplan "$verbose"; then
-    echo "Error suppressing Crashplan!" >&2
-    return 1
+    echo 'Silenced!'
+    return 0
   fi
 }
 
@@ -122,10 +111,6 @@ function unsilence_services {
     silence_file="$1"
   else
     silence_file="$Silence"
-  fi
-  verbose=
-  if [[ "$#" -ge 2 ]]; then
-    verbose="$2"
   fi
   echo "Unsilencing.."
   rm -f "$silence_file"
@@ -197,28 +182,27 @@ function unsilence_dropbox {
 }
 
 function silence_crashplan {
-  get_crashservice=$(get_local_script 'get-crashservice.sh')
-  crashservice=$("$get_crashservice")
+  crashservice=$(get_local_script 'crashservice.sh')
   if [[ "$crashservice" ]]; then
     if ! $crashservice stop; then
+      echo "Error: $crashservice could not kill CrashPlan!" >&2
       return 1
     fi
   else
-    echo "Error: Could not find command to kill CrashPlan!" >&2
+    echo "Error: Could not find script to kill CrashPlan!" >&2
     return 1
   fi
 }
 
 function unsilence_crashplan {
-  get_crashservice=$(get_local_script 'get-crashservice.sh')
-  crashservice=$("$get_crashservice")
+  crashservice=$(get_local_script 'crashservice.sh')
   if [[ "$crashservice" ]]; then
     if ! $crashservice start; then
-      echo "Error: Problem starting CrashPlan." >&2
+      echo "Error: $crashservice could not start CrashPlan." >&2
       return 1
     fi
   else
-    echo "Warning: did not find command to start CrashPlan." >&2
+    echo "Warning: did not find script to start CrashPlan." >&2
     return 1
   fi
 }
