@@ -520,8 +520,9 @@ Note: This works with dotfiles and files with spaces." >&2
       hidden=.[!.]*
     fi
   fi
-  du -sB1 $paths $hidden | sort -g -k 1 | while read size path; do
-    du -sh "$path"
+  du -sB1 --apparent-size $paths $hidden | sort -g -k 1 | while read size path; do
+    human_size=$(human_size "$size")
+    printf '%10s  %s\n' "$human_size" "$path"
   done
 }
 alias gitgraph='git log --oneline --abbrev-commit --all --graph --decorate --color'
@@ -1224,11 +1225,19 @@ $ test_rate 10 2' >&2
   local likelihood=$(calc "100*$true_positives/($true_positives+$false_positives)")
   printf "Chance a positive result means you're actually positive: %0.1f%%\n" "$likelihood"
 }
+function human_size {
+  if [[ "$#" -lt 1 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
+    echo "Usage: \$ human_size bytes
+Returns a number the nearest size unit, like 51GB, 2MB, etc." >&2
+    return 1
+  fi
+  printf '%s' "$1" | awk -f "$BashrcDir/scripts/human-size.awk"
+}
 # Convert a number of seconds into a human-readable time string.
 # Example output: "1 year 33 days 2:43:06"
 function human_time {
   if [[ "$#" -lt 1 ]] || [[ "$#" -gt 2 ]] || [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
-    echo "Usage: human_time num_sec [format]
+    echo "Usage: \$ human_time num_sec [format]
 Formats:
             2309487     |   23094   |     2309     |     23
 clock: 26 days 17:31:27 | 6:24:54   | 38:29        | 23
