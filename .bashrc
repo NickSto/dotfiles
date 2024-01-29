@@ -197,7 +197,7 @@ alias pseudo=sudo
 alias awkt="awk -F '\t' -v OFS='\t'"
 alias pingg='ping -c 1 google.com'
 alias curlip='curl -s icanhazip.com'
-alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
+alias rsynca='rsync -e ssh --delete --itemize-changes -zalXAv'
 alias now='date +%s'
 alias pipp='python3 -m pip'
 
