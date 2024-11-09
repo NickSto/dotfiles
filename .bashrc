@@ -197,7 +197,7 @@ alias pseudo=sudo
 alias awkt="awk -F '\t' -v OFS='\t'"
 alias pingg='ping -c 1 google.com'
 alias curlip='curl -s icanhazip.com'
-alias rsynca='rsync -e ssh --delete --itemize-changes -zalXAv'
+alias rsynca='rsync -e ssh --delete --itemize-changes -zaXAv'
 alias now='date +%s'
 alias pipp='python3 -m pip'
 
@@ -520,10 +520,12 @@ Note: This works with dotfiles and files with spaces." >&2
       hidden=.[!.]*
     fi
   fi
-  du -sB1 --apparent-size $paths $hidden | sort -g -k 1 | while read size path; do
-    human_size=$(human_size "$size")
-    printf '%10s  %s\n' "$human_size" "$path"
-  done
+  local total=0
+  while read size path; do
+    total=$((total+size))
+    printf '%10s  %s\n' "$(human_size "$size")" "$path"
+  done <<< $(du -sB1 --apparent-size $paths $hidden | sort -g -k 1)
+  printf '%10s [Total]\n' "$(human_size "$total")"
 }
 alias gitgraph='git log --oneline --abbrev-commit --all --graph --decorate --color'
 alias gig='nohup giggle >/dev/null 2>/dev/null &'
@@ -981,14 +983,14 @@ function passphrase {
   local wordlist="$HOME/aa/misc/eff_large_wordlist.txt"
   if [[ "$#" -ge 1 ]]; then
     if [[ "$1" == '-h' ]] || [[ "$1" == '--help' ]]; then
-      echo "Usage: passphrase [[wordlist.txt] num_words]" >&2
+      echo "Usage: passphrase [num_words [wordlist.txt]]" >&2
       return 1
     fi
     if [[ "$#" == 1 ]]; then
       words="$1"
     elif [[ "$#" -ge 2 ]]; then
-      wordlist="$1"
-      words="$2"
+      words="$1"
+      wordlist="$2"
     fi
   fi
   if ! [[ -f "$wordlist" ]]; then
