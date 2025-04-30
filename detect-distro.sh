@@ -14,12 +14,12 @@ if [[ $# -gt 0 ]]; then
     # login shell, $1 is set to the path to the user's .profile.
     _script=$(basename $0)
     printf "Best-effort detection of the distro and kernel.
-Source this to set \$Distro and \$Kernel to the detected values:
+Source this to set \$Os, \$Distro, and \$Kernel to the detected values:
     source %s
 Or you can execute it, and get have it print the values (one per line), with the
 -p option:
-    \$ read Distro Kernel <<< \$(%s -p)
-    \$ echo \$Distro \$Kernel
+    \$ read Os Distro Kernel <<< \$(%s -p)
+    \$ echo \$Os \$Distro \$Kernel
     ubuntu linux\n" $_script $_script >&2
     exit 1
   fi
@@ -37,6 +37,7 @@ _EXCLUDED='os|lsb|system'
 if Kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]'); then
   # Fuzzy-match some known non-linux uname -s outputs and assign standard names
   # for them.
+  Os="unix"
   if [[ $Kernel =~ freebsd ]]; then
     Distro="freebsd"
   elif [[ $Kernel =~ bsd$ ]]; then
@@ -45,12 +46,15 @@ if Kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]'); then
     Distro="osx"
   elif [[ $Kernel =~ cygwin ]]; then
     Distro="cygwin"
+    Os="windows"
   elif [[ $Kernel =~ mingw ]]; then
     Distro="mingw"
+    Os="windows"
   elif [[ $Kernel =~ sunos ]]; then
     Distro="solaris"
   elif [[ $Kernel =~ haiku ]]; then
     Distro="haiku"
+    Os="beos"
   # If it's a linux kernel, try to determine the distro from files in /etc
   elif [[ $Kernel =~ linux ]]; then
     # Preferred method: /etc/os-release cross-distro standard
@@ -85,12 +89,14 @@ if Kernel=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]'); then
   # If the uname -s output is unrecognized, just use it unmodified
   elif [[ $Kernel ]]; then
     Distro="$Kernel"
+    Os="unknown"
   fi
 # Even uname -s didn't work? Give up.
 else
   Distro="unknown"
+  Os="unknown"
 fi
 
 if [[ $_print ]]; then
-  printf '%s\n%s\n' $Distro $Kernel
+  printf '%s\n%s\n%s\n' "$Os" "$Distro" "$Kernel"
 fi
