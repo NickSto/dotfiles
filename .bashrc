@@ -23,12 +23,17 @@ Host=$(hostname -s 2>/dev/null || hostname)
 # supported distros:
 #   ubuntu debian freebsd
 # partial support:
-#   GitBash cygwin osx
+#   GitBash mingw cygwin osx
 
 # Are we on an NCBI server?
 InNcbi=
 if printf '%s' "$Host" | grep -qE '^(iebdev|lmem)[0-9][0-9]$'; then
   InNcbi=true
+fi
+# Or an NCBI personal machine?
+NcbiPersonal=
+if printf '%s' "$Host" | grep -qE '^NCBI(PC|LAP)[0-9]+$'; then
+  NcbiPersonal=true
 fi
 
 ##### Determine distro #####
@@ -74,10 +79,12 @@ case "$Host" in
   main)      Distro="ubuntu";;
   yarr)      Distro="ubuntu";;
   nsto[2-9]) Distro="ubuntu";;
-  *)  # Unrecognized host? Run detection script.
+  *) # Unrecognized host? Run detection script.
+    # This sets $Os, $Distro, and $Kernel.
     if [[ -f "$BashrcDir/detect-distro.sh" ]] && ! [[ "$IsRoot" ]]; then
       source "$BashrcDir/detect-distro.sh"
     else
+      Os=
       Distro=
     fi;;
 esac
@@ -214,6 +221,19 @@ alias dfh='df -h | fit-columns.py -se -x 1,start,/dev/loop -x 1,tmpfs -x 1,udev 
 
 ##### Functions Etc #####
 
+if [[ "$NcbiPersonal" ]]; then
+  function switch-ncbi {
+    if ipconfig | awk -f "$BashrcDir/scripts/at-ncbi.awk" >/dev/null; then
+      # We're on campus ethernet.
+      echo 'On campus. Switching to local config.'
+      cat "$HOME/.ssh/config.var.local.txt" "$HOME/.ssh/config.static.txt" > "$HOME/.ssh/config"
+    else
+      # We're remote or on campus wifi.
+      echo 'On wifi or remote. Switching to remote config.'
+      cat "$HOME/.ssh/config.var.remote.txt" "$HOME/.ssh/config.static.txt" > "$HOME/.ssh/config"
+    fi
+  }
+fi
 if [[ "$Distro" == mingw ]]; then
   function mouse {
     nohup notepad++.exe -multiInst "$@" >/dev/null 2>/dev/null &
@@ -445,7 +465,7 @@ directory, instead of from the link's directory. It will be resolved to an absol
   if [[ "$#" -ge 2 ]]; then
     local link_path="$2"
   else
-    local link_path=$(basename "$target")
+    local link_path=$(basename "$target_raw")
   fi
   if [[ -e "$link_path" ]] || [[ -h "$link_path" ]]; then
     echo "Error: A file already exists at the link path: $link_path" >&2
@@ -703,23 +723,33 @@ its absolute path and returns 0. Otherwise, it returns 1." >&2
   done
 }
 function venv {
-  if [[ "$#" -ge 1 ]] && [[ "$1" == '-h' ]]; then
-    echo "Usage: \$ venv
-Looks for a .venv directory in the current directory or its parents, and activates the first one it
-finds." >&2
+  if ( [[ "$#" -ge 1 ]] && [[ "$1" == '-h' ]] ) || [[ "$#" -gt 1 ]]; then
+    echo "Usage: \$ venv [virtualenv_dir]
+Activate a virtualenv. If no virtualenv_dir is given, it will look for a ".venv" dir in the current
+directory or its parents. It will activate the first one it finds." >&2
     return 1
   fi
-  local venv=$(parent_find .venv)
+  if [[ "$#" == 1 ]]; then
+    local venv="$1"
+  else
+    # Look for a .venv directory in the current directory or any parent directory.
+    local venv=$(parent_find .venv)
+  fi
   if ! [[ "$venv" ]]; then
     echo "No .venv directory found." >&2
     return 1
-  else
-    echo "Activating virtualenv in $venv" >&2
+  elif ! [[ -e "$venv" ]]; then
+    echo "Error: '$venv' does not exist." >&2
+    return 1
+  elif ! [[ -d "$venv" ]]; then
+    echo "Error: '$venv' is not a directory." >&2
+    return 1
   fi
+  echo "Activating virtualenv in $venv" >&2
   if [[ -f "$venv/bin/activate" ]]; then
     source "$venv/bin/activate"
   else
-    echo "Error: no .venv/bin/activate file found." >&2
+    echo "Error: no activate script found at '$venv/bin/activate'" >&2
     return 1
   fi
 }
@@ -933,10 +963,15 @@ function getip {
 Parse the ifconfig command to get your interface names, IP addresses, and MAC addresses.
 Prints one line per interface, tab-delimited:
 interface-name    MAC-address    IPv4-address    IPv6-address
-Does not work on OS X (totally different ifconfig output)." >&2
+Does not work on OS X (totally different ifconfig output).
+On Windows, the interface name is not computer readable and no MAC or IPv6 is obtained." >&2
     return 1
   fi
-  ip addr | awk -f "$BashrcDir/scripts/getip.awk"
+  if [[ "$Os" == 'windows' ]]; then
+    ipconfig | awk -f "$BashrcDir/scripts/getip-windows.awk"
+  else
+    ip addr | awk -f "$BashrcDir/scripts/getip.awk"
+  fi
 }
 alias getmac=getip
 function getinterface {
@@ -1579,12 +1614,14 @@ function _find_conda {
   # Add only one Conda path, and prefer 3 over 2, and ~/src over ~/
   # Find it in a function to avoid polluting the shell with temporary variables.
   local dir path
-  for dir in src/installations/ ''; do
+  for dir in src/installations/ installations/ ''; do
     path="$HOME/${dir}miniconda3"
-    if [[ -x "$path/bin/conda" ]]; then
-      printf '%s' "$path"
-      return 0
-    fi
+    for conda_path in Scripts/conda bin/conda; do
+      if [[ -x "$path/$conda_path" ]]; then
+        printf '%s' "$path"
+        return 0
+      fi
+    done
   done
   return 1
 }
@@ -1600,11 +1637,14 @@ if [[ "$CondaDir" ]]; then
     # "base". I'd prefer to live in the real world and opt into a conda environment when I want, so
     # I'll just source conda.sh myself.
     source "$CondaDir/etc/profile.d/conda.sh"
-  else
-    # The code Conda generates adds its bin directory to the start of your PATH, but I'd rather it
-    # be at the end so that other versions are preferred.
-    pathadd "$CondaDir/bin"
   fi
+  # In case that didn't work, add Conda's bin directory if it isn't already there.
+  # The code Conda generates adds its bin directory to the start of your PATH, but I'd rather it
+  # be at the end so that other versions are preferred.
+  pathadd "$CondaDir/bin"
+  # This won't work for everything, and `conda activate base` will still be necessary for some
+  # stuff. For example, `rename` seems to be unable to locate Perl modules without activating the
+  # conda environment, probably because of the lack of environment variables.
 fi
 
 # a more "sophisticated" method for determining if we're in a remote shell
