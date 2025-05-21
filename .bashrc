@@ -1627,7 +1627,7 @@ if [[ "$remote" ]]; then
   # 4. ! -f ~/NOSCREEN: The user has requested not to enter a screen (backup method).
   if ! [[ "$STY" ]] && [[ -t 1 ]] && [[ "$LC_NO_SCREEN" != true ]] && ! [[ -f "$HOME/NOSCREEN" ]] \
     && which screen >/dev/null 2>/dev/null; then
-      exec screen -RR -S auto
+      screen -RR -S auto
   fi
 else
   export PS1='$ps1_timer_show\e[$pecol[\d]\e[m \e[0;32m\u@\h:\e[m \e[$pgcol\w\e[m\n$ps1_branch\$ '
