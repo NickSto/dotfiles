@@ -72,13 +72,14 @@ else
 fi
 cd - >/dev/null
 
-# Set distro based on known hostnames
+# Set some parameters based on known hostnames
 case "$Host" in
-  aknot)     Distro="ubuntu";;
-  ruby)      Distro="ubuntu";;
-  main)      Distro="ubuntu";;
-  yarr)      Distro="ubuntu";;
-  nsto[2-9]) Distro="ubuntu";;
+  leeloo)    Distro='ubuntu'
+             HostType='personal';;
+  aknot)     Distro='ubuntu'
+             HostType='personal';;
+  nsto[2-9]) Distro='ubuntu'
+             HostType='server';;
   *) # Unrecognized host? Run detection script.
     # This sets $Os, $Distro, and $Kernel.
     if [[ -f "$BashrcDir/detect-distro.sh" ]] && ! [[ "$IsRoot" ]]; then
@@ -1712,7 +1713,9 @@ else
 fi
 
 # Try to allow things like executing zenity in cron.
-xhost "local:$USER" > /dev/null
+if [[ "$HostType" == 'personal' ]]; then
+  xhost "local:$USER" > /dev/null
+fi
 
 # Retitle window only if it's an interactive session. Otherwise, this can cause scp to hang.
 if [[ "$-" == *i* ]]; then
