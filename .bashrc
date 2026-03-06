@@ -172,8 +172,8 @@ shopt -s globstar 2>/dev/null || true
 # Set directory for my special data files
 DataDir="$HOME/.local/share/nbsdata"
 # Set for easy access to cron logs.
-OutLog="$HOME/.local/share/nbsdata/cron-stdout.log"
-ErrLog="$HOME/.local/share/nbsdata/cron-stderr.log"
+OutLog="$HOME/.local/share/nbsdata/cron.out.log"
+ErrLog="$HOME/.local/share/nbsdata/cron.err.log"
 # Set my default text editor
 export EDITOR=vim
 # Allow disabling ~/.python_history.
@@ -212,8 +212,8 @@ alias pipp='python3 -m pip'
 ##### Complex Aliases #####
 
 alias temp="sensors | grep -A 3 '^coretemp-isa-0000' | tail -n 1 | awk '{print \$3}' | sed -E -e 's/^\+//' -e 's/\.[0-9]+//'"
-alias chromem='totalmem.sh -n Chrome /opt/google/chrome/'
-alias foxmem='totalmem.sh -n Firefox /usr/lib/firefox/'
+alias chromem='totalmem.sh -n Chromium /snap/chromium/'
+alias foxmem='totalmem.sh -n Firefox /snap/firefox/'
 alias bitcoin="curl -s 'https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD' | jq .USD"
 alias ethereum="curl -s 'https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD' | jq .USD"
 alias dfh='df -h | fit-columns.py -se -x 1,start,/dev/loop -x 1,tmpfs -x 1,udev -x 1,start,/dev/mapper/vg-var -x 1,AFS'
@@ -1640,11 +1640,29 @@ pathadd /usr/local/sbin
 pathadd "$HOME/.local/bin" start
 pathadd "$BashrcDir/scripts"
 
+# Python virtualenv
+if [[ -x "$HOME/.venv/bin/python" ]]; then
+  pathadd "$HOME/.venv/bin" start
+  for path in "$HOME/.venv/lib"/python*; do
+    if [[ "$last_path" ]]; then
+      echo "Error: Found multiple Python versions in $HOME/.venv/lib" >&2
+      break
+    fi
+    if [[ "$PYTHONPATH" ]]; then
+      PYTHONPATH="$path:$PYTHONPATH"
+    else
+      PYTHONPATH="$path"
+    fi
+    last_path="$path"
+  done
+  unset path last_path
+fi
+
 # Conda stuff
 function _find_conda {
   # Add only one Conda path, and prefer 3 over 2, and ~/src over ~/
   # Find it in a function to avoid polluting the shell with temporary variables.
-  local dir path
+  local dir path conda_path
   for dir in src/installations/ installations/ ''; do
     path="$HOME/${dir}miniconda3"
     for conda_path in Scripts/conda bin/conda; do
@@ -1692,6 +1710,9 @@ else
     remote="true"
   fi
 fi
+
+# Try to allow things like executing zenity in cron.
+xhost "local:$USER" > /dev/null
 
 # Retitle window only if it's an interactive session. Otherwise, this can cause scp to hang.
 if [[ "$-" == *i* ]]; then
