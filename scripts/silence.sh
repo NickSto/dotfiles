@@ -11,6 +11,10 @@ else
 fi
 set -u
 
+# The regular, formal services (System V, systemd) that can be reliably controlled with
+# the `service` command.
+Services='snapd unattended-upgrades'
+
 ScriptDir=$(dirname "${BASH_SOURCE[0]}")
 SilenceRel=".local/share/nbsdata/SILENCE"
 Silence="$HOME/$SilenceRel"
@@ -85,9 +89,9 @@ function silence_services {
   if ! silence_dropbox; then
     failure=true
   fi
-  # Snap daemon (often maintains a connection) (listening for updates?)
-  echo "Killing snapd.."
-  if ! silence_snapd; then
+  # The regular services.
+  echo "Killing $Services.."
+  if ! silence_service_list; then
     failure=true
   fi
   # CrashPlan
@@ -120,9 +124,9 @@ function unsilence_services {
   if ! unsilence_dropbox; then
     failure=true
   fi
-  # Snap Daemon
-  echo "Starting snapd.."
-  if ! unsilence_snapd; then
+  # The regular services.
+  echo "Starting $Services.."
+  if ! unsilence_service_list; then
     failure=true
   fi
   # Crashplan
@@ -207,20 +211,32 @@ function unsilence_crashplan {
   fi
 }
 
-function silence_snapd {
-  if service snapd status >/dev/null 2>/dev/null; then
-    sudo service snapd stop
-  else
+function silence_service_list {
+  failures=''
+  for service in $Services; do
+    if service "$service" status >/dev/null 2>/dev/null; then
+      sudo service "$service" stop
+    else
+      failures="$failures $service"
+    fi
+  done
+  if [[ "$failures" ]]; then
     return 1
   fi
 }
 
-function unsilence_snapd {
-  service snapd status >/dev/null 2>/dev/null
-  if [[ "$?" != 4 ]]; then
-    # The status command returns 4 if the service doesn't exist, but 3 if it's not running.
-    sudo service snapd start
-  else
+function unsilence_service_list {
+  failures=''
+  for service in $Services; do
+    service "$service" status >/dev/null 2>/dev/null
+    if [[ "$?" != 4 ]]; then
+      # The status command returns 4 if the service doesn't exist, but 3 if it's not running.
+      sudo service "$service" start
+    else
+      failures="$failures $service"
+    fi
+  done
+  if [[ "$failures" ]]; then
     return 1
   fi
 }
