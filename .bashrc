@@ -1409,6 +1409,37 @@ Input format same as for 'sleep' command, except integers only." >&2
 }
 
 
+##### NCBI #####
+
+function count_storage_integrity {
+  if [[ "$#" != 1 ]] || [[ "$1" == '-h' ]]; then
+    echo "Usage: count_storage_integrity timestamp_dir"
+  else
+    dir="$1"
+  fi
+  if ! [[ -d "$dir" ]]; then
+    echo "Error: Directory not found: $dir" >&2
+    return 1
+  fi
+  if ! [[ -f "$dir/report.tsv" ]]; then
+    echo "Warning: report.tsv not found. Audit is not ready." >&2
+  elif ! [[ -s "$dir/report.tsv" ]]; then
+    echo "Warning: report.tsv is empty. Audit may have failed." >&2
+  fi
+  wc -l "$dir"/*.tsv | LC_ALL=en_US.UTF-8 awk '{
+    nparts = split($2,parts,"/")
+    nfields = split(parts[nparts],fields,".")
+    if (nfields == 4) {
+      totals[fields[3]] += $1
+    }
+  }
+  END {
+    for (report in totals) {
+      printf("%10'"'"'d  %s\n", totals[report], report)
+    }
+  }'
+}
+
 ##### Bioinformatics #####
 
 alias seqlen="bioawk -c fastx '{ print \$name, length(\$seq) }'"
