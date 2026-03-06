@@ -173,8 +173,16 @@ shopt -s globstar 2>/dev/null || true
 # Set directory for my special data files
 DataDir="$HOME/.local/share/nbsdata"
 # Set for easy access to cron logs.
-OutLog="$HOME/.local/share/nbsdata/cron.out.log"
-ErrLog="$HOME/.local/share/nbsdata/cron.err.log"
+if [[ "$HostType" == 'personal' ]]; then
+  OutLog="$HOME/aa/computer/logs/cron.out.log"
+  ErrLog="$HOME/aa/computer/logs/cron.err.log"
+elif [[ "$HostType" == 'server' ]]; then
+  OutLog="/var/www/logs/cron.out.log"
+  ErrLog="/var/www/logs/cron.err.log"
+else
+  OutLog="$HOME/logs/cron.out.log"
+  ErrLog="$HOME/logs/cron.err.log"
+fi
 # Set my default text editor
 export EDITOR=vim
 # Allow disabling ~/.python_history.
