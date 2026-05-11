@@ -258,12 +258,7 @@ function cpu {
 }
 alias mem=cpu
 function geoip {
-  if [[ "$1" ]]; then
-    ip="$1"
-  else
-    ip=$(curlip)
-  fi
-  curl -s "http://ipinfo.io/$ip" | jq -r '.city + ", " + .region + ", " + .country + ": " + .org'
+  curl -s 'https://ipinfo.io/' | jq -r '.city + ", " + .region + ", " + .country + ": " + .org'
 }
 function mountf {
   mount | sort -k 3 | awk 'BEGIN {
@@ -450,6 +445,38 @@ Add -f to force logging even when SILENCE is in effect." >&2
     echo echo "$ip" '>>' "$LogFile"
   else
     echo "Error: Failed getting IP address." >&2
+  fi
+}
+function vpnlog {
+  local outfile="$HOME/aa/computer/vpn-locations.tsv"
+  if [[ "$1" == '-h' ]] || [[ "$#" -lt 2 ]] || [[ "$#" -gt 3 ]]; then
+    echo "Usage: \$ vpnlog [outfile|-n] vpn_name server_name
+Log ISP and location info about the current connection. Writes output in tsv format.
+Default output file: $outfile
+-n: Don't write to any output file." >&2
+    return 1
+  fi
+  if [[ "$#" == 3 ]]; then
+    if [[ "$1" == '-n' ]]; then
+      outfile=''
+    else
+      local outfile="$1"
+    fi
+    shift
+  fi
+  local vpn="$1"
+  local server="$2"
+  local ts=$(date +%s)
+  local format='"'"$vpn"'\t'"$server"'\t" + .org + "\t" + .city+", "+.region+", "+.country + "\t" + "'$ts'"'
+  if ! [[ "$outfile" ]]; then
+    curl -s 'https://ipinfo.io' | jq -r "$format"
+  else
+    curl -s 'https://ipinfo.io' | jq -r "$format" | tee -a "$outfile"
+    # Re-sort the file. Split the server column on '#' and treat the part after as a number.
+    mv -f "$outfile" "$outfile.bak"
+    awk -F '\t' -v OFS='\t' \
+      '{split($2, fields, "#"); print $1, fields[1], fields[2], $0}' "$outfile.bak" \
+      | sort -k 1,1 -k 2,2 -k 3,3g -k 5 | cut -f 4- > "$outfile"
   fi
 }
 function bak {
